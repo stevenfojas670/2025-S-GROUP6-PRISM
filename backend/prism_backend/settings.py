@@ -41,6 +41,9 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'channels',
+    'users',
+    'courses',
+    'assignments',
 #    'prism',
 ]
 
@@ -84,8 +87,11 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'prism_db',
-        'USER': 'prism_user',
-        'PASSWORD': 'VhM6geTEf1N&',
+        #CHANGE TO THIS ONE I AM USING MY OWN DATABASE ON MY OWN LAPTOP
+        #'USER': 'prism_user',
+        #'PASSWORD': 'VhM6geTEf1N&',
+        'USER': 'donessie',
+        'PASSWORD': 'Emily!2013',
         'HOST': '127.0.0.1',
         'PORT': '5432',
     }

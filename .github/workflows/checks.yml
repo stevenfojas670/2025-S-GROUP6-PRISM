@@ -1,0 +1,48 @@
+name: Django Tests
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.12]
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: donessie
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install requirements
+        run: |
+          pip install -r requirements/django-venv-requirements_2-23-2025.txt
+          pip install -r requirements/apt-requirements_2-23-2025.txt
+
+      - name: Make Migrations
+        run: python manage.py makemigrations
+
+      - name: Migrate Database
+        run: python manage.py migrate
+
+      - name: Run tests
+        env:
+          DATABASE_URL: postgres://donessie:password@localhost:5432/test_db
+        run: python ./backend/manage.py test
