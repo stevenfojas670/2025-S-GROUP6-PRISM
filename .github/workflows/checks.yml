@@ -5,9 +5,6 @@ on: [push]
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.12]
     services:
       postgres:
         image: postgres:13
@@ -26,15 +23,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Setup Python ${{ matrix.python-version }}
+      - name: Setup Python
         uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: 3.12
 
       - name: Install requirements
         run: |
           pip install -r requirements/django-venv-requirements_2-23-2025.txt
           pip install -r requirements/apt-requirements_2-23-2025.txt
+
+      - name: Wait for PostgreSQL to be ready
+        run: sleep 10
 
       - name: Make Migrations
         run: python ./backend/manage.py makemigrations
