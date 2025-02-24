@@ -10,8 +10,8 @@ jobs:
         image: postgres:13
         env:
           POSTGRES_USER: donessie
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: test_db
+          POSTGRES_PASSWORD: Emily!2013
+          POSTGRES_DB: prism_db
         ports:
           - 5432:5432
         options: >-
@@ -44,5 +44,5 @@ jobs:
 
       - name: Run tests
         env:
-          DATABASE_URL: postgres://donessie:password@localhost:5432/test_db
+          DATABASE_URL: postgres://donessie:Emily!2013@localhost:5432/prism_db
         run: python ./backend/manage.py test
