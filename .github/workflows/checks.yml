@@ -37,10 +37,10 @@ jobs:
           pip install -r requirements/apt-requirements_2-23-2025.txt
 
       - name: Make Migrations
-        run: python manage.py makemigrations
+        run: python ./backend/manage.py makemigrations
 
       - name: Migrate Database
-        run: python manage.py migrate
+        run: python ./backend/manage.py migrate
 
       - name: Run tests
         env:
