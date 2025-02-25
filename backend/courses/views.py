@@ -6,18 +6,22 @@ from courses import models
 from rest_framework import viewsets
 
 class ProfessorVS(viewsets.ModelViewSet):
+    """Professor Model ViewSet."""
     queryset = models.Professor.objects.all()
     serializer_class = serializers.ProfessorSerializer
 
 class SemesterVS(viewsets.ModelViewSet):
+    """Semester Model ViewSet."""
     queryset = models.Semester.objects.all()
     serializer_class = serializers.SemesterSerializer
 
 class ClassVS(viewsets.ModelViewSet):
+    """Class Model ViewSet."""
     queryset = models.Class.objects.all()
     serializer_class = serializers.ClassSerializer
 
 class ProfessorClassSectionVS(viewsets.ModelViewSet):
+    """ProfessorClassSection Model ViewSet."""
     queryset = models.ProfessorClassSection.objects.all()
     serializer_class = serializers.ProfessorClassSectionSerializer
 

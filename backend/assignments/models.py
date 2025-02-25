@@ -6,8 +6,8 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 class Student(models.Model):
     """Students Model."""
     email = models.EmailField(max_length=100, unique=True)
-    student_id = models.IntegerField(unique=True)  # This is for the code_gradeID field in codegrade
-    username = models.CharField(max_length=50, blank=True, null=True)  # Optional
+    codeGrade_id = models.IntegerField(unique=True)  # This is for the code_gradeID field in codegrade
+    username = models.CharField(max_length=50, blank=True, null=True)  # Optional maybe codgrade have this info?
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
 
@@ -31,6 +31,8 @@ class Submission(models.Model):
     flagged = models.BooleanField(default=False)
     professor = models.ForeignKey("courses.Professor", on_delete=models.CASCADE)  # Link to professor
 
+# To Query flagged submissions by professor use this code:
+# FlaggedSubmission.objects.filter(submission__professor=given_professor)
 class FlaggedSubmission(models.Model):
     """Flagged Submissions Model."""
     submission = models.ForeignKey(Submission, on_delete=models.CASCADE)
@@ -41,10 +43,12 @@ class FlaggedSubmission(models.Model):
 class FlaggedStudent(models.Model):
     """Flagged Students Model."""
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    professor = models.ForeignKey("courses.Professor", on_delete=models.CASCADE)
     times_over_threshold = models.IntegerField(default=0)
 
 class ConfirmedCheater(models.Model):
     """Confirmed Cheaters Model."""
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    professor = models.ForeignKey("courses.Professor", on_delete=models.CASCADE)
     confirmed_date = models.DateField(auto_now_add=True)
-    threshold_used = models.IntegerField(default=40)  # Tracks threshold used at confirmation
+    threshold_used = models.IntegerField(default=40)
