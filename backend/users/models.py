@@ -40,12 +40,12 @@ class User(AbstractUser, PermissionsMixin):
     last_name = models.CharField(max_length=50)
     is_admin = models.BooleanField(default=False)
 
-    #linking the user manager to this custome user model
+    # linking the user manager to this custom user model
     objects = UserManager()
 
-    #default behavior is to create an username, here i am saying the username will be the email field
+    # default behavior is to create a username; here the username is the email field
     USERNAME_FIELD = 'email'
-    #email is by dafault required btw
+    # email is by default required; add any other required fields here
     REQUIRED_FIELDS = ['first_name', 'last_name']
 
     groups = models.ManyToManyField(
@@ -58,4 +58,7 @@ class User(AbstractUser, PermissionsMixin):
         related_name="custom_user_permissions_set",
         blank=True
     )
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} ({self.email})"
 
