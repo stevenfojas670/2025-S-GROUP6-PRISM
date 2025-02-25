@@ -15,7 +15,7 @@ from assignments.views import (
 from courses.views import ProfessorVS
 
 # Base router for professors.
-# This will generate the URLs like this: /professor/{prof_pk}/whever so we can filfter using professor wich is the main guy here
+# This will generate the URLs like this: /professor/{prof_pk}/ so we can filfter using professor wich is the main guy here
 professor_router = DefaultRouter()
 professor_router.register('professor', ProfessorVS, basename='professor')
 

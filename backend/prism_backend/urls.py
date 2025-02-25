@@ -27,6 +27,7 @@ urlpatterns = [
     path("django/api/hello/", hello_world),
     path('api/user/', include('users.urls')),
     path('api/course/', include('courses.urls')),
+    path('api/assignment/', include('assignments.urls')),
 ]
 
 #from django.conf.urls import include, url
