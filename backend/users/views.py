@@ -5,7 +5,7 @@ Views for the User APIs.
 #rest_framework handles a lot of the logic we need to create objects in our database for us
 #it does that by providing a bunch of base classes that we can configure for our views that will handle the request
 #in a default standarize way, also it give us the ability to override some of that behavior so we can modify it if we need it
-from users import serializers, models
+from users import models, serializers
 from courses.models import Professor
 from rest_framework import viewsets
 

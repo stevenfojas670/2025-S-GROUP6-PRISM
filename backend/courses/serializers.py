@@ -3,7 +3,7 @@ Courses Models Serializers.
 """
 from rest_framework import serializers
 from courses import models
-
+from users import serializers as user_serializer
 
 class ProfessorSerializer(serializers.ModelSerializer):
     """Professor Model Serializer."""
