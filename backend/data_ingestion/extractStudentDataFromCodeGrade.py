@@ -8,12 +8,8 @@ import pandas as pd
 import json
 import os
 
-'''
-    Log error and continue on~~~~
-    Throw exception and report errors back to front end
-
-    Errors in json format 
-'''
+globalDirName = "cg_data"
+fileSeen = set()
 
 class CodeGradeData:
     '''
@@ -22,15 +18,16 @@ class CodeGradeData:
     '''
     def __init__(self, dirName):
         self.dirName = dirName
+        self.submissionFileName = ""
         self.className = self.section = self.semester = self.assignmentName = self.zipFileDirectory = ""
         self.submissions = self.users = self.metaData = self.errors = []
         self.extractStudentFilesFromZIP()
 
     def extractStudentFilesFromZIP(self):
         for file in os.listdir(self.dirName):
-            if file.endswith('.zip'):
+            if file.endswith('.zip') and file not in fileSeen:
                 self.parseZipFileName(file)
-                self.zipFileDirectory = f"{self.dirName}/{self.assignmentName}"
+                self.zipFileDirectory = f"{self.dirName}/{self.submissionFileName}"
 
                 zipFile = ZipFile(f"{self.dirName}/{file}")
                 zipFile.extractall(self.zipFileDirectory)
@@ -40,6 +37,8 @@ class CodeGradeData:
                     print(
                         f"Error! The zip file for Assignment {self.assignmentName} did not contain any student submissions!")
                     exit(1)
+
+                fileSeen.add(file)
                 return
 
         # If we reach this point, then no valid ZIP file was found. Once we integrate
@@ -55,6 +54,7 @@ class CodeGradeData:
         the object's appropriate fields. No error handling is needed.
     '''
     def parseZipFileName(self, name):
+        self.submissionFileName = name.removesuffix('.zip')
         zipFields = name.split('-', 2)
 
         canvasName = zipFields[0].split(' ')
@@ -92,11 +92,12 @@ class CodeGradeData:
     '''
     def extractMetaDataFromCSV(self):
         for file in os.listdir(self.dirName):
-            if file.endswith('.csv'):
+            if file == f"{self.submissionFileName}.csv":
                 csvFile = open(f"{self.dirName}/{file}", 'r')
                 df = pd.read_csv(csvFile)
                 csvFile.close()
                 self.metaData = df
+                print(self.metaData)
                 return
 
         print("No .csv file containing student metadata was found.")
@@ -121,6 +122,7 @@ class CodeGradeData:
     '''
     def verifyStudentUserExistsInMetaData(self):
         for key, value in self.users.items():
+
             subID, studentName = self.checkIfStudentFileExists(key)
 
             entry = self.metaData.loc[self.metaData['Id'] == value]
@@ -138,6 +140,7 @@ class CodeGradeData:
     def checkIfStudentFileExists(self, fileName):
         subID, studentName = fileName.split('-', 1)
         studentName = studentName.strip()
+
         subID = int(subID.strip())
 
         if fileName not in os.listdir(self.zipFileDirectory):
@@ -159,17 +162,20 @@ class CodeGradeData:
         print(self.metaData)
 
 def main():
-    cgData = CodeGradeData('cg_data')
+    submissionDirLength = len(os.listdir(globalDirName))
 
-    cgData.extractJSON()
-    cgData.extractMetaDataFromCSV()
-    cgData.verifyStudentSubmissionExists()
-    cgData.verifyStudentUserExistsInMetaData()
+    for i in range(submissionDirLength//2):
+        cgData = CodeGradeData(globalDirName)
 
-    cgData.printDebugInfo()
+        cgData.extractJSON()
+        cgData.extractMetaDataFromCSV()
+        cgData.verifyStudentSubmissionExists()
+        cgData.verifyStudentUserExistsInMetaData()
 
-    if (len(cgData.errors) > 0):
-        pass
+        if (len(cgData.errors) > 0):
+            print("An error occurred parsing the data.")
+
+        cgData.printDebugInfo()
 
 if __name__ == "__main__":
     main()
