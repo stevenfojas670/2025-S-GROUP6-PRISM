@@ -97,7 +97,6 @@ class CodeGradeData:
                 df = pd.read_csv(csvFile)
                 csvFile.close()
                 self.metaData = df
-                print(self.metaData)
                 return
 
         print("No .csv file containing student metadata was found.")
