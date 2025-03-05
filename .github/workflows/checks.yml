@@ -1,0 +1,48 @@
+name: Django Tests
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: donessie
+          POSTGRES_PASSWORD: Emily!2013
+          POSTGRES_DB: prism_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.12
+
+      - name: Install requirements
+        run: |
+          pip install -r requirements/django-venv-requirements_2-23-2025.txt
+          pip install -r requirements/apt-requirements_2-23-2025.txt
+
+      - name: Wait for PostgreSQL to be ready
+        run: sleep 10
+
+      - name: Make Migrations
+        run: python ./backend/manage.py makemigrations
+
+      - name: Migrate Database
+        run: python ./backend/manage.py migrate
+
+      - name: Run tests
+        env:
+          DATABASE_URL: postgres://donessie:Emily!2013@localhost:5432/prism_db
+        run: python ./backend/manage.py test
