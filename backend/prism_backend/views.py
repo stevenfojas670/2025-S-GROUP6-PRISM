@@ -5,6 +5,6 @@ from rest_framework.response import Response
 def hello_world(request):
     return Response({"message": "Hello from Django Rest Framework!"})
 
+@api_view(["GET"])
 def validate_token(request):
-    # Do validate token the return JsonResponse({'status': 'success', 'email': email}) or failure
-    print("token will be validated")
+    return Response({"message": "VALIDATE TOKEN PATH CALLED"}, status=200)
