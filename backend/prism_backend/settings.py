@@ -11,10 +11,6 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -45,10 +41,6 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'channels',
-    'users',
-    'courses',
-    'assignments',
-    'drf_spectacular',
 #    'prism',
 ]
 
@@ -92,9 +84,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'prism_db',
-        #CHANGE TO THIS ONE I AM USING MY OWN DATABASE ON MY OWN LAPTOP
-        'USER': 'donessie',
-        'PASSWORD': 'Emily!2013',
+        'USER': 'prism_user',
+        'PASSWORD': 'VhM6geTEf1N&',
         'HOST': '127.0.0.1',
         'PORT': '5432',
     }
@@ -151,12 +142,4 @@ CHANNEL_LAYERS = {
         #     "hosts": [("127.0.0.1", 6379)],  # Redis server
         # },
     },
-}
-
-#asssinging our custom user model to be the defaulkt user model
-AUTH_USER_MODEL = 'users.User'
-
-#setting up the automatic documentation, this is the schema we will use openapi
-REST_FRAMEWORK = {
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
