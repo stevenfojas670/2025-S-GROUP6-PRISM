@@ -19,26 +19,11 @@ export const authOptions: NextAuthOptions = {
 	},
 	callbacks: {
 		async signIn({ user, account }) {
-			if (
-				!user.email?.includes("@unlv.edu") &&
-				!user.email?.includes("@unlv.nevada.edu")
-			)
-				return false
-
-			// const response = await fetch(
-			// 	"http://localhost:8000/api/validate-token/",
-			// 	{
-			// 		method: "GET", // Or POST if your Django expects it that way
-			// 		headers: {
-			// 			Authorization: `Bearer ${account?.access_token}`, // Google token
-			// 			"Content-Type": "application/json",
-			// 		},
-			// 	}
-			// )
+			return true
 		},
 		async redirect({ url, baseUrl }) {
-			if (url) return url
-			return baseUrl
+			console.log("Redirecting to:", url);
+    		return url.startsWith(baseUrl) ? url : baseUrl;
 		},
 		async jwt({ token }) {
 			return token

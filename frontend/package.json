@@ -4,6 +4,16 @@
 	"private": true,
 	"scripts": {
 		"dev": "next dev",
+        "dev-bakera21": "BASE_PATH=/bakera21 PORT=4001 next dev",
+        "dev-donessie": "BASE_PATH=/donessie PORT=4002 next dev",
+        "dev-erasms1": "BASE_PATH=/erasms1 PORT=4003 next dev",
+        "dev-fojass1": "BASE_PATH=/fojass1 PORT=4004 next dev",
+        "dev-kasbohm": "BASE_PATH=/kasbohm PORT=4005 next dev",
+        "dev-levyd1": "BASE_PATH=/levyd1 PORT=4006 next dev",
+        "dev-ortegj8": "BASE_PATH=/ortegj8 PORT=4007 next dev",
+        "dev-rosale5": "BASE_PATH=/rosale5 PORT=4008 next dev",
+        "dev-shumae1": "BASE_PATH=/shumae1 PORT=4009 next dev",
+        "dev-tolton": "BASE_PATH=/tolton PORT=4010 next dev",
 		"build": "next build",
 		"start": "next start",
 		"lint": "next lint"
