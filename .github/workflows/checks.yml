@@ -16,8 +16,7 @@ jobs:
 
       - name: Install requirements
         run: |
-          pip install -r backend/requirements/django-venv-requirements_2-23-2025.txt
-          pip install -r backend/requirements/apt-requirements_2-23-2025.txt
+          pip install -r backend/requirements.txt
 
       - name: Wait for AWS RDS to be ready
         run: sleep 20
