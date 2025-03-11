@@ -5,6 +5,20 @@ on: [push]
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: donessie
+          POSTGRES_PASSWORD: Emily!2013
+          POSTGRES_DB: prism_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -18,12 +32,8 @@ jobs:
         run: |
           pip install -r backend/requirements.txt
 
-      - name: Wait for AWS RDS to be ready
-        run: sleep 20
-
-      - name: Set Environment Variables
-        run: |
-          echo "DATABASE_URL=postgres://${{ secrets.DB_USER }}:${{ secrets.DB_PASSWORD }}@${{ secrets.DB_HOST }}:5432/${{ secrets.DB_NAME }}" >> $GITHUB_ENV
+      - name: Wait for PostgreSQL to be ready
+        run: sleep 10
 
       - name: Make Migrations
         run: python ./backend/manage.py makemigrations
@@ -31,5 +41,7 @@ jobs:
       - name: Migrate Database
         run: python ./backend/manage.py migrate
 
-      - name: Run Tests
+      - name: Run tests
+        env:
+          DATABASE_URL: postgres://donessie:Emily!2013@localhost:5432/prism_db
         run: python ./backend/manage.py test
