@@ -19,11 +19,42 @@ export const authOptions: NextAuthOptions = {
 	},
 	callbacks: {
 		async signIn({ user, account }) {
-			return true
+			if (
+				!(
+					user.email?.toLowerCase().includes("unlv.edu") ||
+					user.email?.toLowerCase().includes("unlv.nevada.edu")
+				)
+			)
+				return false
+
+			if (account?.id_token) {
+				const response = await fetch(
+					"http://localhost:8000/api/validate-token/",
+					{
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+						},
+						body: JSON.stringify({ token: account.id_token }),
+					}
+				)
+
+				const data = await response.json()
+
+				if (response.status == 401) {
+					console.log("Token validation failed.", data)
+					return false
+				} else if (response.status == 200) {
+					console.log("Token validation successful.", data)
+					return true
+				}
+			}
+
+			return false
 		},
 		async redirect({ url, baseUrl }) {
-			console.log("Redirecting to:", url);
-    		return url.startsWith(baseUrl) ? url : baseUrl;
+			console.log("Redirecting to:", url)
+			return url.startsWith(baseUrl) ? url : baseUrl
 		},
 		async jwt({ token }) {
 			return token
