@@ -2,8 +2,8 @@
 Courses Models Serializers.
 """
 from rest_framework import serializers
-from courses import models
-from users import serializers as user_serializer
+from database.courses import models
+
 
 class ProfessorSerializer(serializers.ModelSerializer):
     """Professor Model Serializer."""

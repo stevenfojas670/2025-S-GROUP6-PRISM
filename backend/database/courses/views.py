@@ -1,8 +1,8 @@
 """
 Courses Views.
 """
-from courses import serializers
-from courses import models
+from database.courses import serializers
+from database.courses import models
 from rest_framework import viewsets
 
 class ProfessorVS(viewsets.ModelViewSet):

@@ -4,7 +4,8 @@ Assignments URLs.
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_nested.routers import NestedDefaultRouter
-from assignments.views import (
+
+from database.assignments.views import (
     AssignmentVS,
     SubmissionVS,
     FlaggedSubmissionVS,
@@ -12,7 +13,7 @@ from assignments.views import (
     ConfirmedCheaterVS,
     StudentVS
 )
-from courses.views import ProfessorVS
+from database.courses.views import ProfessorVS
 
 # Base router for professors.
 # This will generate the URLs like this: /professor/{prof_pk}/ so we can filfter using professor wich is the main guy here

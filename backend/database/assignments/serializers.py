@@ -2,9 +2,11 @@
 Assignment Models Serializers.
 """
 from rest_framework import serializers
-from assignments import models
-from courses import models as courses_models
-from courses import serializers as courses_serializer
+
+from database.assignments import models
+from database.courses import models as courses_models
+from database.courses import serializers as courses_serializer
+
 
 class StudentSerializer(serializers.ModelSerializer):
     """Student Models Serializers."""
