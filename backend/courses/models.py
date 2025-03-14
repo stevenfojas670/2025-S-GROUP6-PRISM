@@ -2,7 +2,7 @@
 Courses Database Models.
 """
 from django.db import models
-from database.users import models as user_model
+from users import models as user_model
 from django.conf import settings
 
 class Professor(models.Model):

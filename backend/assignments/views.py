@@ -3,8 +3,8 @@ Assignments Views.
 """
 from rest_framework import viewsets
 
-from database.assignments import serializers, models
-from database.courses import models as courses_models
+from assignments import models, serializers
+from courses import models as courses_models
 
 
 class StudentVS(viewsets.ModelViewSet):

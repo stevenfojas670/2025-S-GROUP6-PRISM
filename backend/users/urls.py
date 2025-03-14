@@ -2,7 +2,7 @@
 URLs mapping for the User API.
 """
 from rest_framework.routers import DefaultRouter
-from database.users.views import UserVS
+from users.views import UserVS
 from django.urls import path, include
 
 #this automates the url so its cleaner and simpelr to work with, UserVS will take care of '/users/' URLs
