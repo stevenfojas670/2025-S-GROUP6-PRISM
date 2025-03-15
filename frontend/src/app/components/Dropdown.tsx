@@ -10,9 +10,14 @@ import Autocomplete from "@mui/material/Autocomplete";
 interface Props {
   items: { Label: string; id: number }[];
   onSelectItem: (item: number | null) => void;
+  dropdownLabel: string;
 }
 
-export default function Dropdown({ items, onSelectItem }: Props) {
+export default function Dropdown({
+  items,
+  onSelectItem,
+  dropdownLabel,
+}: Props) {
   return (
     <Autocomplete
       disablePortal
@@ -24,7 +29,7 @@ export default function Dropdown({ items, onSelectItem }: Props) {
         onSelectItem(b!.id);
       }}
       renderInput={(params) => (
-        <TextField {...params} label="Name" color="primary" />
+        <TextField {...params} label={dropdownLabel} color="primary" />
       )}
     />
   );
