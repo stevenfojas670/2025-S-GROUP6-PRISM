@@ -26,7 +26,7 @@ export const authOptions: NextAuthOptions = {
 				)
 			)
 				return false
-
+			console.log(account?.id_token)
 			if (account?.id_token) {
 				const response = await fetch(
 					"http://localhost:8000/api/validate-token/",
@@ -56,10 +56,12 @@ export const authOptions: NextAuthOptions = {
 			console.log("Redirecting to:", url)
 			return url.startsWith(baseUrl) ? url : baseUrl
 		},
-		async jwt({ token }) {
+		async jwt({ token, account }) {
+			if (account) token.id_token = account.id_token
 			return token
 		},
-		async session({ session }) {
+		async session({ session, token }) {
+			session.id_token = token.id_token
 			return session
 		},
 	},
