@@ -93,11 +93,11 @@ ASGI_APPLICATION = "prism_backend.asgi.application"  # Add this for WebSockets
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "prism_db",
-        "USER": "donessie",
-        "PASSWORD": "Emily!2013",
-        "HOST": "127.0.0.1",
-        "PORT": "5432",
+        "NAME": os.getenv("DBNAME"),
+        "USER": os.getenv("DBUSER"),
+        "PASSWORD": os.getenv("DBPASSWORD"),
+        "HOST": os.getenv("DBHOST"),
+        "PORT": os.getenv("DBPORT"),
     }
 }
 
