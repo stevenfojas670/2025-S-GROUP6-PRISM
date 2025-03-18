@@ -175,7 +175,7 @@ class API_Data:
     def get_json_file(self,stud_dict,file_path):
         #file_name
         file_output = os.path.join(file_path,'.cg-info.json')
-        print(file_output)
+        print('Making json file ".cg-info.json"')
         #check if path exists
         if not self.mkdir(file_path):
             return
@@ -249,7 +249,7 @@ class API_Data:
         Creates a zip archive of a directory.
 
         Args:
-            file_name (str): name of the resulting output file
+            zip_file_name (str): name of the resulting output file
             dir_path (str): Path to the directory to be zipped.
         """
         if not os.path.exists(dir_path):
@@ -260,52 +260,56 @@ class API_Data:
         #os.rename(os.path.splitext(zip_path)[0] + '.zip', zip_path)
 
     def extract_all_assignments(self,assignments):
+        print(f"Extracting assignment(s) from {self.course.name}")
         for assignment in assignments:
             #get all submissions at current assignment
             submissions = self.client.assignment.get_all_submissions(
                 assignment_id=assignment.id,
                 latest_only=True,
                 )
-            prompt = 'Output directory for all assignments:'
-            output_dir = self.get_output_dir(self.course.name,assignment,prompt)
-            #output_dir = 'C:\\Users\\ejera\\testenv\\CS 472 - Development - Businge - Assignment 0'
-            students = {"submission_ids":{},"user_ids":{}}
-            for submission in submissions:
-                #populate the students dictionary
-                subID = submission.id
-                stud_id_key = f"{subID} - {submission.user.name}"
-                stud_uid_key = f"{subID} - {submission.user.name}"
-                #local dictionary
-                userID = submission.user.id
-                students["submission_ids"][stud_id_key] = subID
-                students["user_ids"][stud_uid_key] = userID
+            if len(submissions) > 0:
+                
+                prompt = 'Output directory for all assignments:'
+                output_dir = self.get_output_dir(self.course.name,assignment,prompt)
+                #output_dir = 'C:\\Users\\ejera\\testenv\\CS 472 - Development - Businge - Assignment 0'
+                students = {"submission_ids":{},"user_ids":{}}
+                for submission in submissions:
+                    #populate the students dictionary
+                    subID = submission.id
+                    stud_id_key = f"{subID} - {submission.user.name}"
+                    stud_uid_key = f"{subID} - {submission.user.name}"
+                    #local dictionary
+                    userID = submission.user.id
+                    students["submission_ids"][stud_id_key] = subID
+                    students["user_ids"][stud_uid_key] = userID
 
-                #download all submissions and store them in the output_dir
-                print('Downloading', submission.user.name)
-                self.download_submission(submission, output_dir)
-            #if there are more than one student
-            if(len(students["submission_ids"]) > 0):
+                    #download all submissions and store them in the output_dir
+                    print('Downloading', submission.user.name)
+                    self.download_submission(submission, output_dir)
+                #if there are more than one student
                 students = self.get_sorted_dict(students)
                 self.get_json_file(students,output_dir)
-            #place json in file
-            fileName = self.course.name + " - " + assignment.name 
-            print(f'\nMaking "{fileName}" into a zip file')
-            #convert directory made into a zip archive
-            self.make_zip_archive(fileName,output_dir)
+                #place json in file
+                fileName = self.course.name + " - " + assignment.name 
+                print(f'\nMaking "{fileName}" into a zip file')
+                #convert directory made into a zip archive
+                self.make_zip_archive(fileName,output_dir)
+            else:
+                print(f'No submissions for {assignment.name}')
     #helper fucntion for extract csv
     def get_grade(self,max_grade,grade_achieved):
         #assuming all the multipliers for each grade category is x1
         complement = 100 / max_grade
         return grade_achieved*complement
     def extract_csv (self,assignments):
-        #create first row
+        print(f"Extracting csv for student(s) from class: '{self.course.name}'")
         for assignment in assignments:
-            #always the first row
             submissions = self.client.assignment.get_all_submissions(
                 assignment_id=assignment.id,
                 latest_only=True,
                 )
             if len(submissions) > 0:
+                #always create first row
                 rows = ['Id','Username','Name','Grade','Created at']
                 prompt = 'Output directory for csv:'
                 file_name = self.get_output_dir(self.course.name,assignment,prompt)
@@ -330,13 +334,12 @@ class API_Data:
                 #close csv file
                 fileCSV.close()
             else:
-                print(f"no submissions for {assignment.name}")
+                print(f"No submissions for {assignment.name}")
             
 
 def main():
     #log in client
     client = codegrade.login_from_cli()
-    
     cg_data = API_Data(client)
     cg_data.extract_all_assignments(cg_data.assignments)
     cg_data.extract_csv(cg_data.assignments)
