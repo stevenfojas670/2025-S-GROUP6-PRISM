@@ -6,30 +6,35 @@
 from zipfile import ZipFile
 import pandas as pd
 import json
-import os
-
-globalDirName = "cg_data"
-fileSeen = set()
+# Django setup
+import os, django
+os.environ.setdefault("DJANGO_SETTINGS_MODULE","prism_backend.settings")
+django.setup()
 
 class CodeGradeData:
+
+
+
+    fileSeen = set()    # Hash set that keeps track of every file
+
     '''
         Constructor will initialize this class when we are extracting
         student data from CodeGrade
     '''
     def __init__(self, dirName):
-        self.dirName = dirName
-        self.submissionFileName = ""
-        self.className = self.section = self.semester = self.assignmentName = self.zipFileDirectory = ""
-        self.submissions = self.users = self.metaData = self.errors = []
+        self.__dirName = dirName
+        self.__submissionFileName = ""
+        self.__className = self.__section = self.semester = self.assignmentName = self.zipFileDirectory = ""
+        self.__submissions = self.users = self.metaData = self.errors = []
         self.extractStudentFilesFromZIP()
 
     def extractStudentFilesFromZIP(self):
-        for file in os.listdir(self.dirName):
+        for file in os.listdir(self.__dirName):
             if file.endswith('.zip') and file not in fileSeen:
                 self.parseZipFileName(file)
-                self.zipFileDirectory = f"{self.dirName}/{self.submissionFileName}"
+                self.zipFileDirectory = f"{self.__dirName}/{self.__submissionFileName}"
 
-                zipFile = ZipFile(f"{self.dirName}/{file}")
+                zipFile = ZipFile(f"{self.__dirName}/{file}")
                 zipFile.extractall(self.zipFileDirectory)
 
                 # Make sure the ZIP file actually contains data.
@@ -54,12 +59,12 @@ class CodeGradeData:
         the object's appropriate fields. No error handling is needed.
     '''
     def parseZipFileName(self, name):
-        self.submissionFileName = name.removesuffix('.zip')
+        self.__submissionFileName = name.removesuffix('.zip')
         zipFields = name.split('-', 2)
 
         canvasName = zipFields[0].split(' ')
-        self.className = canvasName[0] + ' ' + canvasName[1]
-        self.section = canvasName[2]
+        self.__className = canvasName[0] + ' ' + canvasName[1]
+        self.__section = canvasName[2]
 
         self.semester = zipFields[1].strip()
         self.assignmentName = zipFields[2][:-4].strip()
@@ -84,16 +89,16 @@ class CodeGradeData:
         cgInfo = open(f'{self.zipFileDirectory}/.cg-info.json', 'r')
         jsonStudentData = json.load(cgInfo)
 
-        self.submissions, self.users = jsonStudentData['submission_ids'], jsonStudentData['user_ids']
+        self.__submissions, self.users = jsonStudentData['submission_ids'], jsonStudentData['user_ids']
 
     '''
         This method handles the extraction of CodeGrade metadata for
         each student which is exported through a CSV file.
     '''
     def extractMetaDataFromCSV(self):
-        for file in os.listdir(self.dirName):
-            if file == f"{self.submissionFileName}.csv":
-                csvFile = open(f"{self.dirName}/{file}", 'r')
+        for file in os.listdir(self.__dirName):
+            if file == f"{self.__submissionFileName}.csv":
+                csvFile = open(f"{self.__dirName}/{file}", 'r')
                 df = pd.read_csv(csvFile)
                 csvFile.close()
                 self.metaData = df
@@ -108,7 +113,7 @@ class CodeGradeData:
         name matches the name associated with the given submission.
     '''
     def verifyStudentSubmissionExists(self):
-        for key, value in self.submissions.items():
+        for key, value in self.__submissions.items():
             subID, studentName = self.checkIfStudentFileExists(key)
 
             if subID != value:
@@ -156,15 +161,15 @@ class CodeGradeData:
         )
 
     def printDebugInfo(self):
-        print(self.submissions)
+        print(self.__submissions)
         print(self.users)
         print(self.metaData)
 
 def main():
-    submissionDirLength = len(os.listdir(globalDirName))
+    submissionDirLength = len(os.listdir("codegrade_data"))
 
     for i in range(submissionDirLength//2):
-        cgData = CodeGradeData(globalDirName)
+        cgData = CodeGradeData("codegrade_data")
 
         cgData.extractJSON()
         cgData.extractMetaDataFromCSV()
