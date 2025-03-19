@@ -5,8 +5,8 @@
 '''
 # Django setup
 import os, django
-os.environ.setdefault("DJANGO_SETTINGS_MODULE","prism_backend.settings")
-django.setup()
+# os.environ.setdefault("DJANGO_SETTINGS_MODULE","prism_backend.settings")
+# django.setup()
 
 from zipfile import ZipFile
 import pandas as pd
@@ -29,6 +29,7 @@ class CodeGradeDataIngestion:
     __errors = None
 
     fileSeen = set()    # Static set that keeps track of every file seen
+    allErrors = list()  # Static list that keeps track of all errors found
 
     # Methods
     def __init__(self, dirName):
@@ -64,12 +65,13 @@ class CodeGradeDataIngestion:
                 self.fileSeen.add(file)
                 return
 
-        # If we reach this point, then we have either extract all data from each ZIP file
+        # If we reach this point, then we have either have a duplicated ZIP file in the directory
         # or there are no ZIP files in the directory, so we have to create an error
         self.__errors.append(eb.DataIngestionErrorBuilder()
                              .addFileName(self.__dirName)
                              .addMsg(f"No .zip files were found containing student submission in {self.__dirName}")
                              .createError())
+        raise ValueError()
 
     '''
         CodeGrade exports a ZIP file with the following title format:
@@ -124,8 +126,13 @@ class CodeGradeDataIngestion:
                 self.__metaData = df
                 return
 
-        print("No .csv file containing student metadata was found.")
-        exit(1)
+        # ERROR CHECK #1: If we could not find the appropriate metadata .csv file
+        #                 for the current ZIP file we extracted, generate an error
+        self.__errors.append(eb.DataIngestionErrorBuilder()
+                                     .addFileName(self.__submissionFileName)
+                                     .addMsg(f"{self.__submissionFileName}.csv was not found in {self.__dirName}.")
+                                     .createError())
+        raise ValueError()
 
     '''
         Here, we verify that every submission ID is linked back to a student. We check
@@ -134,10 +141,17 @@ class CodeGradeDataIngestion:
     '''
     def __verifyStudentSubmissionExists(self):
         for key, value in self.__submissions.items():
-            subID, studentName = self.__checkIfStudentFileExists(key)
+            try:
+                subID, studentName = self.__checkIfStudentFileExists(key)
+            except:
+                continue
+            else:
 
-            if subID != value:
-                self.__addError(f"Submission ID #{subID} does not match for {studentName}.")
+                if subID != value:
+                    self.__errors.append(eb.DataIngestionErrorBuilder()
+                                         .addFileName(self.__zipFileDirectory)
+                                         .addMsg(f"The submission ID #{subID} for {studentName} is not correct.")
+                                         .createError())
 
     '''
         Similarly, we check to make sure that each user ID in the metadata
@@ -147,19 +161,31 @@ class CodeGradeDataIngestion:
     def __verifyStudentUserExistsInMetaData(self):
         for key, value in self.__users.items():
 
-            subID, studentName = self.__checkIfStudentFileExists(key)
+            try:
+                subID, studentName = self.__checkIfStudentFileExists(key)
+            except:
+                continue
+            else:
 
-            entry = self.__metaData.loc[self.__metaData['Id'] == value]
-            entriesFound = len(entry)
+                entry = self.__metaData.loc[self.__metaData['Id'] == value]
+                entriesFound = len(entry)
 
-            if entriesFound < 1:
-                self.__addError(f"Error! No metadata for user ID {value} was found.", 'meta')
+                if entriesFound < 1:
+                    self.__errors.append(eb.DataIngestionErrorBuilder()
+                                         .addFileName(self.__submissionFileName)
+                                         .addMsg(f"User ID {value} does not have any metadata associated with it.")
+                                         .createError())
+                elif entriesFound > 1:
+                    self.__errors.append(eb.DataIngestionErrorBuilder()
+                                         .addFileName(self.__submissionFileName)
+                                         .addMsg(f"User ID {value} has multiple metadata entries associated with it.")
+                                         .createError())
 
-            if entriesFound > 1:
-                self.__addError(f"Error! User ID {value} has more than one entry.", 'meta')
-
-            if entry.iloc[0, 2] != studentName:
-                self.__addError(f"Error! User ID {value} does not have a matching name.", 'meta')
+                if entry.iloc[0, 2] != studentName:
+                    self.__errors.append(eb.DataIngestionErrorBuilder()
+                                         .addFileName(self.__submissionFileName)
+                                         .addMsg(f"User ID {value} does not match the given name in the metadata file.")
+                                         .createError())
 
     def __checkIfStudentFileExists(self, fileName):
         subID, studentName = fileName.split('-', 1)
@@ -168,17 +194,24 @@ class CodeGradeDataIngestion:
         subID = int(subID.strip())
 
         if fileName not in os.listdir(self.__zipFileDirectory):
-            self.__addError(f"Submission for {studentName} is missing.", fileName)
+            self.__errors.append(eb.DataIngestionErrorBuilder()
+                                 .addFileName(self.__submissionFileName)
+                                 .addMsg(f"Submission for {studentName} is missing in zip directory.")
+                                 .createError())
+            raise ValueError()
 
         return subID, studentName
 
-    def __addError(self, msg, file):
-        self.__errors.append(
-            {
-                'message': msg,
-                'file': file
-            }
-        )
+    def __createErrorJSON(self):
+        errorCount = len(self.__errors)
+        with open("codeGradeDataIngestionErrors.json",'w') as oFile:
+            oFile.write('{\n\t"errors": [\n')
+            for i,e in enumerate(self.allErrors):
+                json.dump(e.__dict__,oFile,indent=4)
+                if(i != errorCount-1):
+                    oFile.write(',\n')
+            oFile.write('\t]\n')
+            oFile.write('}\n')
 
     def extractData(self):
         submissionDirLength = len(os.listdir("codegrade_data"))
@@ -191,13 +224,19 @@ class CodeGradeDataIngestion:
                 self.__verifyStudentSubmissionExists()
                 self.__verifyStudentUserExistsInMetaData()
             except:
+                for e in self.__errors:
+                    self.allErrors.append(e)
+                self.__errors = list()
                 continue
             else:
                 pass
 
+        if(len(self.allErrors) > 0):
+            self.__createErrorJSON()
+
 def main():
     cgData = CodeGradeDataIngestion("codegrade_data")
-    cgData.__extractData()
+    cgData.extractData()
 
 if __name__ == "__main__":
     main()
