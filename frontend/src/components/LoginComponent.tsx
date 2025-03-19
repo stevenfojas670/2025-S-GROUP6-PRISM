@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect } from "react";
 import { TextField, Button, Container, Typography, Box, Alert, Divider } from "@mui/material";
-import { SignInButton } from "@/components/AuthenticationMethod"; // ✅ Use SignInButton component
+import { SignInButton } from "@/components/AuthenticationMethod"; // Use SignInButton component
 
 const LoginComponent: React.FC = () => {
     const [username, setUsername] = useState<string>("");
@@ -27,7 +27,7 @@ const LoginComponent: React.FC = () => {
         event.preventDefault();
 
         try {
-            const response = await fetch("/api/auth/login", {
+            const response = await fetch("http://localhost:8000/api/user/users/", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username, password }),
@@ -36,13 +36,13 @@ const LoginComponent: React.FC = () => {
             const data = await response.json();
 
             if (response.ok) {
-                setMessage({ type: "success", text: `✅ Welcome, ${data.user.username}!` });
+                setMessage({ type: "success", text: ` Welcome, ${data.user.username}!` });
                 window.location.href = "/dashboard";
             } else {
-                setMessage({ type: "error", text: `❌ ${data.error}` });
+                setMessage({ type: "error", text: ` ${data.error}` });
             }
         } catch (error) {
-            setMessage({ type: "error", text: "❌ Server error. Please try again." });
+            setMessage({ type: "error", text: " Server error. Please try again." });
         }
     };
 
