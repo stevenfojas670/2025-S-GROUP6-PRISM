@@ -1,18 +1,25 @@
 '''
     Created by Daniel Levy, 3/17/2025
 
-    This script is designed to take and validate all Canvas
-    gradebook data and then update the database.
+    This script is responsible for the data ingestion of
+    Canvas metadata into the database. We are primarily
+    concerned with models from the `courses` app. We will also
+    manually validate that there are no errors in the provided
+    Canvas gradebook files.
 '''
 
-import os
+# Django setup
+import os, django
+os.environ.setdefault("DJANGO_SETTINGS_MODULE","prism_backend.settings")
+django.setup()
 import pandas as pd
 import json
 import errors.DataIngestionErrorBuilder as eb
+from courses.models import Semester, Class
 
 class CanvasDataIngestion:
 
-    # Class Fields
+    # Fields
     __dirName = None    # Directory where Canvas data is located
     __fileName = None   # Current file we are checking
     __data = None       # Dataframe to store file contents
@@ -21,8 +28,12 @@ class CanvasDataIngestion:
     __year = None
     __semester = None   # Spring, Summer, or Fall
     __metaID = None     # List of Canvas metadata info
+    __courseID = None   # Course ID: Last number in the metaID
     __errors = None     # List of errors
 
+    errors = list()     # Static list to keep track of all errors
+
+    # Methods
     def __init__(self,dirName):
         self.__dirName = dirName
         self.__fileName = ""
@@ -32,6 +43,7 @@ class CanvasDataIngestion:
         self.__year = ""
         self.__semester = ""
         self.__metaID = list()
+        self.__courseID = ""
         self.__errors = list()
 
     '''
@@ -137,13 +149,42 @@ class CanvasDataIngestion:
         elif courseInfo[0][-1] == "8":
             metaData.append("Fall")
         else:
-            print("Error!")
+            self.__errors.append(eb.DataIngestionErrorBuilder()
+                                 .addFileName(self.__fileName)
+                                 .addMsg(f"The semester is invalid.")
+                                 .createError())
 
         metaData.append(courseInfo[1]+courseInfo[2])
         metaData.append(courseInfo[3][3:])
         metaData.append(courseInfo[4])
 
+        self.__courseID = courseInfo[4]
         return metaData
+
+    '''
+        This method will populate the database based on the data from
+        the Canvas gradebook.
+        
+        Table We Populate: Semester, Course
+        We can not populate Professor/ProfessorCourse yet since we do
+        not have access to the professor information from the Canvas
+        gradebook.
+    '''
+    def __populateDatabase(self):
+
+        # First, add new entry for Semester
+        try:
+            semester = Semester.objects.get_or_create(name=self.__semester + self.__year)
+        except Semester.DoesNotExist:
+            semester = Semester(name=self.__semester + self.__year)
+            semester.save()
+
+        # Then, add new entry for Course
+        try:
+            className = Class.objects.get_or_create(name=self.__course)
+        except Class.DoesNotExist:
+            className = Class(name=self.__course)
+            className.save()
 
     '''
         If we encounter any errors, then this method will create a JSON
@@ -180,7 +221,15 @@ class CanvasDataIngestion:
             self.__convertToDataFrame()
             self.__validateData()
 
-        if len(self.__errors) > 0:
+            if len(self.__errors) > 0:
+                for e in self.__errors:
+                    self.errors.append(e)
+                self.__errors = list()
+                continue
+
+            self.__populateDatabase()
+
+        if(len(self.errors)) > 0:
             self.__createErrorJSON()
 
 def main():
