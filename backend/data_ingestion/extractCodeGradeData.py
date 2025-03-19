@@ -11,18 +11,19 @@ import os, django
 from zipfile import ZipFile
 import pandas as pd
 import json
+from errors.DataIngestionError import DataIngestionError
 import errors.DataIngestionErrorBuilder as eb
 
 class CodeGradeDataIngestion:
 
     # Fields
-    __dirName = None
-    __submissionFileName = None
+    __dirName = None            # Directory containing all data (should be 'codegrade_data')
+    __submissionFileName = None # Current course/assignment we are checking data for
     __className = None
     __section = None
     __semester = None
     __assignmentName = None
-    __zipFileDirectory = None
+    __zipFileDirectory = None   # Directory that contains unzipped student submissions
     __submissions = None
     __users = None
     __metaData = None
@@ -45,6 +46,10 @@ class CodeGradeDataIngestion:
         self.__metaData = list()
         self.__errors = list()
 
+    '''
+        This method will check the current directory and find the next ZIP
+        file to extract and check the student submissions for.
+    '''
     def __extractStudentFilesFromZIP(self):
         for file in os.listdir(self.__dirName):
             if file.endswith('.zip') and file not in self.fileSeen:
@@ -202,17 +207,6 @@ class CodeGradeDataIngestion:
 
         return subID, studentName
 
-    def __createErrorJSON(self):
-        errorCount = len(self.__errors)
-        with open("codeGradeDataIngestionErrors.json",'w') as oFile:
-            oFile.write('{\n\t"errors": [\n')
-            for i,e in enumerate(self.allErrors):
-                json.dump(e.__dict__,oFile,indent=4)
-                if(i != errorCount-1):
-                    oFile.write(',\n')
-            oFile.write('\t]\n')
-            oFile.write('}\n')
-
     def extractData(self):
         submissionDirLength = len(os.listdir("codegrade_data"))
 
@@ -232,7 +226,7 @@ class CodeGradeDataIngestion:
                 pass
 
         if(len(self.allErrors) > 0):
-            self.__createErrorJSON()
+            DataIngestionError.createErrorJSON("codegrade_data_errors",self.allErrors)
 
 def main():
     cgData = CodeGradeDataIngestion("codegrade_data")
