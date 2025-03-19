@@ -1,7 +1,11 @@
 '''
     Created by Daniel Levy, 2/21/2025
 
-    This script is a part of the Data Ingestion phase of PRISM.
+    This script is responsible for the data ingestion of
+    CodeGrade metadata into the database. We are primarily
+    concerned with models from the `assignments` app. We will also
+    manually validate that there are no errors in the provided
+    CodeGrade data files.
 '''
 # Django setup
 import os, django
@@ -60,7 +64,7 @@ class CodeGradeDataIngestion:
                 zipFile = ZipFile(f"{self.__dirName}/{file}")
                 zipFile.extractall(self.__zipFileDirectory)
 
-                # Make sure the ZIP file actually contains data.
+                # ERROR CHECK #1: Make sure the ZIP file actually contains data.
                 if os.listdir(self.__zipFileDirectory) == []:
                     self.__errors.append(eb.DataIngestionErrorBuilder()
                                          .addFileName(self.__zipFileDirectory)
@@ -71,8 +75,8 @@ class CodeGradeDataIngestion:
                 self.fileSeen.add(file)
                 return
 
-        # If we reach this point, then we have either have a duplicated ZIP file in the directory
-        # or there are no ZIP files in the directory, so we have to create an error
+        # ERROR CHECK #2: If we reach this point, then we have either have a duplicated
+        # ZIP file in the directory or there are no ZIP files in the directory, so we have to create an error
         self.__errors.append(eb.DataIngestionErrorBuilder()
                              .addFileName(self.__dirName)
                              .addMsg(f"No .zip files were found containing student submission in {self.__dirName}")
@@ -152,7 +156,7 @@ class CodeGradeDataIngestion:
             except:
                 continue
             else:
-
+                # ERROR CHECK #1: Make sure the submission ID matches for the current student
                 if subID != value:
                     self.__errors.append(eb.DataIngestionErrorBuilder()
                                          .addFileName(self.__zipFileDirectory)
@@ -176,29 +180,37 @@ class CodeGradeDataIngestion:
                 entry = self.__metaData.loc[self.__metaData['Id'] == value]
                 entriesFound = len(entry)
 
+                # ERROR CHECK #1: Make sure the current student has a valid submission
                 if entriesFound < 1:
                     self.__errors.append(eb.DataIngestionErrorBuilder()
                                          .addFileName(self.__submissionFileName)
                                          .addMsg(f"User ID {value} does not have any metadata associated with it.")
                                          .createError())
+                # ERROR CHECK #2: Make sure the current student does not have multiple submissions
                 elif entriesFound > 1:
                     self.__errors.append(eb.DataIngestionErrorBuilder()
                                          .addFileName(self.__submissionFileName)
                                          .addMsg(f"User ID {value} has multiple metadata entries associated with it.")
                                          .createError())
-
+                # ERROR CHECK #3: Make sure the student name matches the name in the user ID portion of cg_data.json
                 if entry.iloc[0, 2] != studentName:
                     self.__errors.append(eb.DataIngestionErrorBuilder()
                                          .addFileName(self.__submissionFileName)
                                          .addMsg(f"User ID {value} does not match the given name in the metadata file.")
                                          .createError())
 
+    '''
+        For this helper method, we are checking whether or not 
+        a student has a directory inside the ZIP directory that
+        contains their submitted code files to CodeGrade.
+    '''
     def __checkIfStudentFileExists(self, fileName):
         subID, studentName = fileName.split('-', 1)
         studentName = studentName.strip()
 
         subID = int(subID.strip())
 
+        # ERROR CHECK #1: Make sure the student has a submission in the ZIP directory
         if fileName not in os.listdir(self.__zipFileDirectory):
             self.__errors.append(eb.DataIngestionErrorBuilder()
                                  .addFileName(self.__submissionFileName)
@@ -208,6 +220,10 @@ class CodeGradeDataIngestion:
 
         return subID, studentName
 
+    '''
+        This method will populate the database by inserting
+        a new entry for each student.
+    '''
     def __populateDatabase(self):
 
         # First, add new entry for Semester
@@ -229,6 +245,10 @@ class CodeGradeDataIngestion:
                                       last_name=names[1])
                 currStudent.save()
 
+    '''
+        This is main method that is responsible for parsing
+        and validating all CodeGrade data.
+    '''
     def extractData(self):
         submissionDirLength = len(os.listdir("codegrade_data"))
 
