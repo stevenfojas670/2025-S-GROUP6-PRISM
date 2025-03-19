@@ -310,7 +310,7 @@ class API_Data:
                 )
             if len(submissions) > 0:
                 #always create first row
-                rows = ['Id','Username','Name','Grade','Created at']
+                rows = ['Id','Username','Name','Grade']
                 prompt = 'Output directory for csv:'
                 file_name = self.get_output_dir(self.course.name,assignment,prompt)
                 file_name = file_name+ '.csv'
@@ -328,8 +328,7 @@ class API_Data:
                     rows = [submission.user.id,
                             submission.user.username,
                             submission.user.name,
-                            grade,
-                            str(submission.created_at).replace(' ','T')]
+                            grade]
                     writer.writerow(rows)
                 #close csv file
                 fileCSV.close()
