@@ -18,6 +18,7 @@ from drf_spectacular.views import (SpectacularAPIView, SpectacularSwaggerView)
 from django.contrib import admin
 from django.urls import path, include
 from .views import hello_world
+from . import views
 
 urlpatterns = [
     path('django/admin/', admin.site.urls),
@@ -28,6 +29,7 @@ urlpatterns = [
     path('api/user/', include('users.urls')),
     path('api/course/', include('courses.urls')),
     path('api/assignment/', include('assignments.urls')),
+    path('api/validate-token/', views.validate_token, name='validate_token'),
 ]
 
 #from django.conf.urls import include, url
