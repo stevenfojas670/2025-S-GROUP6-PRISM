@@ -6,6 +6,7 @@
     we are trying to automate it. However, it doesn't mean we
     should have a safety net in case something unexpected happens.
 '''
+import json
 
 class DataIngestionError:
 
@@ -17,6 +18,23 @@ class DataIngestionError:
         self.__fileName = ""
         self.__line = ""
         self.__msg = ""
+
+    '''
+        If we encounter any errors, then this method will create a JSON
+        file containing all the errors that can then be parsed/displayed
+        to the user however we want.
+    '''
+    @staticmethod
+    def createErrorJSON(fileName,errors):
+        errorCount = len(errors)
+        with open(f"{fileName}.json",'w') as oFile:
+            oFile.write('{\n\t"errors": [\n')
+            for i,e in enumerate(errors):
+                json.dump(e.__dict__,oFile,indent=4)
+                if(i != errorCount-1):
+                    oFile.write(',\n')
+            oFile.write('\t]\n')
+            oFile.write('}\n')
 
     def setFileName(self,fileName):
         self.__fileName = fileName
