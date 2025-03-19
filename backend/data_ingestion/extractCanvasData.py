@@ -14,7 +14,6 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE","prism_backend.settings")
 django.setup()
 
 import pandas as pd
-import json
 from errors.DataIngestionError import DataIngestionError
 import errors.DataIngestionErrorBuilder as eb
 from courses.models import Semester, Class
