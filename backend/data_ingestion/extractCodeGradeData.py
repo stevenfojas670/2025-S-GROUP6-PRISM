@@ -5,14 +5,15 @@
 '''
 # Django setup
 import os, django
-# os.environ.setdefault("DJANGO_SETTINGS_MODULE","prism_backend.settings")
-# django.setup()
+os.environ.setdefault("DJANGO_SETTINGS_MODULE","prism_backend.settings")
+django.setup()
 
 from zipfile import ZipFile
 import pandas as pd
 import json
 from errors.DataIngestionError import DataIngestionError
 import errors.DataIngestionErrorBuilder as eb
+from assignments.models import Student, Assignment, Submission
 
 class CodeGradeDataIngestion:
 
@@ -24,9 +25,9 @@ class CodeGradeDataIngestion:
     __semester = None
     __assignmentName = None
     __zipFileDirectory = None   # Directory that contains unzipped student submissions
-    __submissions = None
-    __users = None
-    __metaData = None
+    __submissions = None        # List of CodeGrade submission IDs
+    __users = None              # List of CodeGrade user IDs
+    __metaData = None           # Dataframe containing CodeGrade meta data
     __errors = None
 
     fileSeen = set()    # Static set that keeps track of every file seen
@@ -207,6 +208,27 @@ class CodeGradeDataIngestion:
 
         return subID, studentName
 
+    def __populateDatabase(self):
+
+        # First, add new entry for Semester
+        for index, student in self.__metaData.iterrows():
+            names = student['Name'].split(' ')
+
+            # Add new Student to database
+            try:
+                currStudent = Student.objects.get_or_create(email = student['Username'] + "@unlv.nevada.edu",
+                                                            codeGrade_id = student['Id'],
+                                                            username = student['Username'],
+                                                            first_name = names[0],
+                                                            last_name = names[1])
+            except Student.DoesNotExist:
+                currStudent = Student(email = student['Username'] + "@unlv.nevada.edu",
+                                      codeGrade_id=student['Id'],
+                                      username=student['Username'],
+                                      first_name=names[0],
+                                      last_name=names[1])
+                currStudent.save()
+
     def extractData(self):
         submissionDirLength = len(os.listdir("codegrade_data"))
 
@@ -223,7 +245,7 @@ class CodeGradeDataIngestion:
                 self.__errors = list()
                 continue
             else:
-                pass
+                self.__populateDatabase()
 
         if(len(self.allErrors) > 0):
             DataIngestionError.createErrorJSON("codegrade_data_errors",self.allErrors)
