@@ -12,8 +12,10 @@
 import os, django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE","prism_backend.settings")
 django.setup()
+
 import pandas as pd
 import json
+from errors.DataIngestionError import DataIngestionError
 import errors.DataIngestionErrorBuilder as eb
 from courses.models import Semester, Class
 
@@ -185,23 +187,6 @@ class CanvasDataIngestion:
         except Class.DoesNotExist:
             className = Class(name=self.__course)
             className.save()
-
-    '''
-        If we encounter any errors, then this method will create a JSON
-        file containing all the errors that can then be parsed/displayed
-        to the user however we want.
-    '''
-    def __createErrorJSON(self):
-        errorCount = len(self.__errors)
-        with open("canvasDataIngestionErrors.json",'w') as oFile:
-            oFile.write('{\n\t"errors": [\n')
-            for i,e in enumerate(self.__errors):
-                json.dump(e.__dict__,oFile,indent=4)
-                if(i != errorCount-1):
-                    oFile.write(',\n')
-            oFile.write('\t]\n')
-            oFile.write('}\n')
-
     '''
         This will be the main method that a user will call to extract
         all information from the exported Canvas gradebook file.
@@ -230,7 +215,7 @@ class CanvasDataIngestion:
             self.__populateDatabase()
 
         if(len(self.errors)) > 0:
-            self.__createErrorJSON()
+            DataIngestionError.createErrorJSON("canvas_data_errors",self.errors)
 
 def main():
     ingest = CanvasDataIngestion('canvas_data')
