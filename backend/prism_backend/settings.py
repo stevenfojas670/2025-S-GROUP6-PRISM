@@ -63,6 +63,30 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+"""Configuring the session engine to use DATABASE BACKED SESSIONS"""
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
+
+""" Session Cookie Settings"""
+SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
+CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
+# SESSION_COOKIE_AGE = 86400
+
+# asssinging our custom user model to be the defaulkt user model
+AUTH_USER_MODEL = "users.User"
+
+# setting up the automatic documentation, this is the schema we will use openapi
+REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # Globally requires authentication
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.BasicAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+}
+
 ROOT_URLCONF = "prism_backend.urls"
 CORS_ALLOW_ALL_ORIGINS = True  # For development only, Restrict in production.
 
@@ -152,19 +176,4 @@ CHANNEL_LAYERS = {
         #     "hosts": [("127.0.0.1", 6379)],  # Redis server
         # },
     },
-}
-
-# asssinging our custom user model to be the defaulkt user model
-AUTH_USER_MODEL = "users.User"
-
-# setting up the automatic documentation, this is the schema we will use openapi
-REST_FRAMEWORK = {
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-    # Globally requires authentication
-    # "DEFAULT_PERMISSION_CLASSES": [
-    #     "rest_framework.permissions.IsAuthenticated",
-    # ],
-    "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.SessionAuthentication",
-    ],
 }

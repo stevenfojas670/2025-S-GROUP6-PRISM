@@ -9,7 +9,6 @@ Views for the User APIs.
 from users import models, serializers
 from courses.models import Professor
 from rest_framework import viewsets, status
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.request import Request
 from django.db.models import Q
@@ -18,7 +17,6 @@ from django.db.models import Q
 class UserVS(viewsets.ModelViewSet):
     queryset = models.User.objects.all()
     serializer_class = serializers.UserSerializer
-    # permission_classes = [IsAuthenticated]
 
     def list(self, request: Request):
         queryset = models.User.objects.all()
@@ -64,11 +62,6 @@ class UserVS(viewsets.ModelViewSet):
             )
 
     def partial_update(self, request: Request, pk=None):
-        """
-        - Allow the user to make partial updates
-        - If user is not an admin, then they can only update their own information
-        - If the user is admin, they can update anything
-        """
 
         try:
             instance = self.get_object()

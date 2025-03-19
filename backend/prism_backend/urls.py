@@ -33,6 +33,7 @@ urlpatterns = [
     path("api/course/", include("courses.urls")),
     path("api/assignment/", include("assignments.urls")),
     path("api/validate-token/", views.validate_token, name="validate_token"),
+    path("api/login/", views.login_view, name="login"),
 ]
 
 # from django.conf.urls import include, url
