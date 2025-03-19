@@ -18,7 +18,7 @@ class Class(models.Model):
 
     # Explicitly reference the Professor model from the users app
     professors = models.ManyToManyField(
-        "database.courses.Professor",
+        "courses.Professor",
         #the join table will happen at the ProfessorClassSection instead of being created automatic bewteen prof and class
         through="ProfessorClassSection",
     )
@@ -35,7 +35,7 @@ class Semester(models.Model):
 
 class ProfessorClassSection(models.Model):
     """Mapping Professors to Class Sections."""
-    professor = models.ForeignKey("database.courses.Professor", on_delete=models.CASCADE, related_name="profclassect")
+    professor = models.ForeignKey("courses.Professor", on_delete=models.CASCADE, related_name="profclassect")
     class_instance = models.ForeignKey(Class, on_delete=models.CASCADE)
     semester = models.ForeignKey(Semester, on_delete=models.CASCADE)
     section_number = models.IntegerField(blank=True, null=True)
