@@ -64,8 +64,15 @@ class UserVS(viewsets.ModelViewSet):
             )
 
     def partial_update(self, request: Request, pk=None):
+        """
+        - Allow the user to make partial updates
+        - If user is not an admin, then they can only update their own information
+        - If the user is admin, they can update anything
+        """
+
         try:
             instance = self.get_object()
+
             serializer = self.serializer_class(
                 instance, data=request.data, partial=True
             )
