@@ -15,8 +15,8 @@ class Student(models.Model):
 
 class Assignment(models.Model):
     """Assignment Model."""
-    class_instance = models.ForeignKey("database.courses.Class", on_delete=models.CASCADE)
-    professor = models.ForeignKey("database.courses.Professor", on_delete=models.CASCADE)  # Link to professor
+    class_instance = models.ForeignKey("courses.Class", on_delete=models.CASCADE)
+    professor = models.ForeignKey("courses.Professor", on_delete=models.CASCADE)  # Link to professor
     assignment_number = models.IntegerField()
     title = models.CharField(max_length=100)
     due_date = models.DateField()
@@ -34,7 +34,7 @@ class Submission(models.Model):
     grade = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(100)])
     created_at = models.DateField(auto_now_add=True)
     flagged = models.BooleanField(default=False)
-    professor = models.ForeignKey("database.courses.Professor", on_delete=models.CASCADE)  # Link to professor
+    professor = models.ForeignKey("courses.Professor", on_delete=models.CASCADE)  # Link to professor
 
     def __str__(self):
         return f"Submission by {self.student} for {self.assignment}"
@@ -52,7 +52,7 @@ class FlaggedSubmission(models.Model):
 class FlaggedStudent(models.Model):
     """Flagged Students Model."""
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    professor = models.ForeignKey("database.courses.Professor", on_delete=models.CASCADE)
+    professor = models.ForeignKey("courses.Professor", on_delete=models.CASCADE)
     times_over_threshold = models.IntegerField(default=0)
 
     def __str__(self):
@@ -61,7 +61,7 @@ class FlaggedStudent(models.Model):
 class ConfirmedCheater(models.Model):
     """Confirmed Cheaters Model."""
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    professor = models.ForeignKey("database.courses.Professor", on_delete=models.CASCADE)
+    professor = models.ForeignKey("courses.Professor", on_delete=models.CASCADE)
     confirmed_date = models.DateField(auto_now_add=True)
     threshold_used = models.IntegerField(default=40)  # Tracks threshold used at confirmation
 
