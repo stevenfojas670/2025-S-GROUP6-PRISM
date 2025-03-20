@@ -32,9 +32,11 @@ urlpatterns = [
     path("api/user/", include("users.urls")),
     path("api/course/", include("courses.urls")),
     path("api/assignment/", include("assignments.urls")),
-    path("api/validate-token/", views.validate_token, name="validate_token"),
-    path("api/login/", views.login_view, name="login"),
-    path("api/logout/", views.logout_view, name="logout"),
+    # Django-Rest-Auth urls
+    path("dj-rest-auth/", include("dj_rest_auth.urls")),
+    path("dj-rest-auth/registration/", include("dj_rest_auth.registration.urls")),
+    # Django AllAuth URL
+    path("accounts/", include("allauth.urls")),
 ]
 
 # from django.conf.urls import include, url

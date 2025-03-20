@@ -19,14 +19,7 @@ export const authOptions: NextAuthOptions = {
 	},
 	callbacks: {
 		async signIn({ user, account }) {
-			if (
-				!(
-					user.email?.toLowerCase().includes("unlv.edu") ||
-					user.email?.toLowerCase().includes("unlv.nevada.edu")
-				)
-			)
-				return false
-			if (account?.id_token) {
+			if (account?.provider === "google") {
 				const response = await fetch(
 					"http://localhost:8000/api/validate-token/",
 					{
@@ -54,6 +47,15 @@ export const authOptions: NextAuthOptions = {
 		async redirect({ url, baseUrl }) {
 			console.log("Redirecting to:", url)
 			return url.startsWith(baseUrl) ? url : baseUrl
+		},
+		async session({ session, user, token }) {
+			return session
+		},
+		async jwt({ token, user, account, profile }) {
+			// JWT token will be updated with new data from Django,
+			// which we will add to the session so that we can still check if the user is logged in
+
+			return token
 		},
 	},
 }

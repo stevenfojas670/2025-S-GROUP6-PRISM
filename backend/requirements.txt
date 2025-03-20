@@ -12,7 +12,9 @@ charset-normalizer==3.4.1
 constantly==23.10.4
 cryptography==44.0.0
 daphne==4.1.2
+dj-rest-auth==7.0.1
 Django==5.1.5
+django-allauth==65.5.0
 django-cors-headers==4.6.0
 django-filter==25.1
 djangorestframework==3.15.2
@@ -29,6 +31,7 @@ msgpack==1.1.0
 nodejs==0.1.1
 npm==0.1.1
 numpy==2.2.3
+oauthlib==3.2.2
 optional-django==0.1.0
 pandas==2.2.3
 perl==1.0.0
@@ -37,6 +40,7 @@ psycopg2-binary==2.9.10
 pyasn1==0.6.1
 pyasn1_modules==0.4.1
 pycparser==2.22
+PyJWT==2.9.0
 pyOpenSSL==25.0.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
@@ -45,6 +49,7 @@ PyYAML==6.0.2
 redis==5.2.1
 referencing==0.36.2
 requests==2.32.3
+requests-oauthlib==2.0.0
 rpds-py==0.23.1
 rsa==4.9
 service-identity==24.2.0
