@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from google.oauth2 import id_token
@@ -30,3 +31,12 @@ def validate_token(self, request):
         return Response({"error": "Invalid token"}, status=401)
     except Exception as e:
         return Response({"error": str(e)}, status=500)
+=======
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
+@api_view(["GET"])
+def hello_world(request):
+    return Response({"message": "Hello from Django Rest Framework!"})
+
+>>>>>>> origin
