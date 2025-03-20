@@ -5,3 +5,6 @@ from rest_framework.response import Response
 def hello_world(request):
     return Response({"message": "Hello from Django Rest Framework!"})
 
+def validate_token(request):
+    # Do validate token the return JsonResponse({'status': 'success', 'email': email}) or failure
+    print("token will be validated")
