@@ -7,16 +7,18 @@ from rest_framework.decorators import (
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework import status
+from rest_framework.permissions import AllowAny
+from rest_framework.decorators import permission_classes
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_auth_request
 from django.contrib.auth import get_user_model
 from django.contrib.auth import login, logout
 from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
 from django.middleware.csrf import get_token
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from prism_backend import serializers
+from prism_backend.permissions import IsNotAuthenticated
 
 load_dotenv()
 
@@ -26,9 +28,11 @@ expiration_time = datetime.now() + timedelta(hours=24)
 
 
 @api_view(["POST"])
-@csrf_exempt
+@permission_classes([IsNotAuthenticated])
 def login_view(request: Request):
     """Handling user logins"""
+
+    # If user is authenticated don't allow them to query this endpoint
 
     print(request.data)
 
@@ -48,8 +52,23 @@ def login_view(request: Request):
 
 
 @api_view(["POST"])
+def logout_view(request: Request):
+    """Handling user logouts"""
+
+    logout(request._request)
+
+    return Response(
+        {"message": "Logout successful."},
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(["POST"])
+@permission_classes([IsNotAuthenticated])
 def validate_token(request: Request):
     """Validating the user's access token sent from Google"""
+
+    # print(request.data)
 
     token = request.data.get("token")
 
