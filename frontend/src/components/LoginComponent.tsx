@@ -37,7 +37,7 @@ const LoginComponent: React.FC = () => {
 
             if (response.ok) {
                 setMessage({ type: "success", text: ` Welcome, ${data.user.username}!` });
-                window.location.href = "/dashboard";
+                window.location.href = "@/app/dashboard";
             } else {
                 setMessage({ type: "error", text: ` ${data.error}` });
             }
@@ -67,6 +67,7 @@ const LoginComponent: React.FC = () => {
                 {/* Username & Password Login */}
                 <form onSubmit={handleSubmit} style={{ width: "100%" }}>
                     <TextField
+                        id="username-input"
                         label="Username"
                         variant="outlined"
                         fullWidth
@@ -74,8 +75,14 @@ const LoginComponent: React.FC = () => {
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         required
+                        InputLabelProps={{ shrink: true }}
+                        inputProps={{ "aria-label": "Username" }}
                     />
+                    <label id="username-label" htmlFor="username-input" style={{ display: "none" }}>
+                        Username
+                    </label>
                     <TextField
+                        id="password-input"
                         label="Password"
                         type="password"
                         variant="outlined"
@@ -84,7 +91,12 @@ const LoginComponent: React.FC = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
+                        InputLabelProps={{ shrink: true}}
+                        inputProps={{ "aria-labelledby": "password-label" }}
                     />
+                    <label id="password-label" htmlFor="password-input" style={{ display: "none" }}>
+                        Password
+                    </label>
                     <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
                         Login
                     </Button>

@@ -4,7 +4,11 @@ import { signIn, signOut } from "next-auth/react";
 
 export function SignInButton() {
     return (
-        <Button variant="contained" onClick={() => signIn("google", { callbackUrl: "/dashboard" })}>
+        <Button
+            variant="contained"
+            onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+            data-testid="google-sign-in"
+        >
             Sign In with Google
         </Button>
     );
