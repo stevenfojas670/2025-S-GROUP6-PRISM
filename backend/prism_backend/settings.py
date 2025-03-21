@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 from dotenv import load_dotenv
+from datetime import timedelta
 import os
 
 load_dotenv()
@@ -44,6 +45,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "corsheaders",
     "django.contrib.sites",
+    "django.contrib.humanize",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
@@ -51,6 +53,7 @@ INSTALLED_APPS = [
     "dj_rest_auth.registration",
     "rest_framework",
     "rest_framework.authtoken",
+    "rest_framework_simplejwt.token_blacklist",
     "dj_rest_auth",
     "channels",
     "users",
@@ -66,7 +69,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
+    # "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -90,14 +93,6 @@ SOCIALACCOUNT_PROVIDERS = {
 
 SITE_ID = 1
 
-"""Configuring the session engine to use DATABASE BACKED SESSIONS"""
-SESSION_ENGINE = "django.contrib.sessions.backends.db"
-
-""" Session Cookie Settings"""
-SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
-CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
-SESSION_COOKIE_AGE = 86400
-
 # asssinging our custom user model to be the defaulkt user model
 AUTH_USER_MODEL = "users.User"
 
@@ -108,25 +103,47 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
-    "DEFAULT_AUTHENTICATION_CLASSES": [],
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "dj_rest_auth.jwt_auth.JWTCookieAuthentication",
+    ],
+    "NUM_PROXIES": 0,  # In prod, change this to 1, since we are using NGINX. This will allow us to view the client IP
+    # Use these as global throttlers
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.ScopedRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "auth": "1000/min",
+        "dj_rest_auth": "1000/min",
+    },  # In prod, reduce this number or change as you see fit
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
 }
 
 REST_AUTH = {
     "LOGIN_SERIALIZER": "dj_rest_auth.serializers.LoginSerializer",
     "TOKEN_SERIALIZER": "dj_rest_auth.serializers.TokenSerializer",
+    "JWT_SERIALIZER": "dj_rest_auth.serializers.JWTSerializer",
+    "JWT_SERIALIZER_WITH_EXPIRATION": "dj_rest_auth.serializers.JWTSerializerWithExpiration",
+    "JWT_TOKEN_CLAIMS_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
     "USER_DETAILS_SERIALIZER": "dj_rest_auth.serializers.UserDetailsSerializer",
-    "PASSWORD_RESET_SERIALIZER": "dj_rest_auth.serializers.PasswordResetSerializer",
-    "PASSWORD_RESET_CONFIRM_SERIALIZER": "dj_rest_auth.serializers.PasswordResetConfirmSerializer",
-    "PASSWORD_CHANGE_SERIALIZER": "dj_rest_auth.serializers.PasswordChangeSerializer",
-    "REGISTER_SERIALIZER": "dj_rest_auth.registration.serializers.RegisterSerializer",
-    "REGISTER_PERMISSION_CLASSES": ("rest_framework.permissions.AllowAny",),
     "TOKEN_MODEL": "rest_framework.authtoken.models.Token",
     "TOKEN_CREATOR": "dj_rest_auth.utils.default_create_token",
-    "PASSWORD_RESET_USE_SITES_DOMAIN": False,
-    "OLD_PASSWORD_FIELD_ENABLED": False,
-    "LOGOUT_ON_PASSWORD_CHANGE": False,
-    "SESSION_LOGIN": True,
-    "USE_JWT": False,
+    "SESSION_LOGIN": False,
+    "USE_JWT": True,
+    "JWT_AUTH_COOKIE": "prism-cookie",
+    "JWT_AUTH_REFRESH_COOKIE": "prism-refresh",
+    "JWT_AUTH_REFRESH_COOKIE_PATH": "/",
+    "JWT_AUTH_SECURE": False,  # Set to True for production
+    "JWT_AUTH_HTTPONLY": True,
+    "JWT_AUTH_SAMESITE": "Lax",
+    "JWT_AUTH_RETURN_EXPIRATION": False,
+    "JWT_AUTH_COOKIE_USE_CSRF": False,  # Set to True for extra protection in Prod
+    "JWT_AUTH_COOKIE_ENFORCE_CSRF_ON_UNAUTHENTICATED": False,
 }
 
 ROOT_URLCONF = "prism_backend.urls"

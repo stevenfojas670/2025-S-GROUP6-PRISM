@@ -1,20 +1,48 @@
+from google.oauth2 import id_token
+from google.auth.transport import requests
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from django.contrib.auth import authenticate
+from rest_framework_simplejwt.tokens import RefreshToken
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+User = get_user_model()
 
 
-class LoginSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=True, write_only=True, allow_blank=False)
-    password = serializers.CharField(required=True, write_only=True, allow_blank=False)
+class GoogleAuthSerializer(serializers.Serializer):
+    id_token = serializers.CharField()
 
-    def validate(self, data):
-        email = data.get("email")
-        password = data.get("password")
+    def validate(self, attrs):
+        id_token_str = attrs.get("id_token")
+        try:
+            # Verify Google's id_token
+            google_info = id_token.verify_oauth2_token(
+                id_token=id_token_str,
+                request=requests.Request(),
+                audience=os.getenv("GOOGLE_CLIENT_ID"),
+            )
 
-        user = authenticate(username=email, password=password)
+            if "email" not in google_info:
+                raise serializers.ValidationError("Invalid Google token.")
 
-        if not user:
-            raise serializers.ValidationError("Invalid username or password")
+            # Check if the user exists
+            email = google_info["email"]
+            user = User.objects.get(email=email)
 
-        data["user"] = user
+            # We'll probably need to set the claims for the user
 
-        return data
+            # Generate JWT token
+            refresh = RefreshToken.for_user(user)
+
+            return {
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                },
+            }
+        except ValueError:
+            raise serializers.ValidationError("Invalid token.")

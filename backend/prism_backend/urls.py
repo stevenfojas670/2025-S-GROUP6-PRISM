@@ -17,9 +17,11 @@ Including another URLconf
 
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django.contrib import admin
+from dj_rest_auth.views import LogoutView
 from django.urls import path, include
 from . import views
 
+"""We may want to implement """
 urlpatterns = [
     path("django/admin/", admin.site.urls),
     # setting up the urls for the automatic API documentation
@@ -32,25 +34,7 @@ urlpatterns = [
     path("api/user/", include("users.urls")),
     path("api/course/", include("courses.urls")),
     path("api/assignment/", include("assignments.urls")),
-    # Django-Rest-Auth urls
-    path("dj-rest-auth/", include("dj_rest_auth.urls")),
-    path("dj-rest-auth/registration/", include("dj_rest_auth.registration.urls")),
-    # Django AllAuth URL
-    path("accounts/", include("allauth.urls")),
+    path("api/login", views.CustomLoginView.as_view()),
+    path("api/logout", LogoutView.as_view()),
+    path("api/token/verify", views.GoogleAuthView.as_view()),
 ]
-
-# from django.conf.urls import include, url
-# from . import views
-
-# urlpatterns = [
-#    url(r'^django/', include([
-#        url(r'^admin/', include(admin.site.urls) ),
-#        url(r'^other/$', views.other)
-#    ])),
-# ]
-
-# from django.conf.urls import patterns, url
-
-# urlpatterns = patterns('',
-#    (r'^django/admin/', include(admin.site.urls) ),
-# )
