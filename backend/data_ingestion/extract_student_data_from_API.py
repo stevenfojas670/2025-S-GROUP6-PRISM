@@ -17,6 +17,7 @@ import shutil
 import json
 import csv
 from codegrade.utils import maybe_input, select_from_list
+from dotenv import load_dotenv
 
 class API_Data:
     #variables
@@ -338,7 +339,19 @@ class API_Data:
 
 def main():
     #log in client
-    client = codegrade.login_from_cli()
+    #BEFORE RUNNING!!!!!!
+    #EDIT THE .ENV FILE AND INPUT YOUR USERNAME AND PASSWORD FOR USERNAME AND CG_PASSWORD
+    #OR USE THIS INSTEAD TO LOGIN:
+    #codegrade.login_from_cli()
+    
+    load_dotenv()  # Load the .env file
+    USERNAME = os.getenv("USER")
+    PASSWORD = os.getenv("CG_PASSWORD")
+    client = codegrade.login(
+                username=USERNAME,
+                password=PASSWORD,
+                tenant = 'University of Nevada, Las Vegas'
+            )
     cg_data = API_Data(client)
     cg_data.extract_all_assignments(cg_data.assignments)
     cg_data.extract_csv(cg_data.assignments)
