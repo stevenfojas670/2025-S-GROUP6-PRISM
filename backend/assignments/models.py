@@ -66,4 +66,3 @@ class ConfirmedCheater(models.Model):
 
     def __str__(self):
         return f"Confirmed Cheater: {self.student} on {self.confirmed_date} (Threshold: {self.threshold_used}%)"
-

@@ -86,7 +86,7 @@ class FlaggedSubmissionSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
     # For read operations: show nested details
-    similarity_with = StudentSerializer(read_only=True)
+    similarity_with = StudentSerializer(read_only=True, many=True)
     submission = SubmissionSerializer(read_only=True)
 
     # For write operations: accept only IDs
@@ -108,10 +108,16 @@ class ConfirmedCheaterSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
     student = StudentSerializer(read_only=True)
+    professor = courses_serializer.ProfessorSerializer(read_only=True)
 
     student_id = serializers.PrimaryKeyRelatedField(
         queryset=models.Student.objects.all(),
         source='student',
+        write_only=True
+    )
+    professor_id = serializers.PrimaryKeyRelatedField(
+        queryset=courses_models.Professor.objects.all(),
+        source='professor',
         write_only=True
     )
 

@@ -19,6 +19,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -30,19 +31,33 @@ jobs:
 
       - name: Install requirements
         run: |
-          pip install -r backend/requirements/django-venv-requirements_2-23-2025.txt
-          pip install -r backend/requirements/apt-requirements_2-23-2025.txt
+          pip install -r requirements/django-venv-requirements_2-23-2025.txt
+          pip install -r requirements/apt-requirements_2-23-2025.txt
 
       - name: Wait for PostgreSQL to be ready
         run: sleep 10
 
       - name: Make Migrations
-        run: python ./backend/manage.py makemigrations
+        run: |
+          cd backend
+          python manage.py makemigrations
 
       - name: Migrate Database
-        run: python ./backend/manage.py migrate
+        run: |
+          cd backend
+          python manage.py migrate
 
-      - name: Run tests
+      - name: Run tests with coverage
         env:
           DATABASE_URL: postgres://donessie:Emily!2013@localhost:5432/prism_db
-        run: python ./backend/manage.py test
+        run: |
+          cd backend
+          coverage run manage.py test -v 2
+          coverage report
+          coverage html
+
+      - name: Upload coverage HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: backend/htmlcov

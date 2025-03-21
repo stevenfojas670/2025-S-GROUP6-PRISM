@@ -42,5 +42,3 @@ class ProfessorClassSection(models.Model):
 
     def __str__(self):
         return f"{self.professor} - {self.class_instance} - {self.semester} (Section {self.section_number})"
-
-
