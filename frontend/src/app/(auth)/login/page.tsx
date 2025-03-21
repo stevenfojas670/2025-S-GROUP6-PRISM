@@ -1,17 +1,17 @@
-import { Container, Typography } from "@mui/material"
-import { SignInButton } from "@/components/AuthenticationMethod"
-import { auth } from "@/lib/auth"
-import { redirect } from "next/navigation"
+/*
+    Renders the login component on the server side.
+*/
 
-export default async function Login() {
-	const session = await auth()
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import LoginComponent from "../../../components/LoginComponent";
 
-	if (session) redirect("/dashboard")
+export default async function LoginPage() {
+    const session = await auth();
 
-	return (
-		<Container>
-			<Typography>Welcome to PRISM, please login below.</Typography>
-			<SignInButton />
-		</Container>
-	)
+    if (session) {
+        redirect("/dashboard");
+    }
+
+    return <LoginComponent />;
 }
