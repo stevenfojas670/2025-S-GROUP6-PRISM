@@ -10,8 +10,8 @@ import GoogleProvider from "next-auth/providers/google"
 export const authOptions: NextAuthOptions = {
 	providers: [
 		GoogleProvider({
-			clientId: process.env.GOOGLE_CLIENT_ID,
-			clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+			clientId: process.env.AUTH_GOOGLE_ID,
+			clientSecret: process.env.AUTH_GOOGLE_SECRET,
 		}),
 	],
 	pages: {
@@ -19,17 +19,16 @@ export const authOptions: NextAuthOptions = {
 	},
 	callbacks: {
 		async signIn({ user, account }) {
+			// Uncomment if you want to use the backend
+			// return true
 			if (account?.provider === "google") {
-				const response = await fetch(
-					"http://localhost:8000/api/validate-token/",
-					{
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-						},
-						body: JSON.stringify({ token: account.id_token }),
-					}
-				)
+				const response = await fetch("http://localhost:8000/api/token/verify", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({ token: account.id_token }),
+				})
 
 				const data = await response.json()
 
@@ -52,9 +51,6 @@ export const authOptions: NextAuthOptions = {
 			return session
 		},
 		async jwt({ token, user, account, profile }) {
-			// JWT token will be updated with new data from Django,
-			// which we will add to the session so that we can still check if the user is logged in
-
 			return token
 		},
 	},

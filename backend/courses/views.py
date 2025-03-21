@@ -50,16 +50,16 @@ class ClassVS(viewsets.ModelViewSet):
 
 
 class ProfessorClassSectionVS(viewsets.ModelViewSet):
-   """ProfessorClassSection Model ViewSet."""
+    """ProfessorClassSection Model ViewSet."""
 
-        queryset = models.ProfessorClassSection.objects.all()
+    queryset = models.ProfessorClassSection.objects.all()
     serializer_class = serializers.ProfessorClassSectionSerializer
     filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
     # Filtering on related fields using dictionary syntax to allow multiple lookup types.
     filterset_fields = {
         "professor__id": ["exact"],
         "class_instance__name": ["exact", "icontains"],
-    "semester__name": ["exact", "icontains"],
+        "semester__name": ["exact", "icontains"],
     }
     ordering_fields = [
         "professor__user__first_name",
