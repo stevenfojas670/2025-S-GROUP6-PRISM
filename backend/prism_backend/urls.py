@@ -55,4 +55,3 @@ urlpatterns = [
 #urlpatterns = patterns('',
 #    (r'^django/admin/', include(admin.site.urls) ),
 #)
->>>>>>> origin
