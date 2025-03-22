@@ -16,7 +16,7 @@ import httpx
 import shutil
 import json
 import csv
-from codegrade.utils import maybe_input, select_from_list
+from codegrade.utils import select_from_list
 from dotenv import load_dotenv
 
 class API_Data:
@@ -34,20 +34,24 @@ class API_Data:
     
     10. submisions
     11. assignments
+    12. create folder path              path to the 'CREATED_FILES' directory(storing all files made by this script)
     '''
     def __init__(self,client):
+        #main will handle the username and password part(retrieve from frontend)
+        #self.__username                     = username (parameter)  #__private_var
+        #self.__password                     = password (parameter) #__prvate_var
         self.client                         = client
         self.course_name                    = ""
         self.course                         = self.get_course(client)
         self.assignments                    = self.get_assignments()
+        self.create_folder_path             = ""
         #To output in a human readable format
         self.course_info                    = {}
         self.all_assignments = self.graders = self.rubric_grades = []
-        self.rubrics                         = {} #{"assignment_id": {}, "assignment_id": {}}
+        self.rubrics                        = {} #{"assignment_id": {}, "assignment_id": {}}
         self.all_assignment_submissions     = {} #{"assignment_id": [], "assignment_id": []}
         
 #helper functions
-
     def handle_maybe(self,maybe):
         return maybe.try_extract(lambda: SystemExit(1))
 
@@ -230,10 +234,11 @@ class API_Data:
                 print('Invalid zip file', file=sys.stderr)
 
     #helper function for extract_all_assignments
-    def get_output_dir(self,course_name,assignment,prompt):
+    def get_output_dir(self,course_name,assignment):
+        self.create_folder_path = os.path.join(os.getcwd(),"CREATED_FILES")
         fileName = course_name + " - " + assignment.name
-        default_dir = os.path.join(os.getcwd(),fileName)
-        return self.handle_maybe(maybe_input(prompt, default_dir))
+        default_dir = os.path.join(self.create_folder_path,fileName)
+        return default_dir
     #helper function for extract_all_assignments
     def get_sorted_dict (self,studDict):
         studDict["submission_ids"] = sorted(studDict["submission_ids"].items())
@@ -250,18 +255,27 @@ class API_Data:
         Creates a zip archive of a directory.
 
         Args:
-            zip_file_name (str): name of the resulting output file
+            zip_file_name (str): name of the resulting output .zip file
             dir_path (str): Path to the directory to be zipped.
         """
         if not os.path.exists(dir_path):
             print(f"Unable to create '{dir_path}.zip' due to unfound '{zip_file_name}' directory name.")
             return
-        shutil.make_archive(zip_file_name,'zip', dir_path)
-        print(f"SUCCESS!! file '{zip_file_name}' has been created!")
+        destPath = os.path.join(self.create_folder_path,zip_file_name)
+        #store into the new path instead of current dir
+        shutil.make_archive(destPath,'zip', dir_path)
+        #base_dir=zip_loc, root_dir=zip_loc, format='zip', base_name=zip_dest
+        print(f"SUCCESS!! file '{zip_file_name}.zip' has been created!")
         #os.rename(os.path.splitext(zip_path)[0] + '.zip', zip_path)
 
     def extract_all_assignments(self,assignments):
-        print(f"Extracting assignment(s) from {self.course.name}")
+        '''
+        INPUT PARAMS:
+        assignemnts = assignments service from codegrade.
+        DESC: 
+        Input all assignments from a course and create a zipfile 
+        '''
+        print(f"Extracting all assignments from {self.course.name}:\n")
         for assignment in assignments:
             #get all submissions at current assignment
             submissions = self.client.assignment.get_all_submissions(
@@ -269,11 +283,10 @@ class API_Data:
                 latest_only=True,
                 )
             if len(submissions) > 0:
-                
-                prompt = 'Output directory for all assignments:'
-                output_dir = self.get_output_dir(self.course.name,assignment,prompt)
+                output_dir = self.get_output_dir(self.course.name,assignment)
                 #output_dir = 'C:\\Users\\ejera\\testenv\\CS 472 - Development - Businge - Assignment 0'
                 students = {"submission_ids":{},"user_ids":{}}
+                print(f"\nExtracting submission source code for {assignment.name}:")
                 for submission in submissions:
                     #populate the students dictionary
                     subID = submission.id
@@ -292,6 +305,7 @@ class API_Data:
                 self.get_json_file(students,output_dir)
                 #place json in file
                 fileName = self.course.name + " - " + assignment.name 
+                print(f"{fileName} Successfully completed!")
                 print(f'\nMaking "{fileName}" into a zip file')
                 #convert directory made into a zip archive
                 self.make_zip_archive(fileName,output_dir)
@@ -303,7 +317,14 @@ class API_Data:
         complement = 100 / max_grade
         return grade_achieved*complement
     def extract_csv (self,assignments):
-        print(f"Extracting csv for student(s) from class: '{self.course.name}'")
+        '''
+        INPUT PARAMS:
+        assignemnts = assignments service from codegrade.
+        DESC: 
+        Input all assignments from a course and create csv that has all information about
+        the student submisison including stud-id, username, name, and grade.
+        '''
+        print(f"\nExtracting .CSV file(s) for student(s) from class: '{self.course.name}'")
         for assignment in assignments:
             submissions = self.client.assignment.get_all_submissions(
                 assignment_id=assignment.id,
@@ -312,8 +333,8 @@ class API_Data:
             if len(submissions) > 0:
                 #always create first row
                 rows = ['Id','Username','Name','Grade']
-                prompt = 'Output directory for csv:'
-                file_name = self.get_output_dir(self.course.name,assignment,prompt)
+                
+                file_name = self.get_output_dir(self.course.name,assignment)
                 file_name = file_name+ '.csv'
                 #find file_name
                 fileCSV = open(file_name, 'w',newline='')
@@ -331,6 +352,7 @@ class API_Data:
                             submission.user.name,
                             grade]
                     writer.writerow(rows)
+                print("SUCCESS!!! Create file 'CS 472 - Development - Businge - Assignment 4.csv' has been created!")
                 #close csv file
                 fileCSV.close()
             else:
@@ -342,16 +364,7 @@ def main():
     #BEFORE RUNNING!!!!!!
     #EDIT THE .ENV FILE AND INPUT YOUR USERNAME AND PASSWORD FOR USERNAME AND CG_PASSWORD
     #OR USE THIS INSTEAD TO LOGIN:
-    #codegrade.login_from_cli()
-    
-    load_dotenv()  # Load the .env file
-    USERNAME = os.getenv("USER")
-    PASSWORD = os.getenv("CG_PASSWORD")
-    client = codegrade.login(
-                username=USERNAME,
-                password=PASSWORD,
-                tenant = 'University of Nevada, Las Vegas'
-            )
+    client = codegrade.login_from_cli()
     cg_data = API_Data(client)
     cg_data.extract_all_assignments(cg_data.assignments)
     cg_data.extract_csv(cg_data.assignments)
