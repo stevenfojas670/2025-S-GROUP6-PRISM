@@ -34,7 +34,7 @@ class API_Data:
     
     10. submisions
     11. assignments
-    12. create folder path              path to the 'CREATED_FILES' directory(storing all files made by this script)
+    12. create folder path              path to the 'cg_data' directory(storing all files made by this script)
     '''
     def __init__(self,client):
         #main will handle the username and password part(retrieve from frontend)
@@ -235,7 +235,7 @@ class API_Data:
 
     #helper function for extract_all_assignments
     def get_output_dir(self,course_name,assignment):
-        self.create_folder_path = os.path.join(os.getcwd(),"CREATED_FILES")
+        self.create_folder_path = os.path.join(os.getcwd(),"cg_data")
         fileName = course_name + " - " + assignment.name
         default_dir = os.path.join(self.create_folder_path,fileName)
         return default_dir
