@@ -20,6 +20,7 @@ class ProfessorVS(viewsets.ModelViewSet):
     ordering = ['user__first_name']
     search_fields = ['user__first_name']
 
+
 class SemesterVS(viewsets.ModelViewSet):
     """Semester Model ViewSet."""
     queryset = models.Semester.objects.all()
