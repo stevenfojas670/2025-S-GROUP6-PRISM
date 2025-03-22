@@ -14,7 +14,7 @@ User = get_user_model()
 class GoogleAuthSerializer(serializers.Serializer):
     id_token = serializers.CharField()
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict):
         id_token_str = attrs.get("id_token")
         try:
             # Verify Google's id_token

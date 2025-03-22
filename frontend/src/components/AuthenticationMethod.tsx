@@ -1,4 +1,5 @@
 "use client"
+import { auth } from "@/lib/auth"
 import { Button } from "@mui/material"
 import { signIn, signOut } from "next-auth/react"
 
@@ -17,7 +18,7 @@ export function SignOutButton() {
 	return (
 		<Button
 			variant="outlined"
-			onClick={() => signOut({ callbackUrl: "/login" })}
+			onClick={() => signOut({ callbackUrl: "/dashboard" })}
 		>
 			Sign Out
 		</Button>
