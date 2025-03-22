@@ -7,6 +7,8 @@ import Dropdown from "../components/Dropdown";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 
 //todo: Just implement the text fields and button on page
 export default function Home() {
@@ -25,7 +27,12 @@ export default function Home() {
     console.log(assignmentName);
   };
   return (
-    <div>
+    //The TextField accepts and returns a string written by the user, The dropdown returns an id correlating to a specific
+    // class, and the button will handle submitting the data to the database
+    <Stack spacing={1} sx={{ justifyContent: "center", alignItems: "center" }}>
+      <Typography variant="h6" gutterBottom>
+        Please insert Assignment Name below.
+      </Typography>
       <TextField
         required
         id="Assignment_Name"
@@ -35,7 +42,11 @@ export default function Home() {
           setAssignmentName(event.target.value);
         }}
       />
+      <Typography variant="h6" gutterBottom>
+        Please select which class the assignment is for below.
+      </Typography>
       <Dropdown
+        isDisabled={false}
         items={list}
         onSelectItem={handleItemSelect}
         dropdownLabel="Classes"
@@ -46,8 +57,8 @@ export default function Home() {
           handleButtonClick();
         }}
       >
-        Create assignmnet
+        Create assignment
       </Button>
-    </div>
+    </Stack>
   );
 }
