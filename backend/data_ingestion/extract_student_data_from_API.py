@@ -29,12 +29,12 @@ class API_Data:
     5. rubric {}                        ({"assignment_id":  {header1:[header_name,points],header2:'',...}})         #DIC
     6. all_assignment_submissions {}    ({"assignment_id":  [sub_id,sub_id...] })                                   #DIC
     7. graders {}                       ([[grader_name,grader_username,grader_user_id],...])                        #LIST OF LISTS
-    8. rubric_grades {}                 ([("sub_id - user.name",points achieved)]})                                 #LIST OF TUPLES
+    8. rubric_grades {}                 ([("sub_id - user.name",points achieved)])                                 #LIST OF TUPLES
     9. course_info                      ({'id':id,  'name':name,    'date':date})
     
     10. submisions
     11. assignments
-    12. create folder path              path to the 'CREATED_FILES' directory(storing all files made by this script)
+    12. create folder path              path to the 'cg_data' directory(storing all files made by this script)
     '''
     def __init__(self,client):
         #main will handle the username and password part(retrieve from frontend)
@@ -81,16 +81,51 @@ class API_Data:
     def get_assignments(self):
         return self.course.assignments
     #TODO vvv finish these methods
-    '''
     def get_course_info(self):
+        course_dict = {}
+        course_dict["Course-ID"] = self.course.id
+        course_dict["Name"] = self.course.name
+        course_dict["Created-Date"] = self.course.created_at
+        return 
+    
+    def get_rubric_grades_dict(self,assignments):
+        '''{"submissionID - Stud_name":   
+                                        [{"header":          ''
+                                         "points_achieved":  0
+                                         "points_possible":  0
+                                         "multiplier":       0 },
+                                         {}]
+            submissionID = Stud_name...
+            }
+        '''
+        grade_dict = {} #dictionary to return
+        for assignment in assignments:
+            submissions = self.get_all_submissions(assignment)  
+            for submission in submissions:
+                sub_id_key = f"{submission.id} - {submission.user.name}"
+                grade_dict[sub_id_key] = []
+                self.get_rubric_value(rubric=self.get_rubric_grade(submission.id),
+                                                     grade_dict=grade_dict,
+                                                     sub_id_key=sub_id_key)
+        return grade_dict
+    #helper funciton:
+    def get_rubric_value(self, rubric,grade_dict,sub_id_key):
+        #return a dictionary parsed with the info.
+        index = 0
+        for obj in rubric.selected:
+            result = {}
+            result["header"]            = f"{rubric.rubrics[index].header}"
+            result["points_achieved"]   = obj.achieved_points
+            result["points_possible"]   = obj.points
+            result["multiplier"]        = obj.multiplier
+            grade_dict[sub_id_key].append(result)
+            index = index + 1
+    '''
+    def get_rubrics(self):
         return None
     def get_all_assignments(self):
         return None
     def get_all_graders(self):
-        return None
-    def get_rubric_grades(self):
-        return None
-    def get_rubrics(self):
         return None
     def get_all_assignment_subs(self):
         return None
@@ -98,6 +133,13 @@ class API_Data:
 
 #Getters from API:
     #ASSIGNMENT SERVICE TYPE
+    def get_all_submissions(self,assignment):
+        try:
+            submissions = self.client.assignment.get_all_submissions(assignment_id=assignment.id)
+        except Exception as e:
+            print(str(e))
+        else:
+            return submissions
     def get_all_graders(self, assignment):
         try:
             graders = self.client.assignment.get_all_graders(assignment_id=assignment.id)
@@ -106,6 +148,14 @@ class API_Data:
         else:
             return graders
     
+    def get_rubric(self, assignment):
+        try:
+            rubric = self.client.assignment.get_rubric(assignment_id=assignment.id)
+        except Exception as e:
+            print(str(e))
+        else:
+            return rubric
+        
     def get_rubric(self, assignment):
         try:
             rubric = self.client.assignment.get_rubric(assignment_id=assignment.id)
@@ -235,7 +285,7 @@ class API_Data:
 
     #helper function for extract_all_assignments
     def get_output_dir(self,course_name,assignment):
-        self.create_folder_path = os.path.join(os.getcwd(),"CREATED_FILES")
+        self.create_folder_path = os.path.join(os.getcwd(),"cg_data")
         fileName = course_name + " - " + assignment.name
         default_dir = os.path.join(self.create_folder_path,fileName)
         return default_dir
@@ -365,9 +415,12 @@ def main():
     #EDIT THE .ENV FILE AND INPUT YOUR USERNAME AND PASSWORD FOR USERNAME AND CG_PASSWORD
     #OR USE THIS INSTEAD TO LOGIN:
     client = codegrade.login_from_cli()
+
     cg_data = API_Data(client)
-    cg_data.extract_all_assignments(cg_data.assignments)
-    cg_data.extract_csv(cg_data.assignments)
+    #cg_data.extract_all_assignments(cg_data.assignments)
+    #cg_data.extract_csv(cg_data.assignments)
+    #print(cg_data.get_course_info())
+    print(cg_data.get_rubric_grades_dict(cg_data.assignments))
     
 if __name__ == "__main__":
     main()
