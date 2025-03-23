@@ -50,7 +50,7 @@ class GoogleAuthSerializer(serializers.Serializer):
             # Returning the newly created token to the view
             return {
                 "access": str(refresh.access_token),
-                "refresh": "",
+                "refresh": str(refresh),
                 "user": {
                     "pk": user.pk,
                     "email": user.email,

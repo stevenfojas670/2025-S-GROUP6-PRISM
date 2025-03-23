@@ -12,9 +12,8 @@ export default function OAuthCallbackHandler() {
 		if (session?.idToken) {
 			const sendToDjango = async () => {
 				try {
-					const res = await fetch("http://localhost:8000/api/token/verify", {
+					const res = await fetch("http://localhost:8000/api/google/verify", {
 						method: "POST",
-						credentials: "include", // sets cookie from Django
 						headers: {
 							"Content-Type": "application/json",
 						},
