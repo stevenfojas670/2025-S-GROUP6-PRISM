@@ -1,13 +1,15 @@
 "use client"
-import { auth } from "@/lib/auth"
 import { Button } from "@mui/material"
-import { signIn, signOut } from "next-auth/react"
+import { signIn } from "next-auth/react"
+import { useRouter } from "next/navigation"
 
 export function SignInButton() {
 	return (
 		<Button
 			variant="contained"
-			onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+			onClick={() =>
+				signIn("google", { callbackUrl: "http://localhost:3000/callback" })
+			}
 		>
 			Sign In with Google
 		</Button>
@@ -15,11 +17,10 @@ export function SignInButton() {
 }
 
 export function SignOutButton() {
+	const router = useRouter()
+
 	return (
-		<Button
-			variant="outlined"
-			onClick={() => signOut({ callbackUrl: "/dashboard" })}
-		>
+		<Button variant="outlined" onClick={() => router.push("/logout")}>
 			Sign Out
 		</Button>
 	)

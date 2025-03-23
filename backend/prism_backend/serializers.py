@@ -36,12 +36,15 @@ class GoogleAuthSerializer(serializers.Serializer):
             # Generate JWT token
             refresh = RefreshToken.for_user(user)
 
+            # Returning the newly created token to the view
             return {
                 "refresh": str(refresh),
                 "access": str(refresh.access_token),
                 "user": {
                     "id": user.id,
                     "email": user.email,
+                    "firstname": user.first_name,
+                    "lastname": user.last_name,
                 },
             }
         except ValueError:

@@ -3,9 +3,7 @@ import { DefaultJWT } from "next-auth/jwt"
 
 declare module "next-auth" {
 	interface Session extends DefaultSession {
-		accessToken?: string
-		refreshToken?: string
-		user_id?: number
+		idToken?: string
 	}
 
 	interface User extends DefaultUser {

@@ -18,6 +18,7 @@ Including another URLconf
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django.contrib import admin
 from dj_rest_auth.views import LogoutView
+from rest_framework_simplejwt.views import TokenVerifyView
 from django.urls import path, include
 from . import views
 
@@ -37,4 +38,5 @@ urlpatterns = [
     path("api/login", views.CustomLoginView.as_view()),
     path("api/logout", LogoutView.as_view()),
     path("api/token/verify", views.GoogleAuthView.as_view()),
+    path("api/jwt/verify", TokenVerifyView.as_view()),
 ]

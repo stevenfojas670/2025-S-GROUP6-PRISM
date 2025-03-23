@@ -20,15 +20,17 @@ class GoogleAuthView(APIView):
         # Check if serializer is valid
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+
+        # The token is in this response, create a new response so we don't expose the actual token to the client
         response = Response(data, status=status.HTTP_200_OK)
 
-        # Set the cookies so the user can access the jwt token
         set_jwt_cookies(
             response=response,
             access_token=data["access"],
             refresh_token=data["refresh"],
         )
 
+        # Return custom response to the user not exposing to token over the network response
         return response
 
 

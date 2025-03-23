@@ -17,8 +17,10 @@ import {
 	Divider,
 } from "@mui/material"
 import { SignInButton } from "@/components/AuthenticationMethod" // Use SignInButton component
+import { useRouter } from "next/navigation"
 
 const LoginComponent: React.FC = () => {
+	const router = useRouter()
 	const [username, setUsername] = useState<string>("")
 	const [password, setPassword] = useState<string>("")
 	const [message, setMessage] = useState<{
@@ -38,25 +40,21 @@ const LoginComponent: React.FC = () => {
 		event.preventDefault()
 
 		try {
-			const response = await fetch("http://localhost:8000/api/user/users/", {
+			const response = await fetch("http://localhost:8000/api/login", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ username, password }),
+				credentials: "include",
 			})
 
 			const data = await response.json()
 
 			if (response.ok) {
-				setMessage({
-					type: "success",
-					text: ` Welcome, ${data.user.username}!`,
-				})
-				window.location.href = "@/app/dashboard"
-			} else {
-				setMessage({ type: "error", text: ` ${data.error}` })
+				console.log("Logged in:", data)
+				router.push("/dashboard")
 			}
-		} catch (error) {
-			setMessage({ type: "error", text: " Server error. Please try again." })
+		} catch (err) {
+			console.error("Login error:", err)
 		}
 	}
 

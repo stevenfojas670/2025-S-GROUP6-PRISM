@@ -118,7 +118,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "ACCESS_TOKEN_LIFETIME": timedelta(seconds=5),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
@@ -140,14 +140,17 @@ REST_AUTH = {
     "JWT_AUTH_REFRESH_COOKIE_PATH": "/",
     "JWT_AUTH_SECURE": False,  # Set to True for production
     "JWT_AUTH_HTTPONLY": True,
-    "JWT_AUTH_SAMESITE": "Lax",
-    "JWT_AUTH_RETURN_EXPIRATION": False,
+    "JWT_AUTH_SAMESITE": "Lax",  # Change to lax if running on the same port
+    "JWT_AUTH_RETURN_EXPIRATION": True,
     "JWT_AUTH_COOKIE_USE_CSRF": False,  # Set to True for extra protection in Prod
     "JWT_AUTH_COOKIE_ENFORCE_CSRF_ON_UNAUTHENTICATED": False,
 }
 
 ROOT_URLCONF = "prism_backend.urls"
-CORS_ALLOW_ALL_ORIGINS = True  # For development only, Restrict in production.
+# CORS_ALLOW_ALL_ORIGINS = True  # For development only, Restrict in production.
+CORS_ALLOWED_ORIGINS = ["http://localhost:3000"]
+CORS_ALLOW_CREDENTIALS = True
+
 
 TEMPLATES = [
     {
