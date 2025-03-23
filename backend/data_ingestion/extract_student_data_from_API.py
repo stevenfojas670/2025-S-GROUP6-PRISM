@@ -417,9 +417,9 @@ def main():
     client = codegrade.login_from_cli()
 
     cg_data = API_Data(client)
-    #cg_data.extract_all_assignments(cg_data.assignments)
-    #cg_data.extract_csv(cg_data.assignments)
-    #print(cg_data.get_course_info())
+    cg_data.extract_all_assignments(cg_data.assignments)
+    cg_data.extract_csv(cg_data.assignments)
+    print(cg_data.get_course_info())
     print(cg_data.get_rubric_grades_dict(cg_data.assignments))
     
 if __name__ == "__main__":
