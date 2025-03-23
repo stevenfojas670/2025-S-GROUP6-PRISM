@@ -1,6 +1,6 @@
 from .serializers import GoogleAuthSerializer
 from dj_rest_auth.jwt_auth import set_jwt_cookies
-from dj_rest_auth.views import LoginView, LogoutView
+from dj_rest_auth.views import LoginView
 from rest_framework.views import APIView
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -30,7 +30,6 @@ class GoogleAuthView(APIView):
             refresh_token=data["refresh"],
         )
 
-        # Return custom response to the user not exposing to token over the network response
         return response
 
 

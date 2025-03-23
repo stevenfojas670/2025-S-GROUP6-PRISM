@@ -11,18 +11,32 @@ export default function LogoutPage() {
 
 	useEffect(() => {
 		const logoutFlow = async () => {
-			const response = await fetch("http://localhost:8000/api/logout", {
-				method: "POST",
-				credentials: "include",
-			})
+			try {
+				const checkCookie = await fetch(
+					"http://localhost:3000/api/jwt/has-cookie",
+					{
+						method: "get",
+					}
+				)
 
-			const data = await response.json()
+				if (checkCookie.ok) {
+					const response = await fetch("http://localhost:8000/api/logout", {
+						method: "POST",
+						credentials: "include",
+					})
 
-			if (session) await signOut({ callbackUrl: "/login" })
+					const data = await response.json()
 
-			if (!response.ok) {
-				console.log("Error logging out of Django.", data)
-				router.push("/login")
+					if (response.ok) {
+						console.log("Succesfully logged out of Django: ", data)
+					} else {
+						throw new Error("Error logging out of Django: ", data)
+					}
+				}
+
+				if (session) await signOut({ callbackUrl: "/login" })
+			} catch (err) {
+				console.error(err)
 			}
 		}
 

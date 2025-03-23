@@ -135,7 +135,7 @@ REST_AUTH = {
     "TOKEN_CREATOR": "dj_rest_auth.utils.default_create_token",
     "SESSION_LOGIN": False,
     "USE_JWT": True,
-    "JWT_AUTH_COOKIE": "prism-cookie",
+    "JWT_AUTH_COOKIE": "prism-access",
     "JWT_AUTH_REFRESH_COOKIE": "prism-refresh",
     "JWT_AUTH_REFRESH_COOKIE_PATH": "/",
     "JWT_AUTH_SECURE": False,  # Set to True for production
@@ -147,8 +147,8 @@ REST_AUTH = {
 }
 
 ROOT_URLCONF = "prism_backend.urls"
-# CORS_ALLOW_ALL_ORIGINS = True  # For development only, Restrict in production.
-CORS_ALLOWED_ORIGINS = ["http://localhost:3000"]
+CORS_ALLOW_ALL_ORIGINS = True  # For development only, Restrict in production.
+# CORS_ALLOWED_ORIGINS = ["http://localhost:3000"]
 CORS_ALLOW_CREDENTIALS = True
 
 

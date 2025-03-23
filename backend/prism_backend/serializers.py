@@ -3,6 +3,7 @@ from google.auth.transport import requests
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 import os
 
@@ -31,21 +32,33 @@ class GoogleAuthSerializer(serializers.Serializer):
             email = google_info["email"]
             user = User.objects.get(email=email)
 
-            # We'll probably need to set the claims for the user
-
             # Generate JWT token
             refresh = RefreshToken.for_user(user)
+            access_token = refresh.access_token
+
+            access_exp = (
+                datetime.fromtimestamp(access_token["exp"], tz=timezone.utc)
+                .isoformat()
+                .replace("+00:00", "Z")
+            )
+            refresh_exp = (
+                datetime.fromtimestamp(refresh["exp"], tz=timezone.utc)
+                .isoformat()
+                .replace("+00:00", "Z")
+            )
 
             # Returning the newly created token to the view
             return {
-                "refresh": str(refresh),
                 "access": str(refresh.access_token),
+                "refresh": "",
                 "user": {
-                    "id": user.id,
+                    "pk": user.pk,
                     "email": user.email,
-                    "firstname": user.first_name,
-                    "lastname": user.last_name,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
                 },
+                "access_expiration": access_exp,
+                "refresh_expiration": refresh_exp,
             }
         except ValueError:
             raise serializers.ValidationError("Invalid token.")
