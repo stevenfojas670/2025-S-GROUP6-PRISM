@@ -7,9 +7,7 @@ declare module "next-auth" {
 	}
 
 	interface User extends DefaultUser {
-		accessToken?: string
-		refreshToken?: string
-		user_id?: number
+		id_token?: string
 	}
 }
 

@@ -18,12 +18,15 @@ export default function OAuthCallbackHandler() {
 							"Content-Type": "application/json",
 						},
 						body: JSON.stringify({ id_token: session.idToken }),
+						credentials: "include",
 					})
+
+					const data = await res.json()
 
 					if (res.ok) {
 						router.push("/dashboard")
 					} else {
-						console.error("Django auth failed")
+						console.error("Django auth failed", data)
 					}
 				} catch (err) {
 					console.error("Error sending token to Django", err)

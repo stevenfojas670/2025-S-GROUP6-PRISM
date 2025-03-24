@@ -6,6 +6,7 @@ import type {
 import type { NextAuthOptions } from "next-auth"
 import { getServerSession } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
+import { userAgent } from "next/server"
 
 export const authOptions: NextAuthOptions = {
 	providers: [
@@ -19,21 +20,24 @@ export const authOptions: NextAuthOptions = {
 	},
 	callbacks: {
 		async signIn({ user, account }) {
-			if (account?.id_token) return true
+			if (account?.id_token) {
+				user.id_token = account.id_token
+				return true
+			}
 			return false
 		},
 		async redirect({ url, baseUrl }) {
 			console.log("Redirecting to:", url)
 			return url.startsWith(baseUrl) ? url : baseUrl
 		},
-		async jwt({ token, account }) {
-			if (account?.id_token) {
-				token.idToken = account.id_token
+		async jwt({ token, user }) {
+			if (user) {
+				token.accessToken = user.id_token
 			}
 			return token
 		},
 		async session({ session, token }) {
-			session.idToken = token.idToken as string
+			session.idToken = token.accessToken
 			return session
 		},
 	},
