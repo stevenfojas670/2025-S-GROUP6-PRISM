@@ -42,3 +42,9 @@ class ProfessorClassSectionVS(viewsets.ModelViewSet):
         #injecting here the professor instance validated data to save in our database with the
         #inf provided in the request
         serializer.save(professor=professor_instance)
+
+
+class EnrollmentVS(viewsets.ModelViewSet):
+    """Enrollment Model ViewSet."""
+    queryset = models.Enrollment.objects.all()
+    serializer_class = serializers.EnrollmentSerializer

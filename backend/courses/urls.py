@@ -19,9 +19,13 @@ prof_nested_router.register(r'semprofclass', ProfessorClassSectionVS, basename='
 semester_router = DefaultRouter()
 semester_router.register('semester', SemesterVS, basename='semester-urls')
 
+enrollment_router = DefaultRouter()
+enrollment_router.register('enrollment', EnrollmentVS, basename='enrollment-urls')
+
 urlpatterns = [
     path('', include(class_router.urls)),
     path('', include(professor_router.urls)),
     path('', include(prof_nested_router.urls)),
     path('', include(semester_router.urls)),
+    path('', include(enrollment_router.urls)),
 ]

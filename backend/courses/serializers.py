@@ -55,3 +55,12 @@ class ProfessorClassSectionSerializer(serializers.ModelSerializer):
             'class_instance',
             'class_instance_id'
         ]
+
+
+# Serializer stuff lets us send data to frontend with API responses. 
+# Also validates incoming JSON data and helps by converting to an enrollment object when creating/updating records
+class EnrollmentSerializer(serializers.ModelSerializer):
+    """Enrollment Model Serializer."""
+    class Meta:
+        model = models.Enrollment
+        fields = '__all__'

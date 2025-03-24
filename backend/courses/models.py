@@ -43,4 +43,16 @@ class ProfessorClassSection(models.Model):
     def __str__(self):
         return f"{self.professor} - {self.class_instance} - {self.semester} (Section {self.section_number})"
 
+class Enrollment(models.Model):
+    """Tracks student enrollment status in classes.
+    'student' will represent an entire student row from that specific table. Thats how its set up with the foreign key.
+    it means we can do this: print(enrollment.student) or this too print(enrollment.student.email)"""
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    class_instance = models.ForeignKey(Class, on_delete=models.CASCADE)
+    semester = models.ForeignKey(Semester, on_delete=models.CASCADE)
+    enrolled_date = models.DateField(auto_now_add=True)
+    dropped = models.BooleanField(default=False)  # Flag for if they dropped
+    dropped_date = models.DateField(blank=True, null=True)  # Timestamp of when they dropped
 
+    def __str__(self):
+        return f"{self.student} enrolled in {self.class_instance} ({self.semester})"
