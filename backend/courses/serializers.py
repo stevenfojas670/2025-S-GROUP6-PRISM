@@ -7,7 +7,7 @@ from users import serializers as user_serializer
 
 class ProfessorSerializer(serializers.ModelSerializer):
     """Professor Model Serializer."""
-    #user = user_serializer.UserSerializer(read_only=True)
+    user = user_serializer.UserSerializer(read_only=True)
     class Meta:
         model = models.Professor
         fields = "__all__"
@@ -45,7 +45,11 @@ class ProfessorClassSectionSerializer(serializers.ModelSerializer):
         source='class_instance',
         write_only=True
     )
-
+    professor_id = serializers.PrimaryKeyRelatedField(
+        queryset=models.Professor.objects.all(),
+        source='professor',
+        write_only=True
+    )
     class Meta:
         model = models.ProfessorClassSection
         fields = [
@@ -53,7 +57,8 @@ class ProfessorClassSectionSerializer(serializers.ModelSerializer):
             'semester',
             'semester_id',
             'class_instance',
-            'class_instance_id'
+            'class_instance_id',
+            'professor_id'
         ]
 
 

@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'courses',
     'assignments',
     'drf_spectacular',
+    'django_filters',
 #    'prism',
 ]
 
