@@ -18,6 +18,8 @@ import json
 import csv
 from codegrade.utils import select_from_list
 from dotenv import load_dotenv
+import datetime
+
 
 class API_Data:
     #variables
@@ -324,6 +326,9 @@ class API_Data:
         assignemnts = assignments service from codegrade.
         DESC: 
         Input all assignments from a course and create a zipfile 
+
+        NOTE:
+        only look at the assignments who's lock_dates/deadlines are already past
         '''
         print(f"Extracting all assignments from {self.course.name}:\n")
         for assignment in assignments:
@@ -332,7 +337,27 @@ class API_Data:
                 assignment_id=assignment.id,
                 latest_only=True,
                 )
-            if len(submissions) > 0:
+            #check if lockdate has past
+            now = datetime.datetime.now()
+            if assignment.lock_date:
+                lock_date = datetime.datetime(assignment.lock_date.year,
+                                              assignment.lock_date.month,
+                                              assignment.lock_date.day,
+                                              assignment.lock_date.hour,
+                                              assignment.lock_date.minute,
+                                              assignment.lock_date.second
+                                              )
+            else:
+                lock_date = datetime.datetime(assignment.deadline.year,
+                                              assignment.deadline.month,
+                                              assignment.deadline.day,
+                                              assignment.deadline.hour,
+                                              assignment.deadline.minute,
+                                              assignment.deadline.second
+                                              )
+            
+            after_lock_date = lock_date < now
+            if (len(submissions) > 0) & (after_lock_date):
                 output_dir = self.get_output_dir(self.course.name,assignment)
                 #output_dir = 'C:\\Users\\ejera\\testenv\\CS 472 - Development - Businge - Assignment 0'
                 students = {"submission_ids":{},"user_ids":{}}
@@ -359,6 +384,8 @@ class API_Data:
                 print(f'\nMaking "{fileName}" into a zip file')
                 #convert directory made into a zip archive
                 self.make_zip_archive(fileName,output_dir)
+            elif not after_lock_date:
+                print(f"Lock date ({lock_date}) has not been passed yet for {assignment.name}")
             else:
                 print(f'No submissions for {assignment.name}')
     #helper fucntion for extract csv
@@ -380,7 +407,27 @@ class API_Data:
                 assignment_id=assignment.id,
                 latest_only=True,
                 )
-            if len(submissions) > 0:
+            #check if lockdate has past
+            now = datetime.datetime.now()
+            if assignment.lock_date:
+                lock_date = datetime.datetime(assignment.lock_date.year,
+                                              assignment.lock_date.month,
+                                              assignment.lock_date.day,
+                                              assignment.lock_date.hour,
+                                              assignment.lock_date.minute,
+                                              assignment.lock_date.second
+                                              )
+            else:
+                lock_date = datetime.datetime(assignment.deadline.year,
+                                              assignment.deadline.month,
+                                              assignment.deadline.day,
+                                              assignment.deadline.hour,
+                                              assignment.deadline.minute,
+                                              assignment.deadline.second
+                                              )
+            
+            after_lock_date = lock_date < now
+            if (len(submissions) > 0)& after_lock_date:
                 #always create first row
                 rows = ['Id','Username','Name','Grade']
                 
@@ -405,8 +452,10 @@ class API_Data:
                 print("SUCCESS!!! Create file 'CS 472 - Development - Businge - Assignment 4.csv' has been created!")
                 #close csv file
                 fileCSV.close()
+            elif not after_lock_date:
+                print(f"Lock date ({lock_date}) has not been passed yet for {assignment.name}")
             else:
-                print(f"No submissions for {assignment.name}")
+                print(f'No submissions for {assignment.name}')
             
 
 def main():
@@ -419,8 +468,8 @@ def main():
     cg_data = API_Data(client)
     cg_data.extract_all_assignments(cg_data.assignments)
     cg_data.extract_csv(cg_data.assignments)
-    print(cg_data.get_course_info())
-    print(cg_data.get_rubric_grades_dict(cg_data.assignments))
+    #print(cg_data.get_course_info())
+    #print(cg_data.get_rubric_grades_dict(cg_data.assignments))
     
 if __name__ == "__main__":
     main()
