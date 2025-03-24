@@ -456,6 +456,17 @@ class API_Data:
                 print(f"Lock date ({lock_date}) has not been passed yet for {assignment.name}")
             else:
                 print(f'No submissions for {assignment.name}')
+
+    def delete_created_folder(self):
+        try:
+            shutil.rmtree(self.create_folder_path)
+            print(f"Directory '{self.create_folder_path}' and its contents deleted successfully.")
+        except FileNotFoundError:
+            print(f"Directory '{self.create_folder_path}' not found.")
+        except PermissionError:
+            print(f"You do not have permission to delete '{self.create_folder_path}'.")
+        except OSError as e:
+            print(f"Error deleting '{self.create_folder_path}': {e}")
             
 
 def main():
@@ -466,8 +477,9 @@ def main():
     client = codegrade.login_from_cli()
 
     cg_data = API_Data(client)
-    cg_data.extract_all_assignments(cg_data.assignments)
-    cg_data.extract_csv(cg_data.assignments)
+    cg_data.extract_all_assignments(cg_data.assignments)        #download all submissions of every assignment witht the lockdate past
+    cg_data.extract_csv(cg_data.assignments)                    #extrace the csv file witht he columns [ID,Username,Name,Grade]                       
+    cg_data.delete_created_folder()                             #delete the created folder
     #print(cg_data.get_course_info())
     #print(cg_data.get_rubric_grades_dict(cg_data.assignments))
     
