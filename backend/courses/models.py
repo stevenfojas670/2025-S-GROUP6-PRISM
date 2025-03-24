@@ -54,5 +54,9 @@ class Enrollment(models.Model):
     dropped = models.BooleanField(default=False)  # Flag for if they dropped
     dropped_date = models.DateField(blank=True, null=True)  # Timestamp of when they dropped
 
+    # this should prevent duplicate enrollments
+    class Meta:
+        unique_together = ('student', 'class_instance', 'semester')  
+
     def __str__(self):
         return f"{self.student} enrolled in {self.class_instance} ({self.semester})"
