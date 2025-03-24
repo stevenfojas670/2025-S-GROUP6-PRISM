@@ -77,7 +77,6 @@ class API_Data:
             return e
         else:
             self.course_name = course.name
-            #self.course_info = self.get_course_info(course)
             return course
 #Populate class vars and output data in a human readable format
     def get_assignments(self):
@@ -88,7 +87,7 @@ class API_Data:
         course_dict["Course-ID"] = self.course.id
         course_dict["Name"] = self.course.name
         course_dict["Created-Date"] = self.course.created_at
-        return 
+        return course_dict
     
     def get_rubric_grades_dict(self,assignments):
         '''{"submissionID - Stud_name":   
