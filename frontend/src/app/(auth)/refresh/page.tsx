@@ -19,11 +19,16 @@ export default function RefreshToken() {
 
 				const data = await response.json()
 
+				console.log("Token refreshed: ", data)
+
 				// I'd like to reroute to where the user was
 			} catch (err) {
 				console.error(err)
+				router.push("/login")
 			}
 		}
+
+		refresh()
 	}, [router])
 
 	return <>Refreshing session...</>

@@ -50,7 +50,7 @@ const LoginComponent: React.FC = () => {
 			const data = await response.json()
 
 			if (response.ok) {
-				console.log("Logged in:", data)
+				// console.log("Logged in:", data)
 				router.push("/dashboard")
 			}
 		} catch (err) {

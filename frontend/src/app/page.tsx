@@ -1,8 +1,13 @@
 "use client"
-import { useRouter } from "next/router"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
 
-export default async function Home() {
+export default function Home() {
 	const router = useRouter()
-	router.push("/login")
+
+	useEffect(() => {
+		router.push("/login")
+	}, [router])
+
 	return null
 }

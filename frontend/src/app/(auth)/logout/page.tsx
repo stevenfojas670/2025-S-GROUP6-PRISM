@@ -1,42 +1,31 @@
 "use client"
 
 import { useEffect } from "react"
-import { signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useSession } from "next-auth/react"
 
 export default function LogoutPage() {
 	const router = useRouter()
-	const { data: session } = useSession()
 
 	useEffect(() => {
 		const logoutFlow = async () => {
 			try {
-				const checkCookie = await fetch(
-					"http://localhost:3000/api/jwt/has-cookie",
-					{
-						method: "get",
-					}
-				)
+				const response = await fetch("http://localhost:8000/api/logout", {
+					method: "POST",
+					credentials: "include",
+				})
 
-				if (checkCookie.ok) {
-					const response = await fetch("http://localhost:8000/api/logout", {
-						method: "POST",
-						credentials: "include",
-					})
+				const data = await response.json()
 
-					const data = await response.json()
-
-					if (response.ok) {
-						console.log("Succesfully logged out of Django: ", data)
-					} else {
-						throw new Error("Error logging out of Django: ", data)
-					}
+				if (response.ok) {
+					console.log("Succesfully logged out of Django: ", data)
 				}
-
-				if (session) await signOut({ callbackUrl: "/login" })
+				// else { *This is mainly for testing, if logout fails, who cares, just go back to login
+				// 	throw new Error("Error logging out of Django: ", data)
+				// }
+				router.push("/login")
 			} catch (err) {
 				console.error(err)
+				router.push("/error")
 			}
 		}
 
