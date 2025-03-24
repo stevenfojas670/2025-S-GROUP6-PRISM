@@ -18,6 +18,9 @@ def is_ta(user):
 def is_admin(user):
     return user.is_staff or user.is_superuser
 
+class IsProfessorOrTA(BasePermission):
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated and (is_professor(request.user) or is_ta(request.user))
 
 class IsProfessorOrAdmin(BasePermission):
     def has_permission(self, request, view):
