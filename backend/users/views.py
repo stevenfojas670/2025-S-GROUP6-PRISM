@@ -11,74 +11,24 @@ from courses.models import Professor
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.request import Request
-from django.db.models import Q
+from rest_framework.permissions import IsAdminUser
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 class UserVS(viewsets.ModelViewSet):
     queryset = models.User.objects.all()
     serializer_class = serializers.UserSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = [
+        "id",
+        "first_name",
+        "last_name",
+        "email",
+    ]
 
-    def list(self, request: Request):
-        queryset = models.User.objects.all()
-
-        email = request.query_params.get("email")
-        first_name = request.query_params.get("first_name")
-        last_name = request.query_params.get("last_name")
-
-        if email:
-            queryset = queryset.filter(email__icontains=email)
-        if first_name:
-            queryset = queryset.filter(first_name__icontains=first_name)
-        if last_name:
-            queryset = queryset.filter(last_name__icontains=last_name)
-
-        ordering = request.query_params.get("ordering", "first_name")
-        queryset = queryset.order_by(ordering)
-
-        serializer = self.serializer_class(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def retrieve(self, request: Request, pk=None):
-        """Retrieve a single user by ID."""
-        try:
-            instance = models.User.objects.get(pk=pk)
-            serializer = self.serializer_class(instance)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except models.User.DoesNotExist:
-            return Response(
-                {"error": "User not found."}, status=status.HTTP_404_NOT_FOUND
-            )
-
-    def update(self, request: Request, pk=None):
-        try:
-            instance = self.get_object()
-            serializer = self.get_serializer(instance, data=request.data)
-            serializer.is_valid(raise_exception=True)
-            self.perform_update(serializer=serializer)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except models.User.DoesNotExist:
-            return Response(
-                {"error": "User not found."}, status=status.HTTP_404_NOT_FOUND
-            )
-
-    def partial_update(self, request: Request, pk=None):
-
-        try:
-            instance = self.get_object()
-
-            serializer = self.serializer_class(
-                instance, data=request.data, partial=True
-            )
-
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except models.User.DoesNotExist:
-            return Response(
-                {"error": "User not found."}, status=status.HTTP_404_NOT_FOUND
-            )
+    # def get_queryset(self):
+    #     user = self.request.user
+    #     return models.User.objects.get(pk=user.pk)
 
     def perform_create(self, serializer):
         """Create a user and automatically assign them as a Professor."""

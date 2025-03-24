@@ -6,7 +6,8 @@ from courses import serializers
 from courses import models
 from rest_framework import viewsets
 from rest_framework.filters import OrderingFilter, SearchFilter
-from django_filters import rest_framework as filters
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.permissions import IsAdminUser
 
 
 class ProfessorVS(viewsets.ModelViewSet):
@@ -14,7 +15,7 @@ class ProfessorVS(viewsets.ModelViewSet):
 
     queryset = models.Professor.objects.all()
     serializer_class = serializers.ProfessorSerializer
-    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
+    filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     filterset_fields = {"id": ["exact"], "user__first_name": ["exact", "icontains"]}
     ordering_fields = ["user__first_name"]
     ordering = ["user__first_name"]
@@ -26,7 +27,7 @@ class SemesterVS(viewsets.ModelViewSet):
 
     queryset = models.Semester.objects.all()
     serializer_class = serializers.SemesterSerializer
-    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
+    filter_backends = [OrderingFilter, SearchFilter]
     filterset_fields = {"id": ["exact"], "name": ["exact", "icontains"]}
     ordering_fields = [
         "name",
@@ -40,7 +41,7 @@ class ClassVS(viewsets.ModelViewSet):
 
     queryset = models.Class.objects.all()
     serializer_class = serializers.ClassSerializer
-    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
+    filter_backends = [OrderingFilter, SearchFilter]
     filterset_fields = {"id": ["exact"], "name": ["exact", "icontains"]}
     ordering_fields = [
         "name",
@@ -48,13 +49,17 @@ class ClassVS(viewsets.ModelViewSet):
     ordering = ["name"]
     search_fields = ["name"]
 
+    def get_queryset(self):
+        user = self.request.user
+        return models.Class.objects.filter(professor__user__pk=user.id)
+
 
 class ProfessorClassSectionVS(viewsets.ModelViewSet):
     """ProfessorClassSection Model ViewSet."""
 
     queryset = models.ProfessorClassSection.objects.all()
     serializer_class = serializers.ProfessorClassSectionSerializer
-    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
+    filter_backends = [OrderingFilter, SearchFilter]
     # Filtering on related fields using dictionary syntax to allow multiple lookup types.
     filterset_fields = {
         "professor__id": ["exact"],
@@ -71,15 +76,8 @@ class ProfessorClassSectionVS(viewsets.ModelViewSet):
     search_fields = ["class_instance__name", "semester__name"]
 
     def get_queryset(self):
-        # 'prof_pk' comes from the nested router lookup
-        # this will allow example GET /professor/4/semprofclass/
-        # types of situations to be possible
-        professor_id = self.kwargs.get("prof_pk")
-        # if something was passed then return the specific info for that professor
-        if professor_id:
-            return self.queryset.filter(professor=professor_id)
-        # else return the whole list
-        return self.queryset
+        user = self.request.user
+        return models.ProfessorClassSection.objects.filter(professor__user__pk=user.id)
 
     def perform_create(self, serializer):
         professor_id = self.kwargs.get("prof_pk")
