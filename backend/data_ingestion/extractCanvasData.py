@@ -196,7 +196,7 @@ class CanvasDataIngestion:
             # Error Check #1: Make sure each file in the canvas_data
             #                 directory is indeed a .csv file
             if not file.endswith('.csv'):
-                self.__errors.append(eb.DataIngestionErrorBuilder()
+                self.errors.append(eb.DataIngestionErrorBuilder()
                                      .addFileName(file)
                                      .addMsg(f"The file '{file}' is not a valid .csv file.")
                                      .createError())
