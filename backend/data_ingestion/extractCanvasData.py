@@ -80,13 +80,15 @@ class CanvasDataIngestion:
     '''
     def __validateData(self):
         self.__metaID = self.__data['Section'].iloc[0]
+        rowCount = 1
         for index, student in self.__data.iterrows():
+            print(index)
             # Error Check #1: Make sure the student's User/login ID
             #                 match (it should be their ACE ID)
             if student['SIS User ID'] != student['SIS Login ID']:
                 self.__errors.append(eb.DataIngestionErrorBuilder()
                                      .addFileName(self.__fileName)
-                                     .addLine(index+1)
+                                     .addLine(rowCount)
                                      .addMsg(f"The User ID for {student['Student']} does not "
                                              "match the Login ID")
                                      .createError())
@@ -96,7 +98,7 @@ class CanvasDataIngestion:
             if student['Section'] != self.__metaID:
                 self.__errors.append(eb.DataIngestionErrorBuilder()
                                      .addFileName(self.__fileName)
-                                     .addLine(index+1)
+                                     .addLine(rowCount)
                                      .addMsg(f"The Canvas metadata ID does not match for {student['Student']}.")
                                      .createError())
 
@@ -107,7 +109,7 @@ class CanvasDataIngestion:
             if self.courseInfo[0] != self.__semester:
                 self.__errors.append(eb.DataIngestionErrorBuilder()
                                      .addFileName(self.__fileName)
-                                     .addLine(index + 1)
+                                     .addLine(rowCount)
                                      .addMsg(f"The semester for {student['Student']} does not "
                                              "match the Canvas semester.")
                                      .createError())
@@ -117,7 +119,7 @@ class CanvasDataIngestion:
             if self.courseInfo[1] != self.__course:
                 self.__errors.append(eb.DataIngestionErrorBuilder()
                                      .addFileName(self.__fileName)
-                                     .addLine(index + 1)
+                                     .addLine(rowCount)
                                      .addMsg(f"The course name for {student['Student']} does not "
                                              "match the Canvas course name.")
                                      .createError())
@@ -127,10 +129,12 @@ class CanvasDataIngestion:
             if self.courseInfo[2] != self.__section:
                 self.__errors.append(eb.DataIngestionErrorBuilder()
                                      .addFileName(self.__fileName)
-                                     .addLine(index + 1)
+                                     .addLine(rowCount)
                                      .addMsg(f"The section number for {student['Student']} does not "
                                              "match the Canvas section.")
                                      .createError())
+
+            rowCount += 1
 
     '''
         When we are trying to validate the student data, we must parse
