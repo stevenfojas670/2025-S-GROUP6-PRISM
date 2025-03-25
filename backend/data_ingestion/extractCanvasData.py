@@ -87,8 +87,8 @@ class CanvasDataIngestion:
                 self.__errors.append(eb.DataIngestionErrorBuilder()
                                      .addFileName(self.__fileName)
                                      .addLine(index+1)
-                                     .addMsg(f"The User ID for f{student['Student']} does not "
-                                             f"match the Login ID")
+                                     .addMsg(f"The User ID for {student['Student']} does not "
+                                             "match the Login ID")
                                      .createError())
 
             # Error Check #2: Make sure the Canvas meta ID matches the
@@ -97,7 +97,7 @@ class CanvasDataIngestion:
                 self.__errors.append(eb.DataIngestionErrorBuilder()
                                      .addFileName(self.__fileName)
                                      .addLine(index+1)
-                                     .addMsg(f"The Canvas metadata ID does not match for f{student['Student']}.")
+                                     .addMsg(f"The Canvas metadata ID does not match for {student['Student']}.")
                                      .createError())
 
             self.courseInfo = self.__getCourseMetaData(student['Section'])
@@ -108,8 +108,8 @@ class CanvasDataIngestion:
                 self.__errors.append(eb.DataIngestionErrorBuilder()
                                      .addFileName(self.__fileName)
                                      .addLine(index + 1)
-                                     .addMsg(f"The semester for f{student['Student']} does not "
-                                             f"match the Canvas semester.")
+                                     .addMsg(f"The semester for {student['Student']} does not "
+                                             "match the Canvas semester.")
                                      .createError())
 
             # Error Check #4: Make sure the course matches the course
@@ -118,8 +118,8 @@ class CanvasDataIngestion:
                 self.__errors.append(eb.DataIngestionErrorBuilder()
                                      .addFileName(self.__fileName)
                                      .addLine(index + 1)
-                                     .addMsg(f"The course name for f{student['Student']} does not "
-                                             f"match the Canvas course name.")
+                                     .addMsg(f"The course name for {student['Student']} does not "
+                                             "match the Canvas course name.")
                                      .createError())
 
             # Error Check #5: Make sure the section matches the section
@@ -128,8 +128,8 @@ class CanvasDataIngestion:
                 self.__errors.append(eb.DataIngestionErrorBuilder()
                                      .addFileName(self.__fileName)
                                      .addLine(index + 1)
-                                     .addMsg(f"The section number for f{student['Student']} does not "
-                                             f"match the Canvas section.")
+                                     .addMsg(f"The section number for {student['Student']} does not "
+                                             "match the Canvas section.")
                                      .createError())
 
     '''
@@ -192,6 +192,7 @@ class CanvasDataIngestion:
     '''
     def extractData(self):
         for file in os.listdir(self.__dirName):
+
             # Error Check #1: Make sure each file in the canvas_data
             #                 directory is indeed a .csv file
             if not file.endswith('.csv'):
