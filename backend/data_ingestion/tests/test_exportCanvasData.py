@@ -8,6 +8,7 @@ class TestExportCanvasData:
     errorFileName = "canvas_data_errors.json"
     ingest = CanvasDataIngestion(test_directory)
 
+    # Fixture to set up/teardown tests for this file
     @pytest.fixture
     def setup(self,request):
         if not os.path.isdir(self.test_directory):
@@ -21,6 +22,8 @@ class TestExportCanvasData:
             for f in os.listdir(self.test_directory):
                 os.remove(f"{self.test_directory}/{f}")
             os.removedirs(self.test_directory)
+            if self.errorFileName in os.listdir():
+                os.remove(self.errorFileName)
 
         request.addfinalizer(cleanup)
 
@@ -29,3 +32,13 @@ class TestExportCanvasData:
     def test_valid_student_data(self,setup):
         self.ingest.extractData()
         assert(self.errorFileName not in os.listdir())
+
+    # Test 2) This checks if a non-CSV file is inside the gradebook directory
+    #         and should return an error.
+    def test_invalid_file_in_gradebook_directory(self,setup):
+        file = open(f"{self.test_directory}/bad_file.txt","w")
+        self.ingest.extractData()
+        assert(self.errorFileName in os.listdir())
+
+    # Test 3)
+
