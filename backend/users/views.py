@@ -8,6 +8,7 @@ whenever needed.
 """
 
 from rest_framework import viewsets, status
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.request import Request
 
@@ -139,3 +140,8 @@ class UserVS(viewsets.ModelViewSet):
         """
         user = serializer.save()
         Professor.objects.create(user=user)
+
+    # def get_permissions(self):
+    #     if self.action in ["list", "create", "destroy"]:
+    #         return [IsAdminUser()]
+    #     return super().get_permissions()
