@@ -84,11 +84,11 @@ class CanvasDataIngestion:
         self.__metaID = self.__data['Section'].iloc[0]
         rowCount = 1
         for index, student in self.__data.iterrows():
+            studentNameFields = student['Student'].split(',')
+            studentName = studentNameFields[1][1:] + ' ' + studentNameFields[0]
             # Error Check #1: Make sure the student's User/login ID
             #                 match (it should be their ACE ID)
             if student['SIS User ID'] != student['SIS Login ID']:
-                studentNameFields = student['Student'].split(',')
-                studentName = studentNameFields[1][1:] + ' ' + studentNameFields[0]
                 self.__errors.append(eb.DataIngestionErrorBuilder()
                                      .addFileName(self.__fileName)
                                      .addLine(rowCount)
@@ -96,45 +96,45 @@ class CanvasDataIngestion:
                                              "match the Login ID")
                                      .createError())
 
-            # Error Check #2: Make sure the Canvas meta ID matches the
-            #                 meta ID for the first student in the file
-            if student['Section'] != self.__metaID:
-                self.__errors.append(eb.DataIngestionErrorBuilder()
-                                     .addFileName(self.__fileName)
-                                     .addLine(rowCount)
-                                     .addMsg(f"The Canvas metadata ID does not match for {student['Student']}.")
-                                     .createError())
-
             self.courseInfo = self.__getCourseMetaData(student['Section'],rowCount)
 
-            # Error Check #3: Make sure the semester matches the semester
+            # Error Check #2: Make sure the semester matches the semester
             #                 given in the file name
             if self.courseInfo[0] != self.__semester:
                 self.__errors.append(eb.DataIngestionErrorBuilder()
                                      .addFileName(self.__fileName)
                                      .addLine(rowCount)
-                                     .addMsg(f"The semester for {student['Student']} does not "
+                                     .addMsg(f"The semester for {studentName} does not "
                                              "match the Canvas semester.")
                                      .createError())
 
-            # Error Check #4: Make sure the course matches the course
+            # Error Check #3: Make sure the course matches the course
             #                 given in the file name
             if self.courseInfo[1] != self.__course:
                 self.__errors.append(eb.DataIngestionErrorBuilder()
                                      .addFileName(self.__fileName)
                                      .addLine(rowCount)
-                                     .addMsg(f"The course name for {student['Student']} does not "
+                                     .addMsg(f"The course name for {studentName} does not "
                                              "match the Canvas course name.")
                                      .createError())
 
-            # Error Check #5: Make sure the section matches the section
+            # Error Check #4: Make sure the section matches the section
             #                 given in the file name
             if self.courseInfo[2] != self.__section:
                 self.__errors.append(eb.DataIngestionErrorBuilder()
                                      .addFileName(self.__fileName)
                                      .addLine(rowCount)
-                                     .addMsg(f"The section number for {student['Student']} does not "
+                                     .addMsg(f"The section number for {studentName} does not "
                                              "match the Canvas section.")
+                                     .createError())
+
+            # Error Check #5: Make sure the Canvas meta ID matches the
+            #                 meta ID for the first student in the file
+            if student['Section'] != self.__metaID:
+                self.__errors.append(eb.DataIngestionErrorBuilder()
+                                     .addFileName(self.__fileName)
+                                     .addLine(rowCount)
+                                     .addMsg(f"The Canvas metadata ID does not match for {studentName}.")
                                      .createError())
 
             rowCount += 1
@@ -223,9 +223,10 @@ class CanvasDataIngestion:
 
             self.__populateDatabase()
 
-        if(len(self.errors)) > 0:
-            DataIngestionError.createErrorJSON("canvas_data_errors",self.errors)
-        print("END")
+        if(len(CanvasDataIngestion.errors)) > 0:
+            DataIngestionError.createErrorJSON("canvas_data_errors",CanvasDataIngestion.errors)
+            CanvasDataIngestion.errors = list()
+
 '''
     Main method to interface with script
 '''
