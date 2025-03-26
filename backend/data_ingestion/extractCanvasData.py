@@ -69,8 +69,10 @@ class CanvasDataIngestion:
         into a Pandas dataframe so we can use it
     '''
     def __convertToDataFrame(self):
+        print(f"{self.__dirName}/{self.__fileName}")
         csvFile = open(f"{self.__dirName}/{self.__fileName}",'r')
         self.__data = pd.read_csv(csvFile)
+        print(self.__data)
         csvFile.close()
 
     '''
@@ -82,14 +84,15 @@ class CanvasDataIngestion:
         self.__metaID = self.__data['Section'].iloc[0]
         rowCount = 1
         for index, student in self.__data.iterrows():
-            print(index)
             # Error Check #1: Make sure the student's User/login ID
             #                 match (it should be their ACE ID)
             if student['SIS User ID'] != student['SIS Login ID']:
+                studentNameFields = student['Student'].split(',')
+                studentName = studentNameFields[1][1:] + ' ' + studentNameFields[0]
                 self.__errors.append(eb.DataIngestionErrorBuilder()
                                      .addFileName(self.__fileName)
                                      .addLine(rowCount)
-                                     .addMsg(f"The User ID for {student['Student']} does not "
+                                     .addMsg(f"The User ID for {studentName} does not "
                                              "match the Login ID")
                                      .createError())
 
@@ -102,7 +105,7 @@ class CanvasDataIngestion:
                                      .addMsg(f"The Canvas metadata ID does not match for {student['Student']}.")
                                      .createError())
 
-            self.courseInfo = self.__getCourseMetaData(student['Section'])
+            self.courseInfo = self.__getCourseMetaData(student['Section'],rowCount)
 
             # Error Check #3: Make sure the semester matches the semester
             #                 given in the file name
@@ -141,7 +144,7 @@ class CanvasDataIngestion:
         the Canvas meta ID per student to make sure each part of the ID
         matches the provided information in the title of the .csv file
     '''
-    def __getCourseMetaData(self, metaID):
+    def __getCourseMetaData(self,metaID,row):
         courseInfo = metaID.split('-')
         metaData = list()
 
@@ -156,6 +159,7 @@ class CanvasDataIngestion:
         else:
             self.__errors.append(eb.DataIngestionErrorBuilder()
                                  .addFileName(self.__fileName)
+                                 .addLine(row)
                                  .addMsg(f"The semester is invalid.")
                                  .createError())
 
@@ -190,6 +194,7 @@ class CanvasDataIngestion:
         except Class.DoesNotExist:
             className = Class(name=self.__course)
             className.save()
+
     '''
         This will be the main method that a user will call to extract
         all information from the exported Canvas gradebook file.
@@ -220,7 +225,7 @@ class CanvasDataIngestion:
 
         if(len(self.errors)) > 0:
             DataIngestionError.createErrorJSON("canvas_data_errors",self.errors)
-
+        print("END")
 '''
     Main method to interface with script
 '''
