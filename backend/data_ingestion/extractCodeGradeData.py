@@ -181,18 +181,23 @@ class CodeGradeDataIngestion:
                                          .addFileName(self.__submissionFileName)
                                          .addMsg(f"User ID {value} does not have any metadata associated with it.")
                                          .createError())
+                    raise ValueError()
+
                 # ERROR CHECK #2: Make sure the current student does not have multiple submissions
                 elif entriesFound > 1:
                     self.__errors.append(eb.DataIngestionErrorBuilder()
                                          .addFileName(self.__submissionFileName)
                                          .addMsg(f"User ID {value} has multiple metadata entries associated with it.")
                                          .createError())
+                    raise ValueError()
+
                 # ERROR CHECK #3: Make sure the student name matches the name in the user ID portion of cg_data.json
                 if entry.iloc[0, 2] != studentName:
                     self.__errors.append(eb.DataIngestionErrorBuilder()
                                          .addFileName(self.__submissionFileName)
                                          .addMsg(f"User ID {value} does not match the given name in the metadata file.")
                                          .createError())
+                    raise ValueError()
 
     '''
         For this helper method, we are checking whether or not 
