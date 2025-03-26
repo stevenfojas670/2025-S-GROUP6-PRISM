@@ -28,7 +28,6 @@ urlpatterns = [
     path('api/user/', include('users.urls')),
     path('api/course/', include('courses.urls')),
     path('api/assignment/', include('assignments.urls')),
-    path("",include("data_ingestion.urls"))
 ]
 
 #from django.conf.urls import include, url
