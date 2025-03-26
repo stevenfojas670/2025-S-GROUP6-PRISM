@@ -57,7 +57,7 @@ class CodeGradeDataIngestion:
     '''
     def __extractStudentFilesFromZIP(self):
         for file in os.listdir(self.__dirName):
-            if file.endswith('.zip') and file not in self.fileSeen:
+            if file.endswith('.zip') and file not in CodeGradeDataIngestion.fileSeen:
                 self.__parseZipFileName(file)
                 self.__zipFileDirectory = f"{self.__dirName}/{self.__submissionFileName}"
 
@@ -65,6 +65,7 @@ class CodeGradeDataIngestion:
                 zipFile.extractall(self.__zipFileDirectory)
 
                 # ERROR CHECK #1: Make sure the ZIP file actually contains data.
+                print(os.listdir(self.__zipFileDirectory))
                 if os.listdir(self.__zipFileDirectory) == []:
                     self.__errors.append(eb.DataIngestionErrorBuilder()
                                          .addFileName(self.__zipFileDirectory)
@@ -72,10 +73,10 @@ class CodeGradeDataIngestion:
                                          .createError())
                     raise ValueError()
 
-                self.fileSeen.add(file)
+                CodeGradeDataIngestion.fileSeen.add(file)
                 return
 
-        # ERROR CHECK #2: If we reach this point, then we have either have a duplicated
+        # ERROR CHECK #2: If we reach this point, then we either have a duplicated
         # ZIP file in the directory or there are no ZIP files in the directory, so we have to create an error
         self.__errors.append(eb.DataIngestionErrorBuilder()
                              .addFileName(self.__dirName)
@@ -250,7 +251,7 @@ class CodeGradeDataIngestion:
         and validating all CodeGrade data.
     '''
     def extractData(self):
-        submissionDirLength = len(os.listdir("codegrade_data"))
+        submissionDirLength = len(os.listdir(self.__dirName))
 
         for i in range(submissionDirLength//2):
             try:
@@ -261,14 +262,16 @@ class CodeGradeDataIngestion:
                 self.__verifyStudentUserExistsInMetaData()
             except:
                 for e in self.__errors:
-                    self.allErrors.append(e)
+                    CodeGradeDataIngestion.allErrors.append(e)
                 self.__errors = list()
                 continue
             else:
                 self.__populateDatabase()
 
-        if(len(self.allErrors) > 0):
-            DataIngestionError.createErrorJSON("codegrade_data_errors",self.allErrors)
+        if(len(CodeGradeDataIngestion.allErrors) > 0):
+            DataIngestionError.createErrorJSON("codegrade_data_errors",CodeGradeDataIngestion.allErrors)
+            CodeGradeDataIngestion.allErrors = list()
+            CodeGradeDataIngestion.fileSeen = set()
 
 def main():
     cgData = CodeGradeDataIngestion("codegrade_data")
