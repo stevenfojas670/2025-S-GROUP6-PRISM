@@ -8,40 +8,35 @@ from rest_framework import viewsets
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAdminUser
+from django.shortcuts import get_object_or_404
 
 
-class ProfessorVS(viewsets.ModelViewSet):
+class BaseModelViewSet(viewsets.ModelViewSet):
+    filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
+
+
+class ProfessorVS(BaseModelViewSet):
     """Professor Model ViewSet."""
 
     queryset = models.Professor.objects.all()
     serializer_class = serializers.ProfessorSerializer
-    filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     filterset_fields = {"id": ["exact"], "user__first_name": ["exact", "icontains"]}
     ordering_fields = ["user__first_name"]
     ordering = ["user__first_name"]
     search_fields = ["user__first_name"]
 
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_admin:
+            return models.Professor.objects.all()
+        return models.Professor.objects.filter(user=user)
 
-class SemesterVS(viewsets.ModelViewSet):
+
+class SemesterVS(BaseModelViewSet):
     """Semester Model ViewSet."""
 
     queryset = models.Semester.objects.all()
     serializer_class = serializers.SemesterSerializer
-    filter_backends = [OrderingFilter, SearchFilter]
-    filterset_fields = {"id": ["exact"], "name": ["exact", "icontains"]}
-    ordering_fields = [
-        "name",
-    ]
-    ordering = ["name"]
-    search_fields = ["name"]
-
-
-class ClassVS(viewsets.ModelViewSet):
-    """Class Model ViewSet."""
-
-    queryset = models.Class.objects.all()
-    serializer_class = serializers.ClassSerializer
-    filter_backends = [OrderingFilter, SearchFilter]
     filterset_fields = {"id": ["exact"], "name": ["exact", "icontains"]}
     ordering_fields = [
         "name",
@@ -51,15 +46,37 @@ class ClassVS(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        return models.Class.objects.filter(professor__user__pk=user.id)
+        if user.is_admin:
+            return models.Semester.objects.filter()
+        return models.Semester.objects.filter(
+            professorclasssection__professor__user=user
+        )
 
 
-class ProfessorClassSectionVS(viewsets.ModelViewSet):
+class ClassVS(BaseModelViewSet):
+    """Class Model ViewSet."""
+
+    queryset = models.Class.objects.all()
+    serializer_class = serializers.ClassSerializer
+    filterset_fields = {"id": ["exact"], "name": ["exact", "icontains"]}
+    ordering_fields = [
+        "name",
+    ]
+    ordering = ["name"]
+    search_fields = ["name"]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_admin:
+            return models.Class.objects.all()
+        return models.Class.objects.filter(professors__user=user)
+
+
+class ProfessorClassSectionVS(BaseModelViewSet):
     """ProfessorClassSection Model ViewSet."""
 
     queryset = models.ProfessorClassSection.objects.all()
     serializer_class = serializers.ProfessorClassSectionSerializer
-    filter_backends = [OrderingFilter, SearchFilter]
     # Filtering on related fields using dictionary syntax to allow multiple lookup types.
     filterset_fields = {
         "professor__id": ["exact"],
@@ -77,11 +94,13 @@ class ProfessorClassSectionVS(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        return models.ProfessorClassSection.objects.filter(professor__user__pk=user.id)
+        if user.is_admin:
+            return models.ProfessorClassSection.objects.all()
+        return models.ProfessorClassSection.objects.filter(professor__user=user)
 
     def perform_create(self, serializer):
         professor_id = self.kwargs.get("prof_pk")
-        professor_instance = models.Professor.objects.get(id=professor_id)
+        professor_instance = get_object_or_404(models.Professor, id=professor_id)
         # injecting here the professor instance validated data to save in our database with the
         # inf provided in the request
         serializer.save(professor=professor_instance)

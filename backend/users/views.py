@@ -27,34 +27,13 @@ class UserVS(viewsets.ModelViewSet):
         "email",
     ]
 
-    def list(self, request):
-        queryset = self.filter_queryset(self.get_queryset())
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    @action(detail=False, methods=["get"], url_path="me")
-    def me(self, request):
-        serializer = self.get_serializer(self.request.user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def create(self):
-        pass
-
-    def update(self):
-        pass
-
-    def partial_update(self):
-        pass
-
-    def destroy(self):
-        pass
+    def get_queryset(self):
+        user = self.request.user
+        if self.request.user.is_admin:
+            return models.User.objects.all()
+        return models.User.objects.filter(id=user.id)
 
     def perform_create(self, serializer):
         """Create a user and automatically assign them as a Professor."""
         user = serializer.save()
         Professor.objects.create(user=user)
-
-    # def get_permissions(self):
-    #     if self.action in ["list", "create", "destroy"]:
-    #         return [IsAdminUser()]
-    #     return super().get_permissions()
