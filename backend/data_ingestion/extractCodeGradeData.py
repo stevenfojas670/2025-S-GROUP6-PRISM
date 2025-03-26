@@ -169,7 +169,7 @@ class CodeGradeDataIngestion:
             try:
                 subID, studentName = self.__checkIfStudentFileExists(key)
             except:
-                continue
+                raise ValueError()
             else:
 
                 entry = self.__metaData.loc[self.__metaData['Id'] == value]
