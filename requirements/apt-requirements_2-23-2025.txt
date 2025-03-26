@@ -1,4 +1,0 @@
-daphne
-perl
-nodejs
-npm
