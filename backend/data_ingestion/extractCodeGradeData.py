@@ -14,6 +14,7 @@ django.setup()
 
 from zipfile import ZipFile
 import pandas as pd
+import math
 import json
 from errors.DataIngestionError import DataIngestionError
 import errors.DataIngestionErrorBuilder as eb
@@ -64,23 +65,14 @@ class CodeGradeDataIngestion:
                 zipFile = ZipFile(f"{self.__dirName}/{file}")
                 zipFile.extractall(self.__zipFileDirectory)
 
-                # ERROR CHECK #1: Make sure the ZIP file actually contains data.
-                print(os.listdir(self.__zipFileDirectory))
-                if os.listdir(self.__zipFileDirectory) == []:
-                    self.__errors.append(eb.DataIngestionErrorBuilder()
-                                         .addFileName(self.__zipFileDirectory)
-                                         .addMsg(f"There is no student submission files found in {self.__zipFileDirectory}")
-                                         .createError())
-                    raise ValueError()
-
                 CodeGradeDataIngestion.fileSeen.add(file)
                 return
 
-        # ERROR CHECK #2: If we reach this point, then we either have a duplicated
+        # ERROR CHECK #1: If we reach this point, then we either have a duplicated
         # ZIP file in the directory or there are no ZIP files in the directory, so we have to create an error
         self.__errors.append(eb.DataIngestionErrorBuilder()
                              .addFileName(self.__dirName)
-                             .addMsg(f"No .zip files were found containing student submission in {self.__dirName}")
+                             .addMsg(f"A duplicate .zip file was found containing student submission in {self.__dirName}")
                              .createError())
         raise ValueError()
 
@@ -109,8 +101,10 @@ class CodeGradeDataIngestion:
     '''
     def __checkIfJSONFileExists(self):
         if not os.path.exists(f"{self.__zipFileDirectory}/.cg-info.json"):
-            print("Error! The extracted zip file is missing the '.cg-info.json' file.")
-            exit(1)
+            self.__errors.append(eb.DataIngestionErrorBuilder()
+                                 .addFileName(self.__dirName)
+                                 .addMsg("The .cg-info.json file is missing.")
+                                 .createError())
 
     '''
         Once the ZIP file has been extracted, we can now take the json 
@@ -253,7 +247,7 @@ class CodeGradeDataIngestion:
     def extractData(self):
         submissionDirLength = len(os.listdir(self.__dirName))
 
-        for i in range(submissionDirLength//2):
+        for i in range(math.ceil(submissionDirLength/2)):
             try:
                 self.__extractStudentFilesFromZIP()
                 self.__extractJSON()
