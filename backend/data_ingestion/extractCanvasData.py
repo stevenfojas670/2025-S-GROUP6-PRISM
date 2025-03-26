@@ -69,10 +69,8 @@ class CanvasDataIngestion:
         into a Pandas dataframe so we can use it
     '''
     def __convertToDataFrame(self):
-        print(f"{self.__dirName}/{self.__fileName}")
         csvFile = open(f"{self.__dirName}/{self.__fileName}",'r')
         self.__data = pd.read_csv(csvFile)
-        print(self.__data)
         csvFile.close()
 
     '''
