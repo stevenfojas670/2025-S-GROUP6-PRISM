@@ -1,3 +1,11 @@
+'''
+    Created by Daniel Levy, 3/26/2025
+
+    This is a unit test script for "extractCodeGradeData.py".
+    Here, we check if the above script will work on valid
+    data and then we will check if every error stored in the
+    json error file can be created.
+'''
 import pytest
 import json
 import zipfile

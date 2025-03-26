@@ -1,3 +1,11 @@
+'''
+    Created by Daniel Levy, 3/26/2025
+
+    This is a unit test script for "extractCanvasData.py".
+    This script checks if the above script will work on valid
+    data first and then it will check if all errors in the
+    json file can be generated correctly.
+'''
 import pytest
 import json
 import csv
