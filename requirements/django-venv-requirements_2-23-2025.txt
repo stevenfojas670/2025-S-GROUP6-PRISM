@@ -34,7 +34,6 @@ numpy==2.2.3
 optional-django==0.1.0
 pandas==2.2.3
 perl==1.0.0
--e git+https://github.com/donessie94/2025-S-GROUP6-PRISM.git@00f1f248564384d35d6b0fa47190d5257ea0199f#egg=prism_backend
 psycopg==3.2.4
 psycopg2-binary==2.9.10
 pyasn1==0.6.1
