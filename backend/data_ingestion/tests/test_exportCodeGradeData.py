@@ -102,3 +102,53 @@ class TestExportCodeGradeData:
         self.createSubmissions(["0 - Mary Smith"])
         self.createZIP('CS 135 1001 - 2024 Fall - Assignment 1.zip')
         assert(self.runAndProduceError() == "The .cg-info.json file is missing.")
+
+    def test_invalid_csv_file_name(self):
+        self.createSubmissions(["0 - Mary Smith"])
+        self.createJSON({ "submission_ids": { "0 - Mary Smith": 0 }, "user_ids": { "0 - Mary Smith": 100000 } })
+        self.createZIP('CS 135 1001 - 2024 Fall - Assignment 1')
+        self.createCSV(['error'],'CS 135 1001 - 2024 Fall - Assignment 2')
+        assert(self.runAndProduceError() == f"CS 135 1001 - 2024 Fall - Assignment 1.csv was not found in {self.test_directory}.")
+
+    def test_non_matching_student_submission_id(self):
+        self.createSubmissions(["0 - Mary Smith"])
+        self.createJSON({"submission_ids": {"0 - Mary Smith": 2}, "user_ids": {"0 - Mary Smith": 100000}})
+        self.createZIP('CS 135 1001 - 2024 Fall - Assignment 1')
+        self.createCSV(['error'], 'CS 135 1001 - 2024 Fall - Assignment 1')
+        assert(self.runAndProduceError() == "The submission ID #0 for Mary Smith is not correct.")
+
+    def test_no_student_metadata(self):
+        self.createSubmissions(["0 - Mary Smith"])
+        self.createJSON({"submission_ids": {"0 - Mary Smith": 0}, "user_ids": {"0 - Mary Smith": 100000}})
+        self.createZIP('CS 135 1001 - 2024 Fall - Assignment 2')
+        self.createCSV( [['Id', 'Username', 'Name', 'Grade']], 'CS 135 1001 - 2024 Fall - Assignment 2')
+        assert (self.runAndProduceError() == "User ID 100000 does not have any metadata associated with it.")
+
+    def test_multiple_student_metadata(self):
+        self.createSubmissions(["0 - Mary Smith"])
+        self.createJSON({"submission_ids": {"0 - Mary Smith": 0}, "user_ids": {"0 - Mary Smith": 100000}})
+        self.createZIP('CS 135 1001 - 2024 Fall - Assignment 3')
+        self.createCSV([['Id', 'Username', 'Name', 'Grade'],
+                                ['100000','smithm','Mary Smith','79.1'],
+                                ['100000','smithm','Mary Smith','78.1']],
+                       'CS 135 1001 - 2024 Fall - Assignment 3')
+        assert(self.runAndProduceError() == "User ID 100000 has multiple metadata entries associated with it.")
+
+    def test_student_name_not_matching_user_id(self):
+        self.createSubmissions(["0 - Mary Smith"])
+        self.createJSON({"submission_ids": {"0 - Mary Smith": 0}, "user_ids": {"0 - Mary Smith": 100000}})
+        self.createZIP('CS 135 1001 - 2024 Fall - Assignment 4')
+        self.createCSV( [['Id', 'Username', 'Name', 'Grade'],
+                                 ['100000', 'smithm', 'Mary Jane', '79.1']], 'CS 135 1001 - 2024 Fall - Assignment 4')
+        assert (self.runAndProduceError() == "User ID 100000 does not match the given name in the metadata file.")
+
+    def test_student_missing_submission_in_zip(self):
+        self.createSubmissions(["23 - Paul Jones"])
+        self.createJSON({"submission_ids": {"0 - Mary Smith": 0, "23 - Paul Jones": 23},
+                         "user_ids": {"0 - Mary Smith": 100000, "23 - Paul Jones": 100001}})
+        self.createZIP('CS 135 1001 - 2024 Fall - Assignment 5')
+        self.createCSV([['Id', 'Username', 'Name', 'Grade'],
+                                ['100000', 'smithm', 'Mary Jane', '79.1'],
+                                ['100001','jonesj','Paul Jones','89.3']],
+                                'CS 135 1001 - 2024 Fall - Assignment 5')
+        assert(self.runAndProduceError() == "Submission for Mary Smith is missing in zip directory.")
