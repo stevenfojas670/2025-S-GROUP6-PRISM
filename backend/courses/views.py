@@ -4,6 +4,7 @@ Courses Views with Enhanced Filtering, Ordering, and Search Capabilities.
 """
 from courses import serializers
 from courses import models
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters import rest_framework as filters
@@ -70,7 +71,7 @@ class EnrollmentVS(viewsets.ModelViewSet):
     """Enrollment Model ViewSet."""
     queryset = models.Enrollment.objects.all()
     serializer_class = serializers.EnrollmentSerializer
-    permission_classes = [IsAuthenticated]  
+    permission_classes = [IsAuthenticated]
     filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
 
     # Allow filtering by student, class, and semester. Similar idea to other VS
