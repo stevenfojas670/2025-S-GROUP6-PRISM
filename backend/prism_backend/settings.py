@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "corsheaders",
+    "django_filters",
     "django.contrib.sites",
     "django.contrib.humanize",
     "allauth",
@@ -98,6 +99,11 @@ AUTH_USER_MODEL = "users.User"
 
 # setting up the automatic documentation, this is the schema we will use openapi
 REST_FRAMEWORK = {
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.OrderingFilter",
+        "rest_framework.filters.SearchFilter",
+    ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     # Globally requires authentication
     "DEFAULT_PERMISSION_CLASSES": [
