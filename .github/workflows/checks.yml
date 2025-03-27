@@ -70,7 +70,6 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: ${{ secrets.DB_PORT }}
-          # Using default 'postgres' user, DB, password in container
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
         run: |
           cd backend
