@@ -9,9 +9,7 @@ jobs:
       postgres:
         image: postgres:13
         env:
-          POSTGRES_USER: donessie
-          POSTGRES_PASSWORD: Emily!2013
-          POSTGRES_DB: prism_db
+          POSTGRES_PASSWORD: postgres  # Provide at least a password if needed
         ports:
           - 5432:5432
         options: >-
@@ -38,18 +36,42 @@ jobs:
         run: sleep 10
 
       - name: Make Migrations
+        env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DEBUG: ${{ secrets.DEBUG }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
         run: |
           cd backend
           python manage.py makemigrations
 
       - name: Migrate Database
+        env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DEBUG: ${{ secrets.DEBUG }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
         run: |
           cd backend
           python manage.py migrate
 
       - name: Run tests with coverage
         env:
-          DATABASE_URL: postgres://donessie:Emily!2013@localhost:5432/prism_db
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DEBUG: ${{ secrets.DEBUG }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          # Using default 'postgres' user, DB, password in container
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
         run: |
           cd backend
           coverage run manage.py test -v 2
