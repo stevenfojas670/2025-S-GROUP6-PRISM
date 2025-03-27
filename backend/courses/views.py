@@ -1,3 +1,4 @@
+
 """
 Courses Views with Enhanced Filtering, Ordering, and Search Capabilities.
 """
