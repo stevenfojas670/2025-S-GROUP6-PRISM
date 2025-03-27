@@ -4,6 +4,7 @@ Courses Database Models.
 from django.db import models
 from users import models as user_model
 from django.conf import settings
+from assignments.models import Student
 
 class Professor(models.Model):
     """Professor Model."""
