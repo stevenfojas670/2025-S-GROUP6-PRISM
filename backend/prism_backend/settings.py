@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'django_filters',
     'data_ingestion',
+    'dj_rest_auth',
 #    'prism',
 ]
 
