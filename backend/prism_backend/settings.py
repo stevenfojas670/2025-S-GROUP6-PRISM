@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'django_filters',
     'data_ingestion',
     'dj_rest_auth',
+    'rest_framework.authtoken',
 #    'prism',
 ]
 
