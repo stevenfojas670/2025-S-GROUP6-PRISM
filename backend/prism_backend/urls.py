@@ -14,34 +14,29 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from drf_spectacular.views import (SpectacularAPIView, SpectacularSwaggerView)
+
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django.contrib import admin
+from dj_rest_auth.views import LogoutView
+from dj_rest_auth.jwt_auth import get_refresh_view
 from django.urls import path, include
-from .views import hello_world
+from . import views
 
+"""We may want to implement """
 urlpatterns = [
-    path('django/admin/', admin.site.urls),
-    #setting up the urls for the automatic API documentation
-    path('api/schema/', SpectacularAPIView.as_view(), name='api-schema'),
-    path('api/docs/', SpectacularSwaggerView.as_view(url_name='api-schema'), name='api-docs' ),
-    path("django/api/hello/", hello_world),
-    path('api/user/', include('users.urls')),
-    path('api/course/', include('courses.urls')),
-    path('api/assignment/', include('assignments.urls')),
+    path("django/admin/", admin.site.urls),
+    # setting up the urls for the automatic API documentation
+    path("api/schema/", SpectacularAPIView.as_view(), name="api-schema"),
+    path(
+        "api/docs/",
+        SpectacularSwaggerView.as_view(url_name="api-schema"),
+        name="api-docs",
+    ),
+    path("api/user/", include("users.urls")),
+    path("api/course/", include("courses.urls")),
+    path("api/assignment/", include("assignments.urls")),
+    path("api/login", views.CustomLoginView.as_view()),
+    path("api/logout", LogoutView.as_view()),
+    path("api/google/verify", views.GoogleAuthView.as_view()),
+    path("api/token/refresh", get_refresh_view().as_view()),
 ]
-
-#from django.conf.urls import include, url
-#from . import views
-
-#urlpatterns = [
-#    url(r'^django/', include([
-#        url(r'^admin/', include(admin.site.urls) ),
-#        url(r'^other/$', views.other)
-#    ])),
-#]
-
-#from django.conf.urls import patterns, url
-
-#urlpatterns = patterns('',
-#    (r'^django/admin/', include(admin.site.urls) ),
-#)

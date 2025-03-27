@@ -14,6 +14,7 @@ django.setup()
 
 from zipfile import ZipFile
 import pandas as pd
+import math
 import json
 from errors.DataIngestionError import DataIngestionError
 import errors.DataIngestionErrorBuilder as eb
@@ -57,29 +58,21 @@ class CodeGradeDataIngestion:
     '''
     def __extractStudentFilesFromZIP(self):
         for file in os.listdir(self.__dirName):
-            if file.endswith('.zip') and file not in self.fileSeen:
+            if file.endswith('.zip') and file not in CodeGradeDataIngestion.fileSeen:
                 self.__parseZipFileName(file)
                 self.__zipFileDirectory = f"{self.__dirName}/{self.__submissionFileName}"
 
                 zipFile = ZipFile(f"{self.__dirName}/{file}")
                 zipFile.extractall(self.__zipFileDirectory)
 
-                # ERROR CHECK #1: Make sure the ZIP file actually contains data.
-                if os.listdir(self.__zipFileDirectory) == []:
-                    self.__errors.append(eb.DataIngestionErrorBuilder()
-                                         .addFileName(self.__zipFileDirectory)
-                                         .addMsg(f"There is no student submission files found in {self.__zipFileDirectory}")
-                                         .createError())
-                    raise ValueError()
-
-                self.fileSeen.add(file)
+                CodeGradeDataIngestion.fileSeen.add(file)
                 return
 
-        # ERROR CHECK #2: If we reach this point, then we have either have a duplicated
+        # ERROR CHECK #1: If we reach this point, then we either have a duplicated
         # ZIP file in the directory or there are no ZIP files in the directory, so we have to create an error
         self.__errors.append(eb.DataIngestionErrorBuilder()
                              .addFileName(self.__dirName)
-                             .addMsg(f"No .zip files were found containing student submission in {self.__dirName}")
+                             .addMsg(f"A duplicate .zip file was found containing student submission in {self.__dirName}")
                              .createError())
         raise ValueError()
 
@@ -108,8 +101,10 @@ class CodeGradeDataIngestion:
     '''
     def __checkIfJSONFileExists(self):
         if not os.path.exists(f"{self.__zipFileDirectory}/.cg-info.json"):
-            print("Error! The extracted zip file is missing the '.cg-info.json' file.")
-            exit(1)
+            self.__errors.append(eb.DataIngestionErrorBuilder()
+                                 .addFileName(self.__dirName)
+                                 .addMsg("The .cg-info.json file is missing.")
+                                 .createError())
 
     '''
         Once the ZIP file has been extracted, we can now take the json 
@@ -174,7 +169,7 @@ class CodeGradeDataIngestion:
             try:
                 subID, studentName = self.__checkIfStudentFileExists(key)
             except:
-                continue
+                raise ValueError()
             else:
 
                 entry = self.__metaData.loc[self.__metaData['Id'] == value]
@@ -186,18 +181,23 @@ class CodeGradeDataIngestion:
                                          .addFileName(self.__submissionFileName)
                                          .addMsg(f"User ID {value} does not have any metadata associated with it.")
                                          .createError())
+                    raise ValueError()
+
                 # ERROR CHECK #2: Make sure the current student does not have multiple submissions
                 elif entriesFound > 1:
                     self.__errors.append(eb.DataIngestionErrorBuilder()
                                          .addFileName(self.__submissionFileName)
                                          .addMsg(f"User ID {value} has multiple metadata entries associated with it.")
                                          .createError())
+                    raise ValueError()
+
                 # ERROR CHECK #3: Make sure the student name matches the name in the user ID portion of cg_data.json
                 if entry.iloc[0, 2] != studentName:
                     self.__errors.append(eb.DataIngestionErrorBuilder()
                                          .addFileName(self.__submissionFileName)
                                          .addMsg(f"User ID {value} does not match the given name in the metadata file.")
                                          .createError())
+                    raise ValueError()
 
     '''
         For this helper method, we are checking whether or not 
@@ -250,9 +250,9 @@ class CodeGradeDataIngestion:
         and validating all CodeGrade data.
     '''
     def extractData(self):
-        submissionDirLength = len(os.listdir("codegrade_data"))
+        submissionDirLength = len(os.listdir(self.__dirName))
 
-        for i in range(submissionDirLength//2):
+        for i in range(math.ceil(submissionDirLength/2)):
             try:
                 self.__extractStudentFilesFromZIP()
                 self.__extractJSON()
@@ -261,14 +261,16 @@ class CodeGradeDataIngestion:
                 self.__verifyStudentUserExistsInMetaData()
             except:
                 for e in self.__errors:
-                    self.allErrors.append(e)
+                    CodeGradeDataIngestion.allErrors.append(e)
                 self.__errors = list()
                 continue
             else:
                 self.__populateDatabase()
 
-        if(len(self.allErrors) > 0):
-            DataIngestionError.createErrorJSON("codegrade_data_errors",self.allErrors)
+        if(len(CodeGradeDataIngestion.allErrors) > 0):
+            DataIngestionError.createErrorJSON("codegrade_data_errors",CodeGradeDataIngestion.allErrors)
+            CodeGradeDataIngestion.allErrors = list()
+            CodeGradeDataIngestion.fileSeen = set()
 
 def main():
     cgData = CodeGradeDataIngestion("codegrade_data")
