@@ -4,7 +4,7 @@ Courses URLs.
 """
 from rest_framework.routers import DefaultRouter
 #from rest_framework_nested.routers import NestedDefaultRouter
-from courses.views import (ProfessorVS, ProfessorClassSectionVS, SemesterVS, ClassVS)
+from courses.views import (ProfessorVS, ProfessorClassSectionVS, SemesterVS, ClassVS, EnrollmentVS)
 from django.urls import path, include
 
 router = DefaultRouter()
