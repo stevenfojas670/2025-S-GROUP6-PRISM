@@ -1,3 +1,4 @@
+
 """
 Courses Database Models.
 """

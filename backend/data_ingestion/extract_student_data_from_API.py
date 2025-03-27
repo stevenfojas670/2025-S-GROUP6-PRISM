@@ -18,6 +18,8 @@ import json
 import csv
 from codegrade.utils import select_from_list
 from dotenv import load_dotenv
+import datetime
+
 
 class API_Data:
     #variables
@@ -29,7 +31,7 @@ class API_Data:
     5. rubric {}                        ({"assignment_id":  {header1:[header_name,points],header2:'',...}})         #DIC
     6. all_assignment_submissions {}    ({"assignment_id":  [sub_id,sub_id...] })                                   #DIC
     7. graders {}                       ([[grader_name,grader_username,grader_user_id],...])                        #LIST OF LISTS
-    8. rubric_grades {}                 ([("sub_id - user.name",points achieved)]})                                 #LIST OF TUPLES
+    8. rubric_grades {}                 ([("sub_id - user.name",points achieved)])                                 #LIST OF TUPLES
     9. course_info                      ({'id':id,  'name':name,    'date':date})
     
     10. submisions
@@ -75,22 +77,56 @@ class API_Data:
             return e
         else:
             self.course_name = course.name
-            #self.course_info = self.get_course_info(course)
             return course
 #Populate class vars and output data in a human readable format
     def get_assignments(self):
         return self.course.assignments
     #TODO vvv finish these methods
-    '''
     def get_course_info(self):
+        course_dict = {}
+        course_dict["Course-ID"] = self.course.id
+        course_dict["Name"] = self.course.name
+        course_dict["Created-Date"] = self.course.created_at
+        return course_dict
+    
+    def get_rubric_grades_dict(self,assignments):
+        '''{"submissionID - Stud_name":   
+                                        [{"header":          ''
+                                         "points_achieved":  0
+                                         "points_possible":  0
+                                         "multiplier":       0 },
+                                         {}]
+            submissionID = Stud_name...
+            }
+        '''
+        grade_dict = {} #dictionary to return
+        for assignment in assignments:
+            submissions = self.get_all_submissions(assignment)  
+            for submission in submissions:
+                sub_id_key = f"{submission.id} - {submission.user.name}"
+                grade_dict[sub_id_key] = []
+                self.get_rubric_value(rubric=self.get_rubric_grade(submission.id),
+                                                     grade_dict=grade_dict,
+                                                     sub_id_key=sub_id_key)
+        return grade_dict
+    #helper funciton:
+    def get_rubric_value(self, rubric,grade_dict,sub_id_key):
+        #return a dictionary parsed with the info.
+        index = 0
+        for obj in rubric.selected:
+            result = {}
+            result["header"]            = f"{rubric.rubrics[index].header}"
+            result["points_achieved"]   = obj.achieved_points
+            result["points_possible"]   = obj.points
+            result["multiplier"]        = obj.multiplier
+            grade_dict[sub_id_key].append(result)
+            index = index + 1
+    '''
+    def get_rubrics(self):
         return None
     def get_all_assignments(self):
         return None
     def get_all_graders(self):
-        return None
-    def get_rubric_grades(self):
-        return None
-    def get_rubrics(self):
         return None
     def get_all_assignment_subs(self):
         return None
@@ -98,6 +134,13 @@ class API_Data:
 
 #Getters from API:
     #ASSIGNMENT SERVICE TYPE
+    def get_all_submissions(self,assignment):
+        try:
+            submissions = self.client.assignment.get_all_submissions(assignment_id=assignment.id)
+        except Exception as e:
+            print(str(e))
+        else:
+            return submissions
     def get_all_graders(self, assignment):
         try:
             graders = self.client.assignment.get_all_graders(assignment_id=assignment.id)
@@ -106,6 +149,14 @@ class API_Data:
         else:
             return graders
     
+    def get_rubric(self, assignment):
+        try:
+            rubric = self.client.assignment.get_rubric(assignment_id=assignment.id)
+        except Exception as e:
+            print(str(e))
+        else:
+            return rubric
+        
     def get_rubric(self, assignment):
         try:
             rubric = self.client.assignment.get_rubric(assignment_id=assignment.id)
@@ -274,6 +325,9 @@ class API_Data:
         assignemnts = assignments service from codegrade.
         DESC: 
         Input all assignments from a course and create a zipfile 
+
+        NOTE:
+        only look at the assignments who's lock_dates/deadlines are already past
         '''
         print(f"Extracting all assignments from {self.course.name}:\n")
         for assignment in assignments:
@@ -282,7 +336,27 @@ class API_Data:
                 assignment_id=assignment.id,
                 latest_only=True,
                 )
-            if len(submissions) > 0:
+            #check if lockdate has past
+            now = datetime.datetime.now()
+            if assignment.lock_date:
+                lock_date = datetime.datetime(assignment.lock_date.year,
+                                              assignment.lock_date.month,
+                                              assignment.lock_date.day,
+                                              assignment.lock_date.hour,
+                                              assignment.lock_date.minute,
+                                              assignment.lock_date.second
+                                              )
+            else:
+                lock_date = datetime.datetime(assignment.deadline.year,
+                                              assignment.deadline.month,
+                                              assignment.deadline.day,
+                                              assignment.deadline.hour,
+                                              assignment.deadline.minute,
+                                              assignment.deadline.second
+                                              )
+            
+            after_lock_date = lock_date < now
+            if (len(submissions) > 0) & (after_lock_date):
                 output_dir = self.get_output_dir(self.course.name,assignment)
                 #output_dir = 'C:\\Users\\ejera\\testenv\\CS 472 - Development - Businge - Assignment 0'
                 students = {"submission_ids":{},"user_ids":{}}
@@ -309,6 +383,8 @@ class API_Data:
                 print(f'\nMaking "{fileName}" into a zip file')
                 #convert directory made into a zip archive
                 self.make_zip_archive(fileName,output_dir)
+            elif not after_lock_date:
+                print(f"Lock date ({lock_date}) has not been passed yet for {assignment.name}")
             else:
                 print(f'No submissions for {assignment.name}')
     #helper fucntion for extract csv
@@ -330,7 +406,27 @@ class API_Data:
                 assignment_id=assignment.id,
                 latest_only=True,
                 )
-            if len(submissions) > 0:
+            #check if lockdate has past
+            now = datetime.datetime.now()
+            if assignment.lock_date:
+                lock_date = datetime.datetime(assignment.lock_date.year,
+                                              assignment.lock_date.month,
+                                              assignment.lock_date.day,
+                                              assignment.lock_date.hour,
+                                              assignment.lock_date.minute,
+                                              assignment.lock_date.second
+                                              )
+            else:
+                lock_date = datetime.datetime(assignment.deadline.year,
+                                              assignment.deadline.month,
+                                              assignment.deadline.day,
+                                              assignment.deadline.hour,
+                                              assignment.deadline.minute,
+                                              assignment.deadline.second
+                                              )
+            
+            after_lock_date = lock_date < now
+            if (len(submissions) > 0)& after_lock_date:
                 #always create first row
                 rows = ['Id','Username','Name','Grade']
                 
@@ -355,8 +451,21 @@ class API_Data:
                 print("SUCCESS!!! Create file 'CS 472 - Development - Businge - Assignment 4.csv' has been created!")
                 #close csv file
                 fileCSV.close()
+            elif not after_lock_date:
+                print(f"Lock date ({lock_date}) has not been passed yet for {assignment.name}")
             else:
-                print(f"No submissions for {assignment.name}")
+                print(f'No submissions for {assignment.name}')
+
+    def delete_created_folder(self):
+        try:
+            shutil.rmtree(self.create_folder_path)
+            print(f"Directory '{self.create_folder_path}' and its contents deleted successfully.")
+        except FileNotFoundError:
+            print(f"Directory '{self.create_folder_path}' not found.")
+        except PermissionError:
+            print(f"You do not have permission to delete '{self.create_folder_path}'.")
+        except OSError as e:
+            print(f"Error deleting '{self.create_folder_path}': {e}")
             
 
 def main():
@@ -365,9 +474,13 @@ def main():
     #EDIT THE .ENV FILE AND INPUT YOUR USERNAME AND PASSWORD FOR USERNAME AND CG_PASSWORD
     #OR USE THIS INSTEAD TO LOGIN:
     client = codegrade.login_from_cli()
+
     cg_data = API_Data(client)
-    cg_data.extract_all_assignments(cg_data.assignments)
-    cg_data.extract_csv(cg_data.assignments)
+    cg_data.extract_all_assignments(cg_data.assignments)        #download all submissions of every assignment witht the lockdate past
+    cg_data.extract_csv(cg_data.assignments)                    #extrace the csv file witht he columns [ID,Username,Name,Grade]                       
+    cg_data.delete_created_folder()                             #delete the created folder
+    #print(cg_data.get_course_info())
+    #print(cg_data.get_rubric_grades_dict(cg_data.assignments))
     
 if __name__ == "__main__":
     main()

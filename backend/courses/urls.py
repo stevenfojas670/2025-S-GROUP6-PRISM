@@ -1,3 +1,4 @@
+
 """
 Courses URLs.
 """
@@ -15,4 +16,3 @@ router.register('enrollments', EnrollmentVS, basename='enrollment')
 
 urlpatterns = [
     path('', include(router.urls)),
-]
