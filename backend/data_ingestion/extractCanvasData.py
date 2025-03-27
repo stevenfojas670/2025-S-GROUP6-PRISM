@@ -216,6 +216,9 @@ class CanvasDataIngestion:
         if(len(self.errors)) > 0:
             DataIngestionError.createErrorJSON("canvas_data_errors",self.errors)
 
+'''
+    Main method to interface with script
+'''
 def main():
     ingest = CanvasDataIngestion('canvas_data')
     ingest.extractData()
