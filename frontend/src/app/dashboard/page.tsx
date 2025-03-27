@@ -28,21 +28,19 @@ import compareStudents from "./compareStudents";
 // waiting to see how the team is going to approach linking the pages
 
 function Dashboard() {
-    return (
-        <div>
-          <div>
-            <h1>"Hello, teacher name"</h1>
-          </div>
-            <div>
-              <button>Compare Students</button>
-              <button>Alerts</button>
-            </div>  
-          <div>
-              createSections();
-          </div>
-        </div>
-    );
-};
+  return (
+    <div>
+      <div>
+        <h1>"Hello, teacher name"</h1>
+      </div>
+      <div>
+        <button>Compare Students</button>
+        <button>Alerts</button>
+      </div>
+      <div>createSections();</div>
+    </div>
+  );
+}
 
 export default Dashboard;
 
@@ -61,6 +59,3 @@ export default Dashboard;
             </div>
         </div>
 */
-
-
-
