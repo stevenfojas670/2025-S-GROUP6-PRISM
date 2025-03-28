@@ -85,6 +85,7 @@ const LoginComponent: React.FC = () => {
 			setMessage({ type: "error", text: " Server error. Please try again."});
 		} finally {
 			setLoading(false);
+			setMessage({ type: "error", text: " Server error. Please try again."});
 		}
 	}
 
