@@ -1,0 +1,6 @@
+assignments
+courses
+data_ingestion
+prism
+prism_backend
+users
