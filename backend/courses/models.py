@@ -6,8 +6,7 @@ from assignments.models import Student
 
 
 class Professor(models.Model):
-    """
-    Represents a professor in the system.
+    """Represents a professor in the system.
 
     Attributes:
         user (OneToOneField): A one-to-one relationship with the User model,
@@ -18,6 +17,7 @@ class Professor(models.Model):
         __str__(): Returns the full name of the professor as a string
             (first name followed by last name).
     """
+
     """Professor Model."""
 
     user = models.OneToOneField(
@@ -27,12 +27,17 @@ class Professor(models.Model):
     )
 
     def __str__(self):
+        """Returns a string representation of the object, combining the first
+        name and last name of the associated user.
+
+        Returns:
+            str: The full name of the user in the format "FirstName LastName".
+        """
         return f"{self.user.first_name} {self.user.last_name}"
 
 
 class Class(models.Model):
-    """
-    Represents a class or course in the system.
+    """Represents a class or course in the system.
 
     Attributes:
         name (str): The name of the class. Must be unique and have a maximum length of 50 characters.
@@ -42,6 +47,7 @@ class Class(models.Model):
     Methods:
         __str__(): Returns the string representation of the class, which is its name.
     """
+
     """Class Model."""
 
     name = models.CharField(max_length=50, unique=True)
@@ -55,12 +61,19 @@ class Class(models.Model):
     )
 
     def __str__(self):
+        """Returns a string representation of the object.
+
+        This method is used to provide a human-readable representation of the instance,
+        typically for debugging or display purposes.
+
+        Returns:
+            str: The name of the object.
+        """
         return self.name
 
 
 class Semester(models.Model):
-    """
-    Represents a semester in the system.
+    """Represents a semester in the system.
 
     Attributes:
         name (str): The name of the semester. Must be unique and have a maximum length of 50 characters.
@@ -68,18 +81,26 @@ class Semester(models.Model):
     Methods:
         __str__(): Returns the string representation of the semester, which is its name.
     """
+
     """Semesters Model."""
 
     name = models.CharField(max_length=50, unique=True)
 
     def __str__(self):
+        """Returns a string representation of the object.
+
+        This method is used to provide a human-readable representation of the object,
+        typically for debugging or displaying the object in the Django admin interface.
+
+        Returns:
+            str: The name of the object.
+        """
         return self.name
 
 
 class ProfessorClassSection(models.Model):
-    """
-    Represents a mapping between a professor, a class instance, and a semester,
-    with an optional section number.
+    """Represents a mapping between a professor, a class instance, and a
+    semester, with an optional section number.
 
     Attributes:
         professor (ForeignKey): A foreign key to the Professor model, representing
@@ -96,6 +117,7 @@ class ProfessorClassSection(models.Model):
             instance in the format:
             "<professor> - <class_instance> - <semester> (Section <section_number>)".
     """
+
     """Mapping Professors to Class Sections."""
 
     professor = models.ForeignKey(
@@ -108,6 +130,14 @@ class ProfessorClassSection(models.Model):
     section_number = models.IntegerField(blank=True, null=True)
 
     def __str__(self):
+        """Returns a string representation of the course instance, including
+        the professor, class instance, semester, and section number in a
+        formatted manner.
+
+        Returns:
+            str: A formatted string containing the professor, class instance, semester,
+                 and section number.
+        """
         return (
             f"{self.professor} - {self.class_instance} - {self.semester} "
             f"(Section {self.section_number})"
@@ -137,4 +167,13 @@ class Enrollment(models.Model):
         unique_together = ("student", "class_instance", "semester")
 
     def __str__(self):
+        """Returns a string representation of the enrollment instance.
+
+        The string includes the student's name, the class instance they are
+        enrolled in, and the semester of enrollment.
+
+        Returns:
+            str: A formatted string in the format
+                 "<student> enrolled in <class_instance> (<semester>)".
+        """
         return f"{self.student} enrolled in {self.class_instance} " f"({self.semester})"

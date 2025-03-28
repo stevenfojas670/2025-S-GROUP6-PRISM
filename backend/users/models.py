@@ -11,11 +11,38 @@ from django.db import models
 
 
 class UserManager(BaseUserManager):
-    """Manager class for User model."""
+    """UserManager is a custom manager for the User model that provides methods
+    for creating regular users and superusers.
+
+    It extends the BaseUserManager class provided by Django.
+    Methods:
+        create_user(email, password, **extra_fields):
+            Creates and returns a new user with the given email and password. Additional
+            fields can be passed as keyword arguments. If a "username" is not provided in
+            the extra fields, it defaults to the email address. Raises a ValueError if the
+            email is not provided.
+        create_superuser(email, password, **extra_fields):
+            Creates and returns a new superuser with the given email and password. This
+            method sets the is_admin, is_staff, and is_superuser flags to True. Additional
+            fields can also be passed as keyword arguments.
+    """
 
     # **extra field allows us to pass a dictionary with extra fields that will be inserted into hte user
     # example first_name, last_name etc
     def create_user(self, email, password, **extra_fields):
+        """Creates and returns a new user with the given email and password.
+
+        Args:
+            email (str): The email address of the user. This is required.
+            password (str): The password for the user. This will be hashed before saving.
+            **extra_fields: Additional fields to include when creating the user. If a
+                            "username" is not provided in extra_fields, it will default
+                            to the email address.
+        Raises:
+            ValueError: If the email is not provided.
+        Returns:
+            User: The created user instance.
+        """
         if not email:
             raise ValueError("Users must have an email address")
 
@@ -33,6 +60,20 @@ class UserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password, **extra_fields):
+        """Creates and returns a superuser with the given email, password, and
+        extra fields.
+
+        A superuser is a user with elevated permissions, including admin, staff,
+        and superuser privileges.
+
+        Args:
+            email (str): The email address of the superuser.
+            password (str): The password for the superuser.
+            **extra_fields: Additional fields to set on the superuser.
+
+        Returns:
+            user: The created superuser instance.
+        """
         user = self.create_user(email, password, **extra_fields)
         user.is_admin = True
         user.is_staff = True
@@ -42,7 +83,24 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractUser, PermissionsMixin):
-    """Custom User model for Professors."""
+    """User Model This model represents a custom user in the system, extending
+    Django's AbstractUser and PermissionsMixin to provide additional
+    functionality and customization.
+
+    Attributes:
+        email (EmailField): The unique email address of the user, used as the username for authentication.
+        first_name (CharField): The first name of the user, with a maximum length of 50 characters.
+        last_name (CharField): The last name of the user, with a maximum length of 50 characters.
+        is_admin (BooleanField): A flag indicating whether the user has administrative privileges. Defaults to False.
+        objects (UserManager): The custom manager for the User model.
+        USERNAME_FIELD (str): Specifies the field to be used as the unique identifier for authentication. Set to "email".
+        REQUIRED_FIELDS (list): A list of fields required when creating a user. Includes "first_name" and "last_name".
+        groups (ManyToManyField): A many-to-many relationship to the Group model, with a custom related name "custom_user_set".
+        user_permissions (ManyToManyField): A many-to-many relationship to the Permission model, with a custom related name
+            "custom_user_permissions_set".
+    Methods:
+        __str__(): Returns a string representation of the user in the format "FirstName LastName (Email)".
+    """
 
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=50)
@@ -63,4 +121,12 @@ class User(AbstractUser, PermissionsMixin):
     )
 
     def __str__(self):
+        """Returns a string representation of the user instance.
+
+        The string includes the user's first name, last name, and email
+        in the format: "FirstName LastName (email@example.com)".
+
+        Returns:
+            str: A formatted string representing the user.
+        """
         return f"{self.first_name} {self.last_name} ({self.email})"

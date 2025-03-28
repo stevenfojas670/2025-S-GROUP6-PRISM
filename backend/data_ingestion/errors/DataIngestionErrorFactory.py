@@ -9,6 +9,17 @@ import data_ingestion.errors.DataIngestionError as error
 
 
 class DataIngestionErrorFactory:
+    """A factory class for creating instances of data ingestion errors.
+
+    Methods:
+        createError():
+            Creates and returns an instance of DataIngestionError.
+    """
 
     def createError(self):
+        """Creates and returns an instance of the DataIngestionError class.
+
+        Returns:
+            DataIngestionError: An instance of the DataIngestionError class.
+        """
         return error.DataIngestionError()

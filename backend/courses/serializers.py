@@ -139,10 +139,9 @@ class ProfessorClassSectionSerializer(serializers.ModelSerializer):
 # object when creating/updating records.
 # Similar structure to PCSSerializer
 class EnrollmentSerializer(serializers.ModelSerializer):
-    """
-    EnrollmentSerializer is a Django REST Framework (DRF) serializer for the Enrollment model.
-    It is designed to handle both read and write operations efficiently by customizing the
-    representation of related fields.
+    """EnrollmentSerializer is a Django REST Framework (DRF) serializer for the
+    Enrollment model. It is designed to handle both read and write operations
+    efficiently by customizing the representation of related fields.
 
     Attributes:
         student (StringRelatedField): A read-only field that provides a string representation
@@ -177,6 +176,7 @@ class EnrollmentSerializer(serializers.ModelSerializer):
     of related objects for read operations, while allowing efficient write operations using
     primary keys. It also reduces database queries, improving performance.
     """
+
     """Enrollment Model Serializer."""
 
     # For read operations, show full student/class/semester details. without

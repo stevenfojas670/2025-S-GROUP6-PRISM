@@ -13,9 +13,41 @@ User = get_user_model()
 
 
 class GoogleAuthSerializer(serializers.Serializer):
+    """Serializer for handling Google OAuth2 authentication.
+
+    Attributes:
+        id_token (serializers.CharField): A required field for the Google ID token.
+    Methods:
+        validate(attrs: dict):
+            Validates the provided Google ID token, verifies its authenticity, and retrieves user information.
+            If the token is valid and the user exists in the database, generates and returns JWT tokens
+            (access and refresh) along with user details and token expiration times.
+            Args:
+                attrs (dict): A dictionary containing the ID token.
+            Returns:
+                dict: A dictionary containing the access token, refresh token, user details, and token expiration times.
+            Raises:
+                serializers.ValidationError: If the token is invalid or the email is missing from the Google token.
+    """
+
     id_token = serializers.CharField()
 
     def validate(self, attrs: dict):
+        """Validates the provided attributes by verifying the Google ID token
+        and generating JWT tokens for the user.
+
+        Args:
+            attrs (dict): A dictionary containing the attributes to validate.
+                          Expected to include the "id_token" key.
+        Returns:
+            dict: A dictionary containing the generated access and refresh tokens,
+                  user details (primary key, email, first name, last name),
+                  and token expiration timestamps.
+        Raises:
+            serializers.ValidationError: If the Google ID token is invalid,
+                                         does not contain an email,
+                                         or if the user does not exist.
+        """
         id_token_str = attrs.get("id_token")
         try:
             # Verify Google's id_token

@@ -9,8 +9,7 @@ from django_filters import rest_framework as filters
 
 
 class ProfessorVS(viewsets.ModelViewSet):
-    """
-    A ViewSet for managing Professor objects.
+    """A ViewSet for managing Professor objects.
 
     This ViewSet provides CRUD operations for the Professor model and supports
     filtering, ordering, and searching based on specific fields.
@@ -24,6 +23,7 @@ class ProfessorVS(viewsets.ModelViewSet):
         ordering (list): Default ordering for the queryset. Defaults to `user__first_name`.
         search_fields (list): Fields that can be used for search queries. Supports searching by `user__first_name`.
     """
+
     """Professor Model ViewSet."""
 
     queryset = models.Professor.objects.all()
@@ -43,8 +43,7 @@ class ProfessorVS(viewsets.ModelViewSet):
 
 
 class SemesterVS(viewsets.ModelViewSet):
-    """
-    SemesterVS is a ModelViewSet for managing Semester objects.
+    """SemesterVS is a ModelViewSet for managing Semester objects.
 
     This viewset provides CRUD operations for the Semester model, along with
     filtering, ordering, and searching capabilities.
@@ -63,6 +62,7 @@ class SemesterVS(viewsets.ModelViewSet):
         search_fields: A list of fields that can be searched using
             case-insensitive partial matches.
     """
+
     """Semester Model ViewSet."""
 
     queryset = models.Semester.objects.all()
@@ -81,8 +81,7 @@ class SemesterVS(viewsets.ModelViewSet):
 
 
 class ClassVS(viewsets.ModelViewSet):
-    """
-    A viewset for managing Class objects.
+    """A viewset for managing Class objects.
 
     This viewset provides CRUD operations for the Class model, along with
     filtering, ordering, and searching capabilities.
@@ -103,6 +102,7 @@ class ClassVS(viewsets.ModelViewSet):
         search_fields (list): A list of fields that can be used for searching.
             Currently supports searching by 'name'.
     """
+
     """Class Model ViewSet."""
 
     queryset = models.Class.objects.all()
@@ -121,8 +121,7 @@ class ClassVS(viewsets.ModelViewSet):
 
 
 class ProfessorClassSectionVS(viewsets.ModelViewSet):
-    """
-    ProfessorClassSection Model ViewSet.
+    """ProfessorClassSection Model ViewSet.
 
     This viewset provides CRUD operations for the ProfessorClassSection model
     and supports filtering, ordering, and searching on related fields.
@@ -149,6 +148,7 @@ class ProfessorClassSectionVS(viewsets.ModelViewSet):
             - "class_instance__name"
             - "semester__name"
     """
+
     """ProfessorClassSection Model ViewSet."""
 
     queryset = models.ProfessorClassSection.objects.all()
@@ -176,8 +176,7 @@ class ProfessorClassSectionVS(viewsets.ModelViewSet):
 
 
 class EnrollmentVS(viewsets.ModelViewSet):
-    """
-    A ViewSet for managing Enrollment objects.
+    """A ViewSet for managing Enrollment objects.
 
     This ViewSet provides CRUD operations for the Enrollment model and supports
     filtering, ordering, and searching functionalities.
@@ -201,6 +200,7 @@ class EnrollmentVS(viewsets.ModelViewSet):
             - "class_instance__name": Search by the name of the class instance.
             - "semester__name": Search by the name of the semester.
     """
+
     """Enrollment Model ViewSet."""
 
     queryset = models.Enrollment.objects.all()

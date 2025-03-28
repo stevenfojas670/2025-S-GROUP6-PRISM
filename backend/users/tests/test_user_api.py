@@ -12,6 +12,14 @@ USER_LIST_URL = reverse("user:user-list")
 
 # A helper to generate the detail URL for a specific user ID.
 def detail_user_url(user_id):
+    """Generate the URL for the detail view of a specific user.
+
+    Args:
+        user_id (int): The ID of the user for which the detail URL is generated.
+
+    Returns:
+        str: The URL string for the user's detail view.
+    """
     return reverse("user:user-detail", args=[user_id])
 
 
@@ -21,9 +29,52 @@ def create_user(**params):
 
 
 class PublicUserApiTests(TestCase):
-    """Test the public (unauthenticated) features of the user API."""
+    """Unit tests for the Public User API. This test suite verifies the
+    functionality of the public-facing user API, including user creation,
+    retrieval, filtering, updating, and deletion. It ensures that the API
+    behaves as expected under various scenarios, such as valid and invalid
+    input, duplicate data, and edge cases.
+
+    Test Cases:
+    - `test_create_user_success`: Verifies that a user can be successfully created
+        with valid input.
+    - `test_user_with_email_exist_error`: Ensures that attempting to create a user
+        with an existing email returns a 400 error.
+    - `test_password_too_short_error`: Confirms that a password shorter than 5
+        characters results in a 400 error.
+    - `test_create_user_also_creates_professor`: Checks that creating a user also
+        creates a corresponding Professor entry.
+    - `test_list_users`: Tests that the API can list all users.
+    - `test_filter_users_by_email`: Verifies that users can be filtered by email.
+    - `test_filter_users_by_first_name`: Ensures that users can be filtered by
+        their first name.
+    - `test_filter_users_by_last_name`: Confirms that users can be filtered by
+        their last name.
+    - `test_order_users_by_first_name`: Tests that users can be ordered by their
+        first name.
+    - `test_retrieve_user_success`: Verifies that a single user can be retrieved
+        by their ID.
+    - `test_retrieve_user_not_found`: Ensures that attempting to retrieve a
+        non-existent user returns a 404 error.
+    - `test_update_user_not_found`: Confirms that updating a non-existent user
+        returns a 404 error.
+    - `test_update_user_missing_required_field`: Tests that updating a user
+        without required fields returns a 400 error.
+    - `test_partial_update_user_success`: Verifies that a user can be partially
+        updated using PATCH.
+    - `test_partial_update_user_duplicate_email`: Ensures that attempting to
+        update a user with a duplicate email returns a 400 error.
+    - `test_delete_user`: Tests that a user can be deleted, or that the API
+        returns a 405 error if deletion is not allowed.
+    """
 
     def setUp(self):
+        """Set up the test client for API requests.
+
+        This method initializes an instance of `APIClient` and assigns it to
+        `self.client`, allowing the test cases to perform HTTP requests
+        to the API endpoints.
+        """
         self.client = APIClient()
 
     def test_create_user_success(self):

@@ -9,11 +9,38 @@ from rest_framework import status
 
 
 class GoogleAuthView(APIView):
+    """A view for handling Google authentication.
+
+    This view allows users to authenticate using Google OAuth and sets
+    JWT cookies for access and refresh tokens upon successful authentication.
+    Attributes:
+        permission_classes (list): Specifies the permissions required to access this view.
+                                   In this case, it allows any user to access.
+        throttle_scope (str): Defines the throttle scope for rate limiting.
+        serializer_class (GoogleAuthSerializer): The serializer used to validate the
+                                                 incoming request data.
+    Methods:
+        post(request: Request):
+            Handles POST requests for Google authentication.
+            Validates the request data using the serializer, retrieves the access
+            and refresh tokens, and sets them as cookies in the response.
+    """
+
     permission_classes = [AllowAny]
     throttle_scope = "auth"
     serializer_class = GoogleAuthSerializer
 
     def post(self, request: Request):
+        """Handles POST requests to authenticate a user and set JWT cookies.
+
+        Args:
+            request (Request): The HTTP request object containing user credentials.
+        Returns:
+            Response: A response object containing validated data and HTTP status 200.
+                      JWT access and refresh tokens are set as cookies in the response.
+        Raises:
+            ValidationError: If the serializer data is invalid.
+        """
         # Retrieve the request
         serializer = self.serializer_class(data=request.data)
 
@@ -34,4 +61,13 @@ class GoogleAuthView(APIView):
 
 
 class CustomLoginView(LoginView):
+    """CustomLoginView extends the default LoginView to include additional
+    functionality.
+
+    Attributes:
+        throttle_scope (str): Defines the scope for throttling login attempts.
+                              This is used to limit the rate of login requests
+                              to prevent abuse or brute-force attacks.
+    """
+
     throttle_scope = "auth"

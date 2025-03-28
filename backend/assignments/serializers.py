@@ -7,7 +7,14 @@ from courses import serializers as courses_serializer
 
 
 class StudentSerializer(serializers.ModelSerializer):
-    """Student Models Serializers."""
+    """Serializer for the Student model.
+
+    This serializer converts Student model instances into JSON format and vice versa.
+    It includes all fields of the Student model.
+    Attributes:
+        Meta (class): Contains metadata for the serializer, including the model to
+        serialize and the fields to include.
+    """
 
     class Meta:
         model = models.Student
@@ -15,7 +22,22 @@ class StudentSerializer(serializers.ModelSerializer):
 
 
 class FlaggedStudentSerializer(serializers.ModelSerializer):
-    """Flagged Student Models Serializers."""
+    """Serializer for the FlaggedStudent model.
+
+    This serializer is used to handle the serialization and deserialization of
+    FlaggedStudent objects. It includes all fields of the model and provides
+    custom handling for the `student` and `student_id` fields.
+    Attributes:
+        student (StudentSerializer): A nested serializer for the related Student
+            object. This field is read-only.
+        student_id (serializers.PrimaryKeyRelatedField): A write-only field that
+            allows setting the related Student object using its primary key. This
+            field maps to the `student` field in the model.
+    Meta:
+        model (models.FlaggedStudent): The model associated with this serializer.
+        fields (str): Specifies that all fields of the model should be included
+            in the serialized output.
+    """
 
     class Meta:
         model = models.FlaggedStudent
@@ -31,7 +53,26 @@ class FlaggedStudentSerializer(serializers.ModelSerializer):
 
 
 class AssignmentSerializer(serializers.ModelSerializer):
-    """Assignment Models Serializers."""
+    """AssignmentSerializer is a serializer for the Assignment model.
+
+    It provides functionality
+    for both read and write operations with nested relationships.
+    Attributes:
+        professor (ProfessorSerializer): A read-only nested serializer for the professor
+            associated with the assignment.
+        class_instance (ClassSerializer): A read-only nested serializer for the class
+            instance associated with the assignment.
+        professor_id (PrimaryKeyRelatedField): A write-only field that allows the client
+            to specify the primary key (ID) of the professor when creating or updating
+            an assignment.
+        class_instance_id (PrimaryKeyRelatedField): A write-only field that allows the
+            client to specify the primary key (ID) of the class instance when creating
+            or updating an assignment.
+    Meta:
+        model (Assignment): The model that this serializer is based on.
+        fields (str): Specifies that all fields of the model should be included in the
+            serialized output.
+    """
 
     class Meta:
         model = models.Assignment
@@ -59,7 +100,28 @@ class AssignmentSerializer(serializers.ModelSerializer):
 
 
 class SubmissionSerializer(serializers.ModelSerializer):
-    """Submission Models Serializers."""
+    """SubmissionSerializer is a serializer for the Submission model.
+
+    It provides functionality
+    for both read and write operations with nested relationships.
+    Attributes:
+        professor (ProfessorSerializer): A read-only nested serializer for the professor
+            associated with the submission.
+        student (StudentSerializer): A read-only nested serializer for the student
+            associated with the submission.
+        assignment (AssignmentSerializer): A read-only nested serializer for the assignment
+            associated with the submission.
+        professor_id (PrimaryKeyRelatedField): A write-only field to accept the ID of the
+            professor associated with the submission.
+        assignment_id (PrimaryKeyRelatedField): A write-only field to accept the ID of the
+            assignment associated with the submission.
+        student_id (PrimaryKeyRelatedField): A write-only field to accept the ID of the
+            student associated with the submission.
+    Meta:
+        model (Submission): The model that this serializer is based on.
+        fields (str): Specifies that all fields of the model should be included in the
+            serialized output.
+    """
 
     class Meta:
         model = models.Submission
@@ -89,7 +151,21 @@ class SubmissionSerializer(serializers.ModelSerializer):
 
 
 class FlaggedSubmissionSerializer(serializers.ModelSerializer):
-    """Flagged Submission Models Serializers."""
+    """FlaggedSubmissionSerializer is a serializer for the FlaggedSubmission
+    model.
+
+    This serializer handles both read and write operations:
+    - For read operations, it provides nested details of related models (e.g., similarity_with and submission).
+    - For write operations, it accepts only the IDs of related models (e.g., student_id and submission_id).
+    Attributes:
+        similarity_with (StudentSerializer): A read-only field that provides nested details of related students.
+        submission (SubmissionSerializer): A read-only field that provides nested details of the related submission.
+        student_id (PrimaryKeyRelatedField): A write-only field that accepts the ID of a related student.
+        submission_id (PrimaryKeyRelatedField): A write-only field that accepts the ID of a related submission.
+    Meta:
+        model (FlaggedSubmission): The model associated with this serializer.
+        fields (str): Specifies that all fields of the model should be included in the serialization.
+    """
 
     class Meta:
         model = models.FlaggedSubmission
@@ -113,7 +189,26 @@ class FlaggedSubmissionSerializer(serializers.ModelSerializer):
 
 
 class ConfirmedCheaterSerializer(serializers.ModelSerializer):
-    """Confirmed Cheater Models Serializers."""
+    """ConfirmedCheaterSerializer is a serializer for the ConfirmedCheater
+    model.
+
+    This serializer is used to handle the serialization and deserialization of
+    ConfirmedCheater objects. It includes all fields from the model and provides
+    additional functionality for handling related fields.
+    Attributes:
+        student (StudentSerializer): A nested serializer for the related Student
+            object. This field is read-only.
+        professor (ProfessorSerializer): A nested serializer for the related
+            Professor object. This field is read-only.
+        student_id (PrimaryKeyRelatedField): A write-only field for specifying the
+            primary key of the related Student object. Maps to the `student` field.
+        professor_id (PrimaryKeyRelatedField): A write-only field for specifying the
+            primary key of the related Professor object. Maps to the `professor` field.
+    Meta:
+        model (ConfirmedCheater): The model that this serializer is based on.
+        fields (str): Specifies that all fields in the model should be included in
+            the serialization.
+    """
 
     class Meta:
         model = models.ConfirmedCheater
