@@ -5,7 +5,7 @@
     data ingestion. Every builder will create a new error, and we can
     add the error information we need based on what we're checking.
 '''
-import errors.DataIngestionErrorFactory as ef
+import data_ingestion.errors.DataIngestionErrorFactory as ef
 
 class DataIngestionErrorBuilder:
 

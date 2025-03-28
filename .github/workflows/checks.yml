@@ -74,7 +74,7 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/postgres
         run: |
           cd backend
-          coverage run manage.py test -v 2
+          coverage run -m pytest
           coverage report
           coverage html
 

@@ -31,6 +31,7 @@ hyperlink==21.0.0
 idna==3.10
 incremental==24.7.2
 inflection==0.5.1
+iniconfig==2.1.0
 jsonschema==4.23.0
 jsonschema-specifications==2024.10.1
 msgpack==1.1.0
@@ -39,8 +40,10 @@ npm==0.1.1
 numpy==2.2.3
 oauthlib==3.2.2
 optional-django==0.1.0
+packaging==24.2
 pandas==2.2.3
 perl==1.0.0
+pluggy==1.5.0
 psycopg==3.2.4
 psycopg2-binary==2.9.10
 pyasn1==0.6.1
@@ -48,6 +51,9 @@ pyasn1_modules==0.4.1
 pycparser==2.22
 PyJWT==2.9.0
 pyOpenSSL==25.0.0
+pytest==8.3.5
+pytest-cov==6.0.0
+pytest-django==4.10.0
 python-dateutil==2.9.0.post0
 python-decouple==3.8
 python-dotenv==1.1.0
