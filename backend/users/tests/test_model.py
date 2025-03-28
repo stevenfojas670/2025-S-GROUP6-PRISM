@@ -104,6 +104,6 @@ class UserModelTest(TestCase):
             first_name='Min',
             last_name='User'
         )
-        self.assertTrue(user.is_active)   # Typically active by default.
-        self.assertFalse(user.is_staff)    # Assuming non-staff by default.
+        self.assertTrue(user.is_active)   
+        self.assertFalse(user.is_staff)
         self.assertFalse(user.is_superuser)

@@ -1,5 +1,5 @@
 """
-Expanded tests for the User API to increase coverage of user views.
+Expanded tests for the User API
 """
 
 from django.test import TestCase
@@ -70,7 +70,6 @@ class PublicUserApiTests(TestCase):
     def test_create_user_also_creates_professor(self):
         """
         Test that creating a user via POST also creates a Professor entry
-        (as per perform_create logic in the UserVS).
         """
         payload = {
             'email': 'professor@example.com',
@@ -217,7 +216,6 @@ class PublicUserApiTests(TestCase):
     def test_update_user_missing_required_field(self):
         """
         Test updating a user but omitting a field the serializer expects
-        (depends on how your serializer is configured).
         """
         user = create_user(
             email='required@example.com',
@@ -256,7 +254,6 @@ class PublicUserApiTests(TestCase):
     def test_partial_update_user_duplicate_email(self):
         """
         Test partial update with an email that already exists
-        (if your serializer enforces unique email).
         """
         user1 = create_user(
             email='duplicate1@example.com',
@@ -280,7 +277,6 @@ class PublicUserApiTests(TestCase):
     def test_delete_user(self):
         """
         Test deleting a user (DELETE /user/<id>/).
-        Only works if your ModelViewSet allows destroy.
         """
         user = create_user(email='delete@example.com', password='pass123')
         url = detail_user_url(user.id)
