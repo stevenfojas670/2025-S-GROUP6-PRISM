@@ -100,9 +100,9 @@ class ProfessorAPITests(APITestCase):
     def test_list_professors(self):
         """Test case for retrieving a list of professors.
 
-        This test ensures that the API endpoint for listing professors
-        returns a successful HTTP 200 response and that the number of
-        professors in the response matches the expected count.
+        This test ensures that the API endpoint for listing professors returns
+        a successful HTTP 200 response and that the number of professors in the
+        response matches the expected count.
         """
         url = reverse("professor-list")
         res = self.client.get(url)

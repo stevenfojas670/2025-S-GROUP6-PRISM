@@ -60,8 +60,8 @@ class PermissionTests(TestCase):
         """Set up the test environment for permission tests.
 
         This method initializes the APIRequestFactory for creating mock
-        requests and sets up user groups for "Professor" and "TA" to be
-        used in the tests.
+        requests and sets up user groups for "Professor" and "TA" to be used in
+        the tests.
         """
         self.factory = APIRequestFactory()
         # Create groups for Professor and TA

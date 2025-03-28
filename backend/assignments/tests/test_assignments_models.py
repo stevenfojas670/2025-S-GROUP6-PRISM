@@ -291,9 +291,9 @@ class SubmissionModelTests(TestCase):
     def test_submission_str(self):
         """Tests the string representation of the Submission model.
 
-        This test verifies that the __str__ method of the Submission
-        model returns the expected string format, which includes the
-        student's name and the assignment's name.
+        This test verifies that the __str__ method of the Submission model
+        returns the expected string format, which includes the student's name
+        and the assignment's name.
         """
 
         submission = assign_models.Submission.objects.create(
@@ -380,11 +380,10 @@ class FlaggedSubmissionModelTests(TestCase):
     def test_flagged_submission_str(self):
         """Test the string representation of the FlaggedSubmission model.
 
-        This test verifies that the __str__ method of the
-        FlaggedSubmission model returns the expected string format,
-        which includes the file name and the percentage value. It also
-        ensures that the similarity relation with a student can be added
-        successfully.
+        This test verifies that the __str__ method of the FlaggedSubmission
+        model returns the expected string format, which includes the file name
+        and the percentage value. It also ensures that the similarity relation
+        with a student can be added successfully.
         """
 
         flagged = assign_models.FlaggedSubmission.objects.create(
@@ -455,10 +454,9 @@ class FlaggedStudentModelTests(TestCase):
     def test_flagged_student_str(self):
         """Test the string representation of the FlaggedStudent model.
 
-        This test ensures that the __str__ method of the FlaggedStudent
-        model returns the expected string format, which includes the
-        student's name and the number of times they have been flagged
-        over the threshold.
+        This test ensures that the __str__ method of the FlaggedStudent model
+        returns the expected string format, which includes the student's name
+        and the number of times they have been flagged over the threshold.
         """
         """Test string representation of FlaggedStudent."""
         flagged_student = assign_models.FlaggedStudent.objects.create(
@@ -503,10 +501,9 @@ class ConfirmedCheaterModelTests(TestCase):
     def test_confirmed_cheater_str(self):
         """Test the string representation of the ConfirmedCheater model.
 
-        This test verifies that the __str__ method of the
-        ConfirmedCheater model returns the expected string format, which
-        includes the student's name, the confirmation date, and the
-        threshold used for confirmation.
+        This test verifies that the __str__ method of the ConfirmedCheater
+        model returns the expected string format, which includes the student's
+        name, the confirmation date, and the threshold used for confirmation.
         """
 
         confirmed = assign_models.ConfirmedCheater.objects.create(

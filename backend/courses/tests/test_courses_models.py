@@ -68,8 +68,8 @@ class ModelTests(TestCase):
         """Test the string representation of the Professor model.
 
         This test ensures that the __str__ method of the Professor model
-        returns the expected string, which is a combination of the first
-        name and last name of the associated user.
+        returns the expected string, which is a combination of the first name
+        and last name of the associated user.
         """
         user = create_user(first_name="Alice", last_name="Smith")
         professor = course_models.Professor.objects.create(user=user)
@@ -79,9 +79,8 @@ class ModelTests(TestCase):
     def test_class_str(self):
         """Test the string representation of the Class model.
 
-        This test ensures that the __str__ method of the Class model
-        returns the expected string representation, which is the name of
-        the class.
+        This test ensures that the __str__ method of the Class model returns
+        the expected string representation, which is the name of the class.
         """
         class_obj = course_models.Class.objects.create(name="Math 101")
         self.assertEqual(str(class_obj), "Math 101")
@@ -89,9 +88,8 @@ class ModelTests(TestCase):
     def test_semester_str(self):
         """Test the string representation of the Semester model.
 
-        This test ensures that the __str__ method of the Semester model
-        returns the correct string representation, which is the name of
-        the semester.
+        This test ensures that the __str__ method of the Semester model returns
+        the correct string representation, which is the name of the semester.
         """
         semester = course_models.Semester.objects.create(name="Fall 2023")
         self.assertEqual(str(semester), "Fall 2023")
@@ -178,10 +176,10 @@ class ModelTests(TestCase):
         """Tests that the Semester model enforces a unique constraint on the
         'name' field.
 
-        This test creates a Semester instance with a specific name and
-        then attempts to create another Semester instance with the same
-        name. It verifies that an IntegrityError is raised, ensuring
-        that duplicate names are not allowed.
+        This test creates a Semester instance with a specific name and then
+        attempts to create another Semester instance with the same name. It
+        verifies that an IntegrityError is raised, ensuring that duplicate
+        names are not allowed.
         """
         course_models.Semester.objects.create(name="UniqueSemester")
         with self.assertRaises(IntegrityError):

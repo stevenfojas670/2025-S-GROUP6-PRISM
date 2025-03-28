@@ -21,10 +21,10 @@ class UserModelTest(TestCase):
     def test_create_user_successfuly(self):
         """Test the successful creation of a user.
 
-        This test verifies that a user can be created with the specified
-        email, password, first name, and last name. It ensures that the
-        created user's attributes match the provided values and that the
-        password is correctly set and can be validated.
+        This test verifies that a user can be created with the specified email,
+        password, first name, and last name. It ensures that the created user's
+        attributes match the provided values and that the password is correctly
+        set and can be validated.
         """
         email = "test@example.com"
         password = "123test"
@@ -129,10 +129,10 @@ class UserModelTest(TestCase):
     def test_unique_email_constraint(self):
         """Test to ensure that the email field in the user model is unique.
 
-        This test creates a user with a specific email and then attempts
-        to create another user with the same email. The second creation
-        should raise an IntegrityError due to the unique constraint on
-        the email field.
+        This test creates a user with a specific email and then attempts to
+        create another user with the same email. The second creation should
+        raise an IntegrityError due to the unique constraint on the email
+        field.
         """
         email = "unique@example.com"
         get_user_model().objects.create_user(

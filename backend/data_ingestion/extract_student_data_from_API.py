@@ -1,8 +1,8 @@
 """Created by Eli Rosales, 3/2/2025.
 
-This script is a part of the Data Ingestion phase of PRISM. This script
-will automate the need for manual data extraction from codegrade. It
-will extract the csv with
+This script is a part of the Data Ingestion phase of PRISM. This script will
+automate the need for manual data extraction from codegrade. It will extract
+the csv with
 """
 
 import io

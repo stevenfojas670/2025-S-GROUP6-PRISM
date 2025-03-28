@@ -1,8 +1,8 @@
 """Created by Daniel Levy, 3/17/2025.
 
 This is a simple error builder class that can be used for PRISM's data
-ingestion. Every builder will create a new error, and we can add the
-error information we need based on what we're checking.
+ingestion. Every builder will create a new error, and we can add the error
+information we need based on what we're checking.
 """
 
 import data_ingestion.errors.DataIngestionErrorFactory as ef
