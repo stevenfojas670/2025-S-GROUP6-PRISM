@@ -1,5 +1,6 @@
 from django.apps import AppConfig
 
-class DataIngestionConfig(AppConfig):
+
+class AssignmentsConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'data_ingestion'
+    name = 'assignments'

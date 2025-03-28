@@ -1,3 +1,4 @@
+
 """
 Courses Views with Enhanced Filtering, Ordering, and Search Capabilities.
 """
@@ -62,3 +63,21 @@ class ProfessorClassSectionVS(viewsets.ModelViewSet):
     # Allow searching by the names of the class instance and semester.
     search_fields = ['class_instance__name', 'semester__name']
 
+
+
+class EnrollmentVS(viewsets.ModelViewSet):
+    """Enrollment Model ViewSet."""
+    queryset = models.Enrollment.objects.all()
+    serializer_class = serializers.EnrollmentSerializer
+    permission_classes = [IsAuthenticated]  
+    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
+
+    # Allow filtering by student, class, and semester. Similar idea to other VS
+    filterset_fields = {
+        'student__id': ['exact'],
+        'class_instance__id': ['exact'],
+        'semester__id': ['exact']
+    }
+    ordering_fields = ['enrolled_date', 'semester__name']
+    ordering = ['enrolled_date']
+    search_fields = ['student__user__first_name', 'class_instance__name', 'semester__name']

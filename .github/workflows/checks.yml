@@ -9,9 +9,9 @@ jobs:
       postgres:
         image: postgres:13
         env:
-          POSTGRES_USER: ${{ secrets.DB_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.DB_NAME }}
+          POSTGRES_USER: donessie
+          POSTGRES_PASSWORD: Emily!2013
+          POSTGRES_DB: prism_db
         ports:
           - 5432:5432
         options: >-
@@ -31,47 +31,24 @@ jobs:
 
       - name: Install requirements
         run: |
-          pip install -r requirements/django-venv-requirements_2-23-2025.txt
-          pip install -r requirements/apt-requirements_2-23-2025.txt
+          pip install -r backend/requirements.txt
 
       - name: Wait for PostgreSQL to be ready
         run: sleep 10
 
       - name: Make Migrations
-        env:
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          DEBUG: ${{ secrets.DEBUG }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_PORT: ${{ secrets.DB_PORT }}
         run: |
           cd backend
           python manage.py makemigrations
 
       - name: Migrate Database
-        env:
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_PORT: ${{ secrets.DB_PORT }}
         run: |
           cd backend
           python manage.py migrate
 
       - name: Run tests with coverage
         env:
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          DEBUG: ${{ secrets.DEBUG }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_PORT: ${{ secrets.DB_PORT }}
-          DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/postgres
+          DATABASE_URL: postgres://donessie:Emily!2013@localhost:5432/prism_db
         run: |
           cd backend
           coverage run manage.py test -v 2
