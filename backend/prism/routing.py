@@ -5,4 +5,3 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 websocket_urlpatterns = [
     re_path(r"ws/$", MyConsumer.as_asgi()),
 ]
-

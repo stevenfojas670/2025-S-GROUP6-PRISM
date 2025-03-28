@@ -1,25 +1,27 @@
 """
 Tests for the Courses models.
 """
+
 from django.test import TestCase
 from django.db.utils import IntegrityError
 from django.contrib.auth import get_user_model
 
 from courses import models as course_models
 
-def create_user(email='test@example.com', password='testpass', first_name='Test', last_name='User'):
+
+def create_user(
+    email="test@example.com", password="testpass", first_name="Test", last_name="User"
+):
     """Helper function to create a test user."""
     return get_user_model().objects.create_user(
-        email=email,
-        password=password,
-        first_name=first_name,
-        last_name=last_name
+        email=email, password=password, first_name=first_name, last_name=last_name
     )
+
 
 class ModelTests(TestCase):
     def test_professor_str(self):
         """Test the string representation of the Professor model."""
-        user = create_user(first_name='Alice', last_name='Smith')
+        user = create_user(first_name="Alice", last_name="Smith")
         professor = course_models.Professor.objects.create(user=user)
         expected_str = f"{user.first_name} {user.last_name}"
         self.assertEqual(str(professor), expected_str)
@@ -45,9 +47,11 @@ class ModelTests(TestCase):
             professor=professor,
             class_instance=class_obj,
             semester=semester,
-            section_number=section_number
+            section_number=section_number,
         )
-        expected_str = f"{professor} - {class_obj} - {semester} (Section {section_number})"
+        expected_str = (
+            f"{professor} - {class_obj} - {semester} (Section {section_number})"
+        )
         self.assertEqual(str(section), expected_str)
 
     def test_class_professors_relationship(self):
@@ -61,7 +65,7 @@ class ModelTests(TestCase):
             professor=professor,
             class_instance=class_obj,
             semester=semester,
-            section_number=1
+            section_number=1,
         )
         # The many-to-many relationship should include our professor.
         self.assertIn(professor, class_obj.professors.all())

@@ -1,6 +1,7 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
 
+
 class MyConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
