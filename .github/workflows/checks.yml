@@ -2,13 +2,7 @@ name: Django Tests
 
 on:
   push:
-    branches-ignore:
-      - dev
-      - master
   pull_request:
-    branches:
-      - dev
-      - master
 
 jobs:
   test:
