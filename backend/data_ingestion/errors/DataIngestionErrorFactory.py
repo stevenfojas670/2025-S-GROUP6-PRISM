@@ -5,7 +5,7 @@
     used for the Error builder in case we have multiple errors while
     performing data ingestion (which is unlikely).
 '''
-import errors.DataIngestionError as error
+import data_ingestion.errors.DataIngestionError as error
 
 class DataIngestionErrorFactory:
 

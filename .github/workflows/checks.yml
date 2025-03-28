@@ -1,6 +1,8 @@
 name: Django Tests
 
-on: [push]
+on:
+  push:
+  pull_request:
 
 jobs:
   test:
@@ -74,7 +76,7 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/postgres
         run: |
           cd backend
-          coverage run manage.py test -v 2
+          coverage run --source=. -m pytest
           coverage report
           coverage html
 

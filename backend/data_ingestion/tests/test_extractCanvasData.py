@@ -11,6 +11,8 @@ import json
 import csv
 from data_ingestion.extractCanvasData import *
 
+# marking the class so Django allows it to touch the databsae and interact with it
+@pytest.mark.django_db
 class TestExportCanvasData:
 
     test_directory = "canvas_data_test_directory"

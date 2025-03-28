@@ -14,8 +14,8 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE","prism_backend.settings")
 django.setup()
 
 import pandas as pd
-from errors.DataIngestionError import DataIngestionError
-import errors.DataIngestionErrorBuilder as eb
+from data_ingestion.errors.DataIngestionError import DataIngestionError
+import data_ingestion.errors.DataIngestionErrorBuilder as eb
 from courses.models import Semester, Class
 
 class CanvasDataIngestion:
@@ -48,7 +48,7 @@ class CanvasDataIngestion:
         self.__errors = list()
 
     '''
-        This method will parse the file name and extract 
+        This method will parse the file name and extract
         the info related to the Canvas course, so we may
         validate each student's Canvas meta ID.
     '''
@@ -74,7 +74,7 @@ class CanvasDataIngestion:
         csvFile.close()
 
     '''
-        This will be our main error handling method that will check 
+        This will be our main error handling method that will check
         if all the individual student entries in the .csv file match
         the expected data for the Canvas course.
     '''
@@ -171,7 +171,7 @@ class CanvasDataIngestion:
     '''
         This method will populate the database based on the data from
         the Canvas gradebook.
-        
+
         Table We Populate: Semester, Course
         We can not populate Professor/ProfessorCourse yet since we do
         not have access to the professor information from the Canvas

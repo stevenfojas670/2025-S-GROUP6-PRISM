@@ -13,6 +13,7 @@ import csv
 import shutil
 from data_ingestion.extractCodeGradeData import *
 
+@pytest.mark.django_db
 class TestExportCodeGradeData:
 
     test_directory = "codegrade_data_test_directory"

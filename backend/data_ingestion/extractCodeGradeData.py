@@ -16,8 +16,8 @@ from zipfile import ZipFile
 import pandas as pd
 import math
 import json
-from errors.DataIngestionError import DataIngestionError
-import errors.DataIngestionErrorBuilder as eb
+from data_ingestion.errors.DataIngestionError import DataIngestionError
+import data_ingestion.errors.DataIngestionErrorBuilder as eb
 from assignments.models import Student, Assignment, Submission
 
 class CodeGradeDataIngestion:
@@ -79,8 +79,8 @@ class CodeGradeDataIngestion:
     '''
         CodeGrade exports a ZIP file with the following title format:
             '<CS Class> <Section> - <Semester> <Assignment Name>'
-        
-        This method will simply parse the title and save each part to 
+
+        This method will simply parse the title and save each part to
         the object's appropriate fields. No error handling is needed.
     '''
     def __parseZipFileName(self, name):
@@ -107,7 +107,7 @@ class CodeGradeDataIngestion:
                                  .createError())
 
     '''
-        Once the ZIP file has been extracted, we can now take the json 
+        Once the ZIP file has been extracted, we can now take the json
         data and populate the submissions/users fields.
     '''
     def __extractJSON(self):
@@ -141,7 +141,7 @@ class CodeGradeDataIngestion:
 
     '''
         Here, we verify that every submission ID is linked back to a student. We check
-        the ZIP directory to make sure the submission is there and ensure the student 
+        the ZIP directory to make sure the submission is there and ensure the student
         name matches the name associated with the given submission.
     '''
     def __verifyStudentSubmissionExists(self):
@@ -200,7 +200,7 @@ class CodeGradeDataIngestion:
                     raise ValueError()
 
     '''
-        For this helper method, we are checking whether or not 
+        For this helper method, we are checking whether or not
         a student has a directory inside the ZIP directory that
         contains their submitted code files to CodeGrade.
     '''
