@@ -1,6 +1,4 @@
-"""
-Tests for the Assignments API endpoints.
-"""
+"""Tests for the Assignments API endpoints."""
 
 from django.urls import reverse
 from rest_framework import status
@@ -34,9 +32,7 @@ def create_user(
     )
 
 
-def create_professor(
-    email="prof@example.com", first_name="Prof", last_name="One"
-):
+def create_professor(email="prof@example.com", first_name="Prof", last_name="One"):
     user = create_user(
         email=email,
         password="pass123",
@@ -106,9 +102,7 @@ class FlaggedStudentAPITests(APITestCase):
         self.assertEqual(len(res.data), 1)
 
     def test_filter_flagged_students(self):
-        url = (
-            reverse("flagged-student-list") + f"?professor__id={self.prof.id}"
-        )
+        url = reverse("flagged-student-list") + f"?professor__id={self.prof.id}"
         res = self.client.get(url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 1)
@@ -212,9 +206,7 @@ class SubmissionAPITests(APITestCase):
         res = self.client.get(url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         # Verify nested assignment title in the response.
-        self.assertEqual(
-            res.data[0]["assignment"]["title"], "World History Assignment"
-        )
+        self.assertEqual(res.data[0]["assignment"]["title"], "World History Assignment")
 
 
 # ----- Flagged Submission API Tests -----

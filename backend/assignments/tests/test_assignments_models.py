@@ -1,6 +1,4 @@
-"""
-Tests for the Assignments models.
-"""
+"""Tests for the Assignments models."""
 
 from django.test import TestCase
 from django.db.utils import IntegrityError
@@ -168,7 +166,8 @@ class SubmissionModelTests(TestCase):
         self.assertEqual(str(submission), expected)
 
     def test_submission_grade_validators(self):
-        """Test that grade validators work (grade must be between 0 and 100)."""
+        """Test that grade validators work (grade must be between 0 and
+        100)."""
         submission = assign_models.Submission(
             student=self.student,
             assignment=self.assignment,
@@ -274,5 +273,8 @@ class ConfirmedCheaterModelTests(TestCase):
         confirmed = assign_models.ConfirmedCheater.objects.create(
             student=self.student, professor=self.professor, threshold_used=50
         )
-        expected = f"Confirmed Cheater: {self.student} on {confirmed.confirmed_date} (Threshold: 50%)"
+        expected = (
+            f"Confirmed Cheater: {self.student} "
+            f"on {confirmed.confirmed_date} (Threshold: 50%)"
+        )
         self.assertEqual(str(confirmed), expected)

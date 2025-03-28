@@ -1,6 +1,4 @@
-"""
-Views for the User APIs.
-"""
+"""Views for the User APIs."""
 
 # Views define how we handle requests
 # rest_framework handles a lot of the logic we need to create objects in our database for us
@@ -73,9 +71,7 @@ class UserVS(viewsets.ModelViewSet):
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except models.User.DoesNotExist:
             return Response(
                 {"error": "User not found."}, status=status.HTTP_404_NOT_FOUND

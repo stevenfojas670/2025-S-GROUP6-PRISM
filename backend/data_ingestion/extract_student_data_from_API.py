@@ -1,10 +1,8 @@
-"""
-Created by Eli Rosales, 3/2/2025
+"""Created by Eli Rosales, 3/2/2025.
 
-This script is a part of the Data Ingestion phase of PRISM.
-This script will automate the need for manual data extraction from
-codegrade.
-It will extract the csv with
+This script is a part of the Data Ingestion phase of PRISM. This script
+will automate the need for manual data extraction from codegrade. It
+will extract the csv with
 """
 
 import io
@@ -18,22 +16,21 @@ import shutil
 import json
 import csv
 from codegrade.utils import select_from_list
-from dotenv import load_dotenv
 import datetime
 
 
 class API_Data:
     # variables
     """
-    1. client                           (cg client)                                                                 #CODEGRADE AUTHENTICATED CLIENT
-    2. course                           (cg courseService)                                                          #STR
-    3. course_name                      (str)                                                                       #STR
-    4. all_assignments []               ([(assignment_id,assignemnt_name),(assignment_id,assignemnt_name)...])      #LIST OF TUPLES
-    5. rubric {}                        ({"assignment_id":  {header1:[header_name,points],header2:'',...}})         #DIC
-    6. all_assignment_submissions {}    ({"assignment_id":  [sub_id,sub_id...] })                                   #DIC
-    7. graders {}                       ([[grader_name,grader_username,grader_user_id],...])                        #LIST OF LISTS
-    8. rubric_grades {}                 ([("sub_id - user.name",points achieved)])                                 #LIST OF TUPLES
-    9. course_info                      ({'id':id,  'name':name,    'date':date})
+    1. client                         (cg client)                                                             #CODEGRADE AUTHENTICATED CLIENT
+    2. course                         (cg courseService)                                                      #STR
+    3. course_name                    (str)                                                                   #STR
+    4. all_assignments []             ([(assignment_id,assignemnt_name),(assignment_id,assignemnt_name)...])  #LIST OF TUPLES
+    5. rubric {}                      ({"assignment_id":  {header1:[header_name,points],header2:'',...}})     #DIC
+    6. all_assignment_submissions {}  ({"assignment_id":  [sub_id,sub_id...] })                               #DIC
+    7. graders {}                     ([[grader_name,grader_username,grader_user_id],...])                    #LIST OF LISTS
+    8. rubric_grades {}               ([("sub_id - user.name",points achieved)])                              #LIST OF TUPLES
+    9. course_info                    ({'id':id,  'name':name,    'date':date})
 
     10. submisions
     11. assignments
@@ -41,9 +38,10 @@ class API_Data:
     """
 
     def __init__(self, client):
-        # main will handle the username and password part(retrieve from frontend)
-        # self.__username                     = username (parameter)  #__private_var
-        # self.__password                     = password (parameter) #__prvate_var
+        # main will handle the username and password
+        # part(retrieve from frontend)
+        # self.__username               = username (parameter)  #__private_var
+        # self.__password               = password (parameter) #__prvate_var
         self.client = client
         self.course_name = ""
         self.course = self.get_course(client)
@@ -168,9 +166,7 @@ class API_Data:
 
     def get_rubric(self, assignment):
         try:
-            rubric = self.client.assignment.get_rubric(
-                assignment_id=assignment.id
-            )
+            rubric = self.client.assignment.get_rubric(assignment_id=assignment.id)
         except Exception as e:
             print(str(e))
         else:
@@ -178,9 +174,7 @@ class API_Data:
 
     def get_rubric(self, assignment):
         try:
-            rubric = self.client.assignment.get_rubric(
-                assignment_id=assignment.id
-            )
+            rubric = self.client.assignment.get_rubric(assignment_id=assignment.id)
         except Exception as e:
             print(str(e))
         else:
@@ -188,9 +182,7 @@ class API_Data:
 
     def get_desc(self, assignment):
         try:
-            desc = self.client.assignment.get_description(
-                assignment_id=assignment.id
-            )
+            desc = self.client.assignment.get_description(assignment_id=assignment.id)
         except Exception as e:
             print(str(e))
         else:
@@ -198,9 +190,7 @@ class API_Data:
 
     def get_time_frames(self, assignment):
         try:
-            times = self.client.assignment.get_timeframes(
-                assignment_id=assignment.id
-            )
+            times = self.client.assignment.get_timeframes(assignment_id=assignment.id)
         except Exception as e:
             print(str(e))
         else:
@@ -296,7 +286,7 @@ class API_Data:
             username = submission.user.name
 
         student_output_dir = os.path.join(output_dir, username)
-        # C:\path\...\CS 472 - Development - Businge - Assignment 3\Jacob Kasbohm
+        # C:\path\...\CS 472-Development-Businge-Assignment 3\Jacob Kasbohm
 
         if not self.mkdir(student_output_dir):
             return
@@ -308,9 +298,7 @@ class API_Data:
                     if not filename:
                         continue
                     source = zipf.open(file)
-                    target = open(
-                        os.path.join(student_output_dir, filename), "wb"
-                    )
+                    target = open(os.path.join(student_output_dir, filename), "wb")
                     with source, target:
                         shutil.copyfileobj(source, target)
             except zipfile.BadZipFile:
@@ -336,8 +324,7 @@ class API_Data:
 
     # helper function for extract_all_assignments
     def make_zip_archive(self, zip_file_name, dir_path):
-        """
-        Creates a zip archive of a directory.
+        """Creates a zip archive of a directory.
 
         Args:
             zip_file_name (str): name of the resulting output .zip file
@@ -345,7 +332,8 @@ class API_Data:
         """
         if not os.path.exists(dir_path):
             print(
-                f"Unable to create '{dir_path}.zip' due to unfound '{zip_file_name}' directory name."
+                f"Unable to create '{dir_path}.zip' due "
+                f"to unfound '{zip_file_name}' directory name."
             )
             return
         destPath = os.path.join(self.create_folder_path, zip_file_name)
@@ -363,7 +351,8 @@ class API_Data:
         Input all assignments from a course and create a zipfile
 
         NOTE:
-        only look at the assignments who's lock_dates/deadlines are already past
+        only look at the assignments who's lock_dates/deadlines
+        are already past
         """
         print(f"Extracting all assignments from {self.course.name}:\n")
         for assignment in assignments:
@@ -398,9 +387,7 @@ class API_Data:
                 output_dir = self.get_output_dir(self.course.name, assignment)
                 # output_dir = 'C:\\Users\\ejera\\testenv\\CS 472 - Development - Businge - Assignment 0'
                 students = {"submission_ids": {}, "user_ids": {}}
-                print(
-                    f"\nExtracting submission source code for {assignment.name}:"
-                )
+                print(f"\nExtracting submission source code for {assignment.name}:")
                 for submission in submissions:
                     # populate the students dictionary
                     subID = submission.id
@@ -489,9 +476,7 @@ class API_Data:
                 writer.writerow(rows)
                 self.get_feedback(assignment)
                 for submission in submissions:
-                    grade = self.get_grade(
-                        assignment.max_grade, submission.grade
-                    )
+                    grade = self.get_grade(assignment.max_grade, submission.grade)
                     # find the grade
                     rows = [
                         submission.user.id,
@@ -521,9 +506,7 @@ class API_Data:
         except FileNotFoundError:
             print(f"Directory '{self.create_folder_path}' not found.")
         except PermissionError:
-            print(
-                f"You do not have permission to delete '{self.create_folder_path}'."
-            )
+            print(f"You do not have permission to delete '{self.create_folder_path}'.")
         except OSError as e:
             print(f"Error deleting '{self.create_folder_path}': {e}")
 

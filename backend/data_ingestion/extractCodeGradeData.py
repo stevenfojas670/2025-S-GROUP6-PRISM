@@ -1,5 +1,4 @@
-"""
-Created by Daniel Levy, 2/21/2025
+"""Created by Daniel Levy, 2/21/2025.
 
 This script is responsible for the data ingestion of
 CodeGrade metadata into the database. We are primarily
@@ -26,19 +25,13 @@ from assignments.models import Student, Assignment, Submission
 class CodeGradeDataIngestion:
 
     # Fields
-    __dirName = (
-        None  # Directory containing all data (should be 'codegrade_data')
-    )
-    __submissionFileName = (
-        None  # Current course/assignment we are checking data for
-    )
+    __dirName = None  # Directory containing all data (should be 'codegrade_data')
+    __submissionFileName = None  # Current course/assignment we are checking data for
     __className = None
     __section = None
     __semester = None
     __assignmentName = None
-    __zipFileDirectory = (
-        None  # Directory that contains unzipped student submissions
-    )
+    __zipFileDirectory = None  # Directory that contains unzipped student submissions
     __submissions = None  # List of CodeGrade submission IDs
     __users = None  # List of CodeGrade user IDs
     __metaData = None  # Dataframe containing CodeGrade meta data
@@ -68,10 +61,7 @@ class CodeGradeDataIngestion:
 
     def __extractStudentFilesFromZIP(self):
         for file in os.listdir(self.__dirName):
-            if (
-                file.endswith(".zip")
-                and file not in CodeGradeDataIngestion.fileSeen
-            ):
+            if file.endswith(".zip") and file not in CodeGradeDataIngestion.fileSeen:
                 self.__parseZipFileName(file)
                 self.__zipFileDirectory = (
                     f"{self.__dirName}/{self.__submissionFileName}"
@@ -83,13 +73,16 @@ class CodeGradeDataIngestion:
                 CodeGradeDataIngestion.fileSeen.add(file)
                 return
 
-        # ERROR CHECK #1: If we reach this point, then we either have a duplicated
-        # ZIP file in the directory or there are no ZIP files in the directory, so we have to create an error
+        # ERROR CHECK #1: If we reach this point,
+        # then we either have a duplicated
+        # ZIP file in the directory or there are no
+        # ZIP files in the directory, so we have to create an error
         self.__errors.append(
             eb.DataIngestionErrorBuilder()
             .addFileName(self.__dirName)
             .addMsg(
-                f"A duplicate .zip file was found containing student submission in {self.__dirName}"
+                f"A duplicate .zip file was found containing student "
+                f"submission in {self.__dirName}"
             )
             .createError()
         )
@@ -115,9 +108,9 @@ class CodeGradeDataIngestion:
         self.__assignmentName = zipFields[2][:-4].strip()
 
     """
-        Every exported CodeGrade ZIP file will contain a .cg-info.json file that keeps
-        track of all submissions and users. This is needed to ensure data authentication,
-        so it must be present in the file.
+        Every exported CodeGrade ZIP file will contain a .cg-info.json file
+        that keeps track of all submissions and users. This is needed to
+        ensure data authentication, so it must be present in the file.
     """
 
     def __checkIfJSONFileExists(self):
@@ -159,22 +152,25 @@ class CodeGradeDataIngestion:
                 self.__metaData = df
                 return
 
-        # ERROR CHECK #1: If we could not find the appropriate metadata .csv file
-        #                 for the current ZIP file we extracted, generate an error
+        # ERROR CHECK #1: If we could not find the appropriate
+        # metadata .csv file for the current ZIP file we extracted,
+        # generate an error
         self.__errors.append(
             eb.DataIngestionErrorBuilder()
             .addFileName(self.__submissionFileName)
             .addMsg(
-                f"{self.__submissionFileName}.csv was not found in {self.__dirName}."
+                f"{self.__submissionFileName}.csv was not found "
+                f"in {self.__dirName}."
             )
             .createError()
         )
         raise ValueError()
 
     """
-        Here, we verify that every submission ID is linked back to a student. We check
-        the ZIP directory to make sure the submission is there and ensure the student
-        name matches the name associated with the given submission.
+        Here, we verify that every submission ID is linked back to a student.
+        We check the ZIP directory to make sure the submission is there and
+        ensure the student name matches the name associated with the given
+        submission.
     """
 
     def __verifyStudentSubmissionExists(self):
@@ -184,13 +180,15 @@ class CodeGradeDataIngestion:
             except:
                 continue
             else:
-                # ERROR CHECK #1: Make sure the submission ID matches for the current student
+                # ERROR CHECK #1: Make sure the submission ID matches
+                # for the current student
                 if subID != value:
                     self.__errors.append(
                         eb.DataIngestionErrorBuilder()
                         .addFileName(self.__zipFileDirectory)
                         .addMsg(
-                            f"The submission ID #{subID} for {studentName} is not correct."
+                            f"The submission ID #{subID} "
+                            f"for {studentName} is not correct."
                         )
                         .createError()
                     )
@@ -213,37 +211,43 @@ class CodeGradeDataIngestion:
                 entry = self.__metaData.loc[self.__metaData["Id"] == value]
                 entriesFound = len(entry)
 
-                # ERROR CHECK #1: Make sure the current student has a valid submission
+                # ERROR CHECK #1: Make sure the current
+                # student has a valid submission
                 if entriesFound < 1:
                     self.__errors.append(
                         eb.DataIngestionErrorBuilder()
                         .addFileName(self.__submissionFileName)
                         .addMsg(
-                            f"User ID {value} does not have any metadata associated with it."
+                            f"User ID {value} does not have any "
+                            f"metadata associated with it."
                         )
                         .createError()
                     )
                     raise ValueError()
 
-                # ERROR CHECK #2: Make sure the current student does not have multiple submissions
+                # ERROR CHECK #2: Make sure the current student
+                # does not have multiple submissions
                 elif entriesFound > 1:
                     self.__errors.append(
                         eb.DataIngestionErrorBuilder()
                         .addFileName(self.__submissionFileName)
                         .addMsg(
-                            f"User ID {value} has multiple metadata entries associated with it."
+                            f"User ID {value} has multiple metadata "
+                            f"entries associated with it."
                         )
                         .createError()
                     )
                     raise ValueError()
 
-                # ERROR CHECK #3: Make sure the student name matches the name in the user ID portion of cg_data.json
+                # ERROR CHECK #3: Make sure the student name matches
+                # the name in the user ID portion of cg_data.json
                 if entry.iloc[0, 2] != studentName:
                     self.__errors.append(
                         eb.DataIngestionErrorBuilder()
                         .addFileName(self.__submissionFileName)
                         .addMsg(
-                            f"User ID {value} does not match the given name in the metadata file."
+                            f"User ID {value} does not match the "
+                            f"given name in the metadata file."
                         )
                         .createError()
                     )
@@ -261,13 +265,14 @@ class CodeGradeDataIngestion:
 
         subID = int(subID.strip())
 
-        # ERROR CHECK #1: Make sure the student has a submission in the ZIP directory
+        # ERROR CHECK #1: Make sure the student
+        # has a submission in the ZIP directory
         if fileName not in os.listdir(self.__zipFileDirectory):
             self.__errors.append(
                 eb.DataIngestionErrorBuilder()
                 .addFileName(self.__submissionFileName)
                 .addMsg(
-                    f"Submission for {studentName} is missing in zip directory."
+                    f"Submission for {studentName} " f"is missing in zip directory."
                 )
                 .createError()
             )

@@ -1,6 +1,5 @@
 """
-Courses URLs.
-"""
+URL Configuration for the courses app."""
 
 from rest_framework.routers import DefaultRouter
 

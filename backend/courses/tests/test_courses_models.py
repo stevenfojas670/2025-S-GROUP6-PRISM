@@ -1,6 +1,4 @@
-"""
-Tests for the Courses models.
-"""
+"""Tests for the Courses models."""
 
 from django.test import TestCase
 from django.db.utils import IntegrityError
@@ -43,7 +41,8 @@ class ModelTests(TestCase):
         self.assertEqual(str(semester), "Fall 2023")
 
     def test_professor_class_section_str(self):
-        """Test the string representation of the ProfessorClassSection model."""
+        """Test the string representation of the ProfessorClassSection
+        model."""
         user = create_user(first_name="John", last_name="Doe")
         professor = course_models.Professor.objects.create(user=user)
         class_obj = course_models.Class.objects.create(name="History 101")
@@ -55,11 +54,14 @@ class ModelTests(TestCase):
             semester=semester,
             section_number=section_number,
         )
-        expected_str = f"{professor} - {class_obj} - {semester} (Section {section_number})"
+        expected_str = (
+            f"{professor} - {class_obj} - {semester} " f"(Section {section_number})"
+        )
         self.assertEqual(str(section), expected_str)
 
     def test_class_professors_relationship(self):
-        """Test the many-to-many relationship between Class and Professor via ProfessorClassSection."""
+        """Test the many-to-many relationship between Class and Professor via
+        ProfessorClassSection."""
         user = create_user(first_name="Bob", last_name="Brown")
         professor = course_models.Professor.objects.create(user=user)
         class_obj = course_models.Class.objects.create(name="Biology 101")
@@ -78,7 +80,7 @@ class ModelTests(TestCase):
         """Test that Class names must be unique."""
         course_models.Class.objects.create(name="UniqueClass")
         with self.assertRaises(IntegrityError):
-            # Attempting to create another Class with the same name should fail.
+            # Attempting to create another Class with the same name should fail
             course_models.Class.objects.create(name="UniqueClass")
 
     def test_semester_unique_name(self):

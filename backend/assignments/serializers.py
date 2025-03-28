@@ -1,6 +1,4 @@
-"""
-Assignment Models Serializers.
-"""
+"""Assignment Models Serializers."""
 
 from rest_framework import serializers
 from assignments import models
@@ -45,8 +43,9 @@ class AssignmentSerializer(serializers.ModelSerializer):
 
     # For write operations: accept only IDs
     # since these are nested object its easier to simply declare them like so,
-    # this will allow our client to specify the primary key (id) of the given fields
-    # in their request to create new instances of ProffClassSection in the databse
+    # this will allow our client to specify the primary key (id) of the given
+    # fields in their request to create new instances of ProffClassSection in
+    # the databse
     professor_id = serializers.PrimaryKeyRelatedField(
         queryset=courses_models.Professor.objects.all(),
         source="professor",

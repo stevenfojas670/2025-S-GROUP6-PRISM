@@ -1,5 +1,4 @@
-"""
-Created by Daniel Levy, 3/17/2025
+"""Created by Daniel Levy, 3/17/2025.
 
 This script is responsible for the data ingestion of
 Canvas metadata into the database. We are primarily
@@ -9,15 +8,16 @@ Canvas gradebook files.
 """
 
 # Django setup
-import os, django
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "prism_backend.settings")
-django.setup()
+import os
+import django
 
 import pandas as pd
 from data_ingestion.errors.DataIngestionError import DataIngestionError
 import data_ingestion.errors.DataIngestionErrorBuilder as eb
 from courses.models import Semester, Class
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "prism_backend.settings")
+django.setup()
 
 
 class CanvasDataIngestion:
@@ -97,15 +97,12 @@ class CanvasDataIngestion:
                     .addFileName(self.__fileName)
                     .addLine(rowCount)
                     .addMsg(
-                        f"The User ID for {studentName} does not "
-                        "match the Login ID"
+                        f"The User ID for {studentName} does not " "match the Login ID"
                     )
                     .createError()
                 )
 
-            self.courseInfo = self.__getCourseMetaData(
-                student["Section"], rowCount
-            )
+            self.courseInfo = self.__getCourseMetaData(student["Section"], rowCount)
 
             # Error Check #2: Make sure the semester matches the semester
             #                 given in the file name
@@ -157,7 +154,7 @@ class CanvasDataIngestion:
                     .addFileName(self.__fileName)
                     .addLine(rowCount)
                     .addMsg(
-                        f"The Canvas metadata ID does not match for {studentName}."
+                        f"The Canvas metadata ID does not match " f"for {studentName}."
                     )
                     .createError()
                 )

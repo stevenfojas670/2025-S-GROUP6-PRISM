@@ -1,6 +1,4 @@
-"""
-Tests for the User model.
-"""
+"""Tests for the User model."""
 
 from django.test import TestCase
 from django.contrib.auth import get_user_model
@@ -98,7 +96,8 @@ class UserModelTest(TestCase):
             )
 
     def test_minimal_valid_input_defaults(self):
-        """Test creating a user with minimal valid input and checking default values."""
+        """Test creating a user with minimal valid input and checking default
+        values."""
         user = get_user_model().objects.create_user(
             email="minimal@example.com",
             password="minpass",

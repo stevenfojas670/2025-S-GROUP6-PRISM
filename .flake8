@@ -1,0 +1,10 @@
+[flake8]
+max-line-length = 79
+extend-ignore = E501
+select = C,E,F,W,D
+exclude =
+    venv,
+    __pycache__,
+    migrations,
+    .env
+extend-ignore = D100,D101,D102,D103,D104,D105

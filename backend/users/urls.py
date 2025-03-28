@@ -1,6 +1,4 @@
-"""
-URLs mapping for the User API.
-"""
+"""URLs mapping for the User API."""
 
 from rest_framework.routers import DefaultRouter
 from users.views import UserVS

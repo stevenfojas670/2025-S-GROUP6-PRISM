@@ -1,6 +1,4 @@
-"""
-User Model.
-"""
+"""User Model."""
 
 from django.contrib.auth.models import (
     AbstractUser,
@@ -44,7 +42,7 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractUser, PermissionsMixin):
-    """Custom User model for Professors"""
+    """Custom User model for Professors."""
 
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=50)
@@ -59,9 +57,7 @@ class User(AbstractUser, PermissionsMixin):
     # email is by default required; add any other required fields here
     REQUIRED_FIELDS = ["first_name", "last_name"]
 
-    groups = models.ManyToManyField(
-        Group, related_name="custom_user_set", blank=True
-    )
+    groups = models.ManyToManyField(Group, related_name="custom_user_set", blank=True)
     user_permissions = models.ManyToManyField(
         Permission, related_name="custom_user_permissions_set", blank=True
     )

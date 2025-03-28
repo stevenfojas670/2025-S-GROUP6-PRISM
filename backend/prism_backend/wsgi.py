@@ -1,5 +1,4 @@
-"""
-WSGI config for prism_backend project.
+"""WSGI config for prism_backend project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 

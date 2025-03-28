@@ -1,10 +1,9 @@
-"""
-Created by Daniel Levy, 3/17/2025
+"""Created by Daniel Levy, 3/17/2025.
 
-This is an Error class to handle any errors from PRISM's data
-ingestion. The likelihood of errors is low, especially since
-we are trying to automate it. However, it doesn't mean we
-should have a safety net in case something unexpected happens.
+This is an Error class to handle any errors from PRISM's data ingestion.
+The likelihood of errors is low, especially since we are trying to
+automate it. However, it doesn't mean we should have a safety net in
+case something unexpected happens.
 """
 
 import json

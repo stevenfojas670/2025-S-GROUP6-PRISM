@@ -22,9 +22,7 @@ class Student(models.Model):
 class Assignment(models.Model):
     """Assignment Model."""
 
-    class_instance = models.ForeignKey(
-        "courses.Class", on_delete=models.CASCADE
-    )
+    class_instance = models.ForeignKey("courses.Class", on_delete=models.CASCADE)
     professor = models.ForeignKey(
         "courses.Professor", on_delete=models.CASCADE
     )  # Link to professor
@@ -80,26 +78,29 @@ class FlaggedStudent(models.Model):
     """Flagged Students Model."""
 
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    professor = models.ForeignKey(
-        "courses.Professor", on_delete=models.CASCADE
-    )
+    professor = models.ForeignKey("courses.Professor", on_delete=models.CASCADE)
     times_over_threshold = models.IntegerField(default=0)
 
     def __str__(self):
-        return f"Flagged Student: {self.student} flagged {self.times_over_threshold} times"
+        return (
+            f"Flagged Student: {self.student} "
+            f"flagged {self.times_over_threshold} times"
+        )
 
 
 class ConfirmedCheater(models.Model):
     """Confirmed Cheaters Model."""
 
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    professor = models.ForeignKey(
-        "courses.Professor", on_delete=models.CASCADE
-    )
+    professor = models.ForeignKey("courses.Professor", on_delete=models.CASCADE)
     confirmed_date = models.DateField(auto_now_add=True)
     threshold_used = models.IntegerField(
         default=40
     )  # Tracks threshold used at confirmation
 
     def __str__(self):
-        return f"Confirmed Cheater: {self.student} on {self.confirmed_date} (Threshold: {self.threshold_used}%)"
+        return (
+            f"Confirmed Cheater: {self.student} "
+            f"on {self.confirmed_date} "
+            f"(Threshold: {self.threshold_used}%)"
+        )

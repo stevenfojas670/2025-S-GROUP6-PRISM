@@ -1,5 +1,4 @@
-"""
-Created by Daniel Levy, 3/18/2025
+"""Created by Daniel Levy, 3/18/2025.
 
 Python imports... suck. And the documentation sucks
 even more... :)

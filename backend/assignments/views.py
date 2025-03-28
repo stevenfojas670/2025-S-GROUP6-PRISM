@@ -1,6 +1,5 @@
-"""
-Assignments Views with Enhanced Filtering, Ordering, and Search Capabilities.
-"""
+"""Assignments Views with Enhanced Filtering, Ordering, and Search
+Capabilities."""
 
 from assignments import serializers
 from assignments import models
@@ -156,15 +155,17 @@ class ConfirmedCheaterVS(viewsets.ModelViewSet):
     ordering = ["confirmed_date"]
 
 
-# an extension of the flaggedSubmissionVS. It supports searching by file name and professor. Only lets a professor see their classes,
-# flaggedSubmissionVS is more suitable to be used by an admin, since it shows data from all classes.
+# an extension of the flaggedSubmissionVS. It supports searching
+# by file name and professor. Only lets a professor see their classes,
+# flaggedSubmissionVS is more suitable to be used by an admin, since
+# it shows data from all classes.
 class PlagiarismReportViewSet(viewsets.ModelViewSet):
-    """
-    Returns plagiarism reports (flagged submissions) filtered by semester and/or course,
-    but only for courses the authenticated professor is assigned to.
-    """
+    """Returns plagiarism reports (flagged submissions) filtered by semester
+    and/or course, but only for courses the authenticated professor is assigned
+    to."""
 
-    # This lets DRF use FlaggedSubmissionSerializer to convert FlaggedSubmission model instances into
+    # This lets DRF use FlaggedSubmissionSerializer to convert
+    # FlaggedSubmission model instances into
     # JSON data before sending it in the API response.
     serializer_class = FlaggedSubmissionSerializer
     permission_classes = [IsAuthenticated]
@@ -189,7 +190,8 @@ class PlagiarismReportViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
-        # Admins should see all flagged submissions. is_admin is from users/permissions.py
+        # Admins should see all flagged submissions. is_admin is
+        # from users/permissions.py
         if is_admin(user):
             return FlaggedSubmission.objects.all()
         else:

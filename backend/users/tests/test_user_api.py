@@ -1,6 +1,4 @@
-"""
-Expanded tests for the User API
-"""
+"""Expanded tests for the User API."""
 
 from django.test import TestCase
 from django.contrib.auth import get_user_model
@@ -67,15 +65,12 @@ class PublicUserApiTests(TestCase):
         res = self.client.post(USER_LIST_URL, payload)
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
-        user_exists = (
-            get_user_model().objects.filter(email=payload["email"]).exists()
-        )
+        user_exists = get_user_model().objects.filter(email=payload["email"]).exists()
         self.assertFalse(user_exists)
 
     def test_create_user_also_creates_professor(self):
-        """
-        Test that creating a user via POST also creates a Professor entry
-        """
+        """Test that creating a user via POST also creates a Professor
+        entry."""
         payload = {
             "email": "professor@example.com",
             "password": "prof123",
@@ -136,7 +131,8 @@ class PublicUserApiTests(TestCase):
         self.assertEqual(res.data[0]["email"], user1.email)
 
     def test_filter_users_by_first_name(self):
-        """Test filtering user list by first_name (GET /user/?first_name=...)."""
+        """Test filtering user list by first_name (GET
+        /user/?first_name=...)."""
         user1 = create_user(
             email="somebody@example.com",
             password="pass123",
@@ -230,9 +226,7 @@ class PublicUserApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_update_user_missing_required_field(self):
-        """
-        Test updating a user but omitting a field the serializer expects
-        """
+        """Test updating a user but omitting a field the serializer expects."""
         user = create_user(
             email="required@example.com",
             password="pass123",
@@ -268,9 +262,7 @@ class PublicUserApiTests(TestCase):
         self.assertEqual(user.email, "patchme@example.com")
 
     def test_partial_update_user_duplicate_email(self):
-        """
-        Test partial update with an email that already exists
-        """
+        """Test partial update with an email that already exists."""
         user1 = create_user(
             email="duplicate1@example.com",
             password="pass123",
@@ -291,17 +283,11 @@ class PublicUserApiTests(TestCase):
         self.assertIn("email", str(res.data))
 
     def test_delete_user(self):
-        """
-        Test deleting a user (DELETE /user/<id>/).
-        """
+        """Test deleting a user (DELETE /user/<id>/)."""
         user = create_user(email="delete@example.com", password="pass123")
         url = detail_user_url(user.id)
         res = self.client.delete(url)
         if res.status_code == status.HTTP_204_NO_CONTENT:
-            self.assertFalse(
-                get_user_model().objects.filter(id=user.id).exists()
-            )
+            self.assertFalse(get_user_model().objects.filter(id=user.id).exists())
         else:
-            self.assertEqual(
-                res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED
-            )
+            self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)

@@ -1,10 +1,8 @@
-"""
-Created by Daniel Levy, 3/26/2025
+"""Created by Daniel Levy, 3/26/2025.
 
-This is a unit test script for "extractCodeGradeData.py".
-Here, we check if the above script will work on valid
-data and then we will check if every error stored in the
-json error file can be created.
+This is a unit test script for "extractCodeGradeData.py". Here, we check
+if the above script will work on valid data and then we will check if
+every error stored in the json error file can be created.
 """
 
 import pytest
@@ -129,9 +127,7 @@ class TestExportCodeGradeData:
     def test_missing_cg_json_file(self):
         self.createSubmissions(["0 - Mary Smith"])
         self.createZIP("CS 135 1001 - 2024 Fall - Assignment 1.zip")
-        assert (
-            self.runAndProduceError() == "The .cg-info.json file is missing."
-        )
+        assert self.runAndProduceError() == "The .cg-info.json file is missing."
 
     # Test 4) This test will see if the provided metadata csv file matches the zip
     #         directory name, and it will return an error if so
