@@ -66,4 +66,5 @@ static/
 media/
 
 # Local dev secrets (if any)
+
 secrets.json

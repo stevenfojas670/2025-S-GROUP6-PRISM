@@ -1,3 +1,4 @@
+
 """
 Courses URLs.
 """
@@ -11,7 +12,7 @@ router.register('classes', ClassVS, basename='class')
 router.register('professors', ProfessorVS, basename='professor')
 router.register('semesters', SemesterVS, basename='semester')
 router.register('sectionclassprof', ProfessorClassSectionVS, basename='sectionclassprof')
+router.register('enrollments', EnrollmentVS, basename='enrollment')
 
 urlpatterns = [
     path('', include(router.urls)),
-]
