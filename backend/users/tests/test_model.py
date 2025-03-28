@@ -17,7 +17,10 @@ class UserModelTest(TestCase):
         first_name = "testName"
         last_name = "testLast"
         user = get_user_model().objects.create_user(
-            email=email, password=password, first_name=first_name, last_name=last_name
+            email=email,
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
         )
         self.assertEqual(user.email, email)
         self.assertEqual(user.first_name, first_name)
@@ -44,7 +47,10 @@ class UserModelTest(TestCase):
         """Test creating a user without an email gives us a ValueError."""
         with self.assertRaises(ValueError):
             get_user_model().objects.create_user(
-                email="", password="sample123", first_name="first", last_name="last"
+                email="",
+                password="sample123",
+                first_name="first",
+                last_name="last",
             )
 
     def test_create_superuser(self):
@@ -77,7 +83,10 @@ class UserModelTest(TestCase):
         """Test that creating a user with an existing email raises an error."""
         email = "unique@example.com"
         get_user_model().objects.create_user(
-            email=email, password="pass123", first_name="Unique", last_name="User"
+            email=email,
+            password="pass123",
+            first_name="Unique",
+            last_name="User",
         )
         with self.assertRaises(IntegrityError):
             # Attempt to create a duplicate user; this should fail.

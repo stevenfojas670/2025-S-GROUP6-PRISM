@@ -22,7 +22,9 @@ class Student(models.Model):
 class Assignment(models.Model):
     """Assignment Model."""
 
-    class_instance = models.ForeignKey("courses.Class", on_delete=models.CASCADE)
+    class_instance = models.ForeignKey(
+        "courses.Class", on_delete=models.CASCADE
+    )
     professor = models.ForeignKey(
         "courses.Professor", on_delete=models.CASCADE
     )  # Link to professor
@@ -31,7 +33,10 @@ class Assignment(models.Model):
     due_date = models.DateField()
 
     class Meta:
-        unique_together = ("class_instance", "assignment_number")  # Unique per class
+        unique_together = (
+            "class_instance",
+            "assignment_number",
+        )  # Unique per class
 
     def __str__(self):
         return f"Assignment {self.assignment_number}: {self.title}"
@@ -75,20 +80,22 @@ class FlaggedStudent(models.Model):
     """Flagged Students Model."""
 
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    professor = models.ForeignKey("courses.Professor", on_delete=models.CASCADE)
+    professor = models.ForeignKey(
+        "courses.Professor", on_delete=models.CASCADE
+    )
     times_over_threshold = models.IntegerField(default=0)
 
     def __str__(self):
-        return (
-            f"Flagged Student: {self.student} flagged {self.times_over_threshold} times"
-        )
+        return f"Flagged Student: {self.student} flagged {self.times_over_threshold} times"
 
 
 class ConfirmedCheater(models.Model):
     """Confirmed Cheaters Model."""
 
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    professor = models.ForeignKey("courses.Professor", on_delete=models.CASCADE)
+    professor = models.ForeignKey(
+        "courses.Professor", on_delete=models.CASCADE
+    )
     confirmed_date = models.DateField(auto_now_add=True)
     threshold_used = models.IntegerField(
         default=40

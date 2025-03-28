@@ -21,16 +21,27 @@ from courses.models import Professor, Class as CourseClass
 
 # Helper functions to create required objects.
 def create_user(
-    email="test@example.com", password="pass123", first_name="Test", last_name="User"
+    email="test@example.com",
+    password="pass123",
+    first_name="Test",
+    last_name="User",
 ):
     return get_user_model().objects.create_user(
-        email=email, password=password, first_name=first_name, last_name=last_name
+        email=email,
+        password=password,
+        first_name=first_name,
+        last_name=last_name,
     )
 
 
-def create_professor(email="prof@example.com", first_name="Prof", last_name="One"):
+def create_professor(
+    email="prof@example.com", first_name="Prof", last_name="One"
+):
     user = create_user(
-        email=email, password="pass123", first_name=first_name, last_name=last_name
+        email=email,
+        password="pass123",
+        first_name=first_name,
+        last_name=last_name,
     )
     return Professor.objects.create(user=user)
 
@@ -95,7 +106,9 @@ class FlaggedStudentAPITests(APITestCase):
         self.assertEqual(len(res.data), 1)
 
     def test_filter_flagged_students(self):
-        url = reverse("flagged-student-list") + f"?professor__id={self.prof.id}"
+        url = (
+            reverse("flagged-student-list") + f"?professor__id={self.prof.id}"
+        )
         res = self.client.get(url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 1)
@@ -199,7 +212,9 @@ class SubmissionAPITests(APITestCase):
         res = self.client.get(url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         # Verify nested assignment title in the response.
-        self.assertEqual(res.data[0]["assignment"]["title"], "World History Assignment")
+        self.assertEqual(
+            res.data[0]["assignment"]["title"], "World History Assignment"
+        )
 
 
 # ----- Flagged Submission API Tests -----

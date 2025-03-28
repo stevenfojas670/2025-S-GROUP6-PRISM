@@ -12,7 +12,9 @@ class Professor(models.Model):
     """Professor Model."""
 
     user = models.OneToOneField(
-        user_model.User, on_delete=models.CASCADE, related_name="user_professor"
+        user_model.User,
+        on_delete=models.CASCADE,
+        related_name="user_professor",
     )
 
     def __str__(self):
@@ -48,7 +50,9 @@ class ProfessorClassSection(models.Model):
     """Mapping Professors to Class Sections."""
 
     professor = models.ForeignKey(
-        "courses.Professor", on_delete=models.CASCADE, related_name="profclassect"
+        "courses.Professor",
+        on_delete=models.CASCADE,
+        related_name="profclassect",
     )
     class_instance = models.ForeignKey(Class, on_delete=models.CASCADE)
     semester = models.ForeignKey(Semester, on_delete=models.CASCADE)

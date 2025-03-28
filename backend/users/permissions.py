@@ -53,4 +53,8 @@ class IsProfessor(BasePermission):
 
 class IsAdmin(BasePermission):
     def has_permission(self, request, view):
-        return request.user and request.user.is_authenticated and is_admin(request.user)
+        return (
+            request.user
+            and request.user.is_authenticated
+            and is_admin(request.user)
+        )

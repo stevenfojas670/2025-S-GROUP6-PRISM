@@ -168,7 +168,9 @@ class API_Data:
 
     def get_rubric(self, assignment):
         try:
-            rubric = self.client.assignment.get_rubric(assignment_id=assignment.id)
+            rubric = self.client.assignment.get_rubric(
+                assignment_id=assignment.id
+            )
         except Exception as e:
             print(str(e))
         else:
@@ -176,7 +178,9 @@ class API_Data:
 
     def get_rubric(self, assignment):
         try:
-            rubric = self.client.assignment.get_rubric(assignment_id=assignment.id)
+            rubric = self.client.assignment.get_rubric(
+                assignment_id=assignment.id
+            )
         except Exception as e:
             print(str(e))
         else:
@@ -184,7 +188,9 @@ class API_Data:
 
     def get_desc(self, assignment):
         try:
-            desc = self.client.assignment.get_description(assignment_id=assignment.id)
+            desc = self.client.assignment.get_description(
+                assignment_id=assignment.id
+            )
         except Exception as e:
             print(str(e))
         else:
@@ -192,7 +198,9 @@ class API_Data:
 
     def get_time_frames(self, assignment):
         try:
-            times = self.client.assignment.get_timeframes(assignment_id=assignment.id)
+            times = self.client.assignment.get_timeframes(
+                assignment_id=assignment.id
+            )
         except Exception as e:
             print(str(e))
         else:
@@ -300,7 +308,9 @@ class API_Data:
                     if not filename:
                         continue
                     source = zipf.open(file)
-                    target = open(os.path.join(student_output_dir, filename), "wb")
+                    target = open(
+                        os.path.join(student_output_dir, filename), "wb"
+                    )
                     with source, target:
                         shutil.copyfileobj(source, target)
             except zipfile.BadZipFile:
@@ -388,7 +398,9 @@ class API_Data:
                 output_dir = self.get_output_dir(self.course.name, assignment)
                 # output_dir = 'C:\\Users\\ejera\\testenv\\CS 472 - Development - Businge - Assignment 0'
                 students = {"submission_ids": {}, "user_ids": {}}
-                print(f"\nExtracting submission source code for {assignment.name}:")
+                print(
+                    f"\nExtracting submission source code for {assignment.name}:"
+                )
                 for submission in submissions:
                     # populate the students dictionary
                     subID = submission.id
@@ -477,7 +489,9 @@ class API_Data:
                 writer.writerow(rows)
                 self.get_feedback(assignment)
                 for submission in submissions:
-                    grade = self.get_grade(assignment.max_grade, submission.grade)
+                    grade = self.get_grade(
+                        assignment.max_grade, submission.grade
+                    )
                     # find the grade
                     rows = [
                         submission.user.id,
@@ -507,7 +521,9 @@ class API_Data:
         except FileNotFoundError:
             print(f"Directory '{self.create_folder_path}' not found.")
         except PermissionError:
-            print(f"You do not have permission to delete '{self.create_folder_path}'.")
+            print(
+                f"You do not have permission to delete '{self.create_folder_path}'."
+            )
         except OSError as e:
             print(f"Error deleting '{self.create_folder_path}': {e}")
 

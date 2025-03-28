@@ -26,13 +26,19 @@ from assignments.models import Student, Assignment, Submission
 class CodeGradeDataIngestion:
 
     # Fields
-    __dirName = None  # Directory containing all data (should be 'codegrade_data')
-    __submissionFileName = None  # Current course/assignment we are checking data for
+    __dirName = (
+        None  # Directory containing all data (should be 'codegrade_data')
+    )
+    __submissionFileName = (
+        None  # Current course/assignment we are checking data for
+    )
     __className = None
     __section = None
     __semester = None
     __assignmentName = None
-    __zipFileDirectory = None  # Directory that contains unzipped student submissions
+    __zipFileDirectory = (
+        None  # Directory that contains unzipped student submissions
+    )
     __submissions = None  # List of CodeGrade submission IDs
     __users = None  # List of CodeGrade user IDs
     __metaData = None  # Dataframe containing CodeGrade meta data
@@ -62,7 +68,10 @@ class CodeGradeDataIngestion:
 
     def __extractStudentFilesFromZIP(self):
         for file in os.listdir(self.__dirName):
-            if file.endswith(".zip") and file not in CodeGradeDataIngestion.fileSeen:
+            if (
+                file.endswith(".zip")
+                and file not in CodeGradeDataIngestion.fileSeen
+            ):
                 self.__parseZipFileName(file)
                 self.__zipFileDirectory = (
                     f"{self.__dirName}/{self.__submissionFileName}"
@@ -257,7 +266,9 @@ class CodeGradeDataIngestion:
             self.__errors.append(
                 eb.DataIngestionErrorBuilder()
                 .addFileName(self.__submissionFileName)
-                .addMsg(f"Submission for {studentName} is missing in zip directory.")
+                .addMsg(
+                    f"Submission for {studentName} is missing in zip directory."
+                )
                 .createError()
             )
             raise ValueError()

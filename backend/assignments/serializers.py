@@ -26,7 +26,9 @@ class FlaggedStudentSerializer(serializers.ModelSerializer):
     student = StudentSerializer(read_only=True)
 
     student_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Student.objects.all(), source="student", write_only=True
+        queryset=models.Student.objects.all(),
+        source="student",
+        write_only=True,
     )
 
 
@@ -76,10 +78,14 @@ class SubmissionSerializer(serializers.ModelSerializer):
         write_only=True,
     )
     assignment_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Assignment.objects.all(), source="assignment", write_only=True
+        queryset=models.Assignment.objects.all(),
+        source="assignment",
+        write_only=True,
     )
     student_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Student.objects.all(), source="student", write_only=True
+        queryset=models.Student.objects.all(),
+        source="student",
+        write_only=True,
     )
 
 
@@ -96,10 +102,14 @@ class FlaggedSubmissionSerializer(serializers.ModelSerializer):
 
     # For write operations: accept only IDs
     student_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Student.objects.all(), source="student", write_only=True
+        queryset=models.Student.objects.all(),
+        source="student",
+        write_only=True,
     )
     submission_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Submission.objects.all(), source="submission", write_only=True
+        queryset=models.Submission.objects.all(),
+        source="submission",
+        write_only=True,
     )
 
 
@@ -114,7 +124,9 @@ class ConfirmedCheaterSerializer(serializers.ModelSerializer):
     professor = courses_serializer.ProfessorSerializer(read_only=True)
 
     student_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Student.objects.all(), source="student", write_only=True
+        queryset=models.Student.objects.all(),
+        source="student",
+        write_only=True,
     )
     professor_id = serializers.PrimaryKeyRelatedField(
         queryset=courses_models.Professor.objects.all(),

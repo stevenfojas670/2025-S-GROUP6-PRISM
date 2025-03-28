@@ -46,13 +46,19 @@ class ProfessorClassSectionSerializer(serializers.ModelSerializer):
     # this will allow our client to specify the primary key (id) of the given fields
     # in their request to create new instances of ProffClassSection in the databse
     semester_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Semester.objects.all(), source="semester", write_only=True
+        queryset=models.Semester.objects.all(),
+        source="semester",
+        write_only=True,
     )
     class_instance_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Class.objects.all(), source="class_instance", write_only=True
+        queryset=models.Class.objects.all(),
+        source="class_instance",
+        write_only=True,
     )
     professor_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Professor.objects.all(), source="professor", write_only=True
+        queryset=models.Professor.objects.all(),
+        source="professor",
+        write_only=True,
     )
 
     class Meta:
@@ -84,13 +90,19 @@ class EnrollmentSerializer(serializers.ModelSerializer):
     # Just accepting ids for writes. Same reasoning as PCSSerializer. i.e. he client can just specify a student_id, instead
     # of an entire student object. It also maps the student_id to the actual 'student' field in the enrollment (source='student')
     student_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Student.objects.all(), source="student", write_only=True
+        queryset=models.Student.objects.all(),
+        source="student",
+        write_only=True,
     )
     class_instance_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Class.objects.all(), source="class_instance", write_only=True
+        queryset=models.Class.objects.all(),
+        source="class_instance",
+        write_only=True,
     )
     semester_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Semester.objects.all(), source="semester", write_only=True
+        queryset=models.Semester.objects.all(),
+        source="semester",
+        write_only=True,
     )
 
     # This gives frontend requests full details of student, class, and semester (rather than just ids)

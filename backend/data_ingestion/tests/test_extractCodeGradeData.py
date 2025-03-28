@@ -86,7 +86,8 @@ class TestExportCodeGradeData:
         shutil.rmtree(self.test_directory)
         os.mkdir(self.test_directory)
         shutil.move(
-            f"{os.getcwd()}/{fileName}.zip", f"{os.getcwd()}/{self.test_directory}"
+            f"{os.getcwd()}/{fileName}.zip",
+            f"{os.getcwd()}/{self.test_directory}",
         )
 
     def createCSV(self, csvData, fileName):
@@ -115,7 +116,10 @@ class TestExportCodeGradeData:
 
     # Test 2) This checks if there are 2 identical zip files and errors out
     def test_duplicate_zip_files_found(self):
-        with open(os.path.join(f"{self.test_directory}", f"{self.test_file}.zip"), "w"):
+        with open(
+            os.path.join(f"{self.test_directory}", f"{self.test_file}.zip"),
+            "w",
+        ):
             assert (
                 self.runAndProduceError()
                 == f"A duplicate .zip file was found containing student submission in {self.test_directory}"
@@ -125,7 +129,9 @@ class TestExportCodeGradeData:
     def test_missing_cg_json_file(self):
         self.createSubmissions(["0 - Mary Smith"])
         self.createZIP("CS 135 1001 - 2024 Fall - Assignment 1.zip")
-        assert self.runAndProduceError() == "The .cg-info.json file is missing."
+        assert (
+            self.runAndProduceError() == "The .cg-info.json file is missing."
+        )
 
     # Test 4) This test will see if the provided metadata csv file matches the zip
     #         directory name, and it will return an error if so
@@ -233,7 +239,10 @@ class TestExportCodeGradeData:
         self.createJSON(
             {
                 "submission_ids": {"0 - Mary Smith": 0, "23 - Paul Jones": 23},
-                "user_ids": {"0 - Mary Smith": 100000, "23 - Paul Jones": 100001},
+                "user_ids": {
+                    "0 - Mary Smith": 100000,
+                    "23 - Paul Jones": 100001,
+                },
             }
         )
         self.createZIP("CS 135 1001 - 2024 Fall - Assignment 5")

@@ -15,11 +15,17 @@ from courses import models as course_models
 
 # Helper functions for creating required related objects.
 def create_user(
-    email="test@example.com", password="testpass", first_name="Test", last_name="User"
+    email="test@example.com",
+    password="testpass",
+    first_name="Test",
+    last_name="User",
 ):
     """Helper to create a user."""
     return get_user_model().objects.create_user(
-        email=email, password=password, first_name=first_name, last_name=last_name
+        email=email,
+        password=password,
+        first_name=first_name,
+        last_name=last_name,
     )
 
 
@@ -206,7 +212,9 @@ class FlaggedSubmissionModelTests(TestCase):
     def test_flagged_submission_str(self):
         """Test string representation of FlaggedSubmission."""
         flagged = assign_models.FlaggedSubmission.objects.create(
-            submission=self.submission, file_name="plagiarism_report.pdf", percentage=80
+            submission=self.submission,
+            file_name="plagiarism_report.pdf",
+            percentage=80,
         )
         # Add a similarity relation to the student.
         flagged.similarity_with.add(self.student)
@@ -240,7 +248,9 @@ class FlaggedStudentModelTests(TestCase):
     def test_flagged_student_str(self):
         """Test string representation of FlaggedStudent."""
         flagged_student = assign_models.FlaggedStudent.objects.create(
-            student=self.student, professor=self.professor, times_over_threshold=3
+            student=self.student,
+            professor=self.professor,
+            times_over_threshold=3,
         )
         expected = f"Flagged Student: {self.student} flagged 3 times"
         self.assertEqual(str(flagged_student), expected)

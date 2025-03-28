@@ -28,7 +28,10 @@ class Migration(migrations.Migration):
                 ),
                 ("email", models.EmailField(max_length=100, unique=True)),
                 ("codeGrade_id", models.IntegerField(unique=True)),
-                ("username", models.CharField(blank=True, max_length=50, null=True)),
+                (
+                    "username",
+                    models.CharField(blank=True, max_length=50, null=True),
+                ),
                 ("first_name", models.CharField(max_length=50)),
                 ("last_name", models.CharField(max_length=50)),
             ],
@@ -51,7 +54,8 @@ class Migration(migrations.Migration):
                 (
                     "class_instance",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to="courses.class"
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="courses.class",
                     ),
                 ),
                 (
@@ -196,7 +200,8 @@ class Migration(migrations.Migration):
                 (
                     "similarity_with",
                     models.ManyToManyField(
-                        related_name="similar_submissions", to="assignments.student"
+                        related_name="similar_submissions",
+                        to="assignments.student",
                     ),
                 ),
                 (

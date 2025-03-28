@@ -97,12 +97,15 @@ class CanvasDataIngestion:
                     .addFileName(self.__fileName)
                     .addLine(rowCount)
                     .addMsg(
-                        f"The User ID for {studentName} does not " "match the Login ID"
+                        f"The User ID for {studentName} does not "
+                        "match the Login ID"
                     )
                     .createError()
                 )
 
-            self.courseInfo = self.__getCourseMetaData(student["Section"], rowCount)
+            self.courseInfo = self.__getCourseMetaData(
+                student["Section"], rowCount
+            )
 
             # Error Check #2: Make sure the semester matches the semester
             #                 given in the file name
@@ -153,7 +156,9 @@ class CanvasDataIngestion:
                     eb.DataIngestionErrorBuilder()
                     .addFileName(self.__fileName)
                     .addLine(rowCount)
-                    .addMsg(f"The Canvas metadata ID does not match for {studentName}.")
+                    .addMsg(
+                        f"The Canvas metadata ID does not match for {studentName}."
+                    )
                     .createError()
                 )
 

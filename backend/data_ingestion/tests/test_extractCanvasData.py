@@ -18,7 +18,9 @@ from data_ingestion.extractCanvasData import *
 class TestExportCanvasData:
 
     test_directory = "canvas_data_test_directory"
-    fileName = f"{test_directory}/2025-03-25T0637_Grades-CS_135_1000_-_2024_Sumr.csv"
+    fileName = (
+        f"{test_directory}/2025-03-25T0637_Grades-CS_135_1000_-_2024_Sumr.csv"
+    )
     errorFileName = "canvas_data_errors.json"
 
     # Fixture to set up/teardown tests for this file
