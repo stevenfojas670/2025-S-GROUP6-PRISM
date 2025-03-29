@@ -1,44 +1,43 @@
+"""WebSocket consumer for real-time communication."""
+
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
 
 
 class MyConsumer(AsyncWebsocketConsumer):
-    """MyConsumer is an asynchronous WebSocket consumer that handles WebSocket
-    connections.
+    """Asynchronous WebSocket consumer for handling WebSocket events.
 
     Methods:
-        Handles the WebSocket connection establishment. Accepts the connection
-        and sends a message indicating that the WebSocket is connected.
-        Handles incoming messages from the WebSocket. Sends back a response
-        containing the received message.
-        Handles the WebSocket disconnection. Logs the disconnection with the
-        provided close code.
+        connect():
+            Handles the connection event and sends a confirmation message.
+        receive(text_data):
+            Handles incoming messages and echoes the content.
+        disconnect(close_code):
+            Logs the disconnection event.
+
     Attributes:
         None
     """
 
     async def connect(self):
-        """Handles the WebSocket connection event.
+        """Handle WebSocket connection event.
 
-        This method is called when a WebSocket client attempts to establish a connection.
-        It accepts the connection and sends an initial message to the client indicating
-        that the WebSocket connection has been successfully established.
+        Accepts the connection and sends a JSON message to the client
+        indicating successful connection.
 
         Sends:
-            A JSON-formatted message with a "message" key and the value "WebSocket connected".
+            JSON message: {"message": "WebSocket connected"}
         """
         await self.accept()
         await self.send(text_data=json.dumps({"message": "WebSocket connected"}))
 
     async def receive(self, text_data):
-        """Handles the receipt of a WebSocket message.
+        """Handle incoming WebSocket message.
 
-        This asynchronous method is triggered when a message is received
-        from the WebSocket. It processes the incoming `text_data` and sends
-        a JSON response back to the client with the received message.
+        Echoes the received `text_data` back to the client in JSON format.
 
         Args:
-            text_data (str): The text data received from the WebSocket.
+            text_data (str): Text message received from the client.
 
         Returns:
             None
@@ -46,12 +45,14 @@ class MyConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({"message": f"You sent: {text_data}"}))
 
     async def disconnect(self, close_code):
-        """Handles the WebSocket disconnection event.
+        """Handle WebSocket disconnection event.
 
-        This method is called when the WebSocket connection is closed.
-        It logs the disconnection event along with the provided close code.
+        Logs the disconnection using the provided close code.
 
         Args:
-            close_code (int): The close code indicating the reason for disconnection.
+            close_code (int): Code indicating the reason for disconnection.
+
+        Returns:
+            None
         """
         print(f"WebSocket disconnected: {close_code}")

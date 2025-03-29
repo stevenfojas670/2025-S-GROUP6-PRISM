@@ -1,57 +1,49 @@
+"""Permissions and role-based access control for the users app."""
+
 from rest_framework.permissions import BasePermission
 import logging
 
-# used for logging access to views. This creates a 'logger' thats named
-# based on this specific app (users.permissions)
+# Create a logger for this module.
 logger = logging.getLogger(__name__)
 
 
-# to be used by a view. Its up to us to decide what gets logged this way,
-# and what specifically is passed as 'action' and 'resource'
 def log_role_access(user, action, resource):
-    """Logs the access of a user performing an action on a specific resource.
+    """Log access of a user performing an action on a resource.
 
     Args:
         user (str): The username or identifier of the user performing the action.
-        action (str): The action performed by the user (e.g., "read", "write", "delete").
-        resource (str): The resource on which the action is performed (e.g., file, database entry).
-
-    Returns:
-        None
+        action (str): The action performed (e.g., "read", "write", "delete").
+        resource (str): The target resource of the action.
     """
     logger.info(f"{user} performed {action} on {resource}")
 
 
-# In users/permissions.py
 def is_professor(user):
-    """Check if the given user belongs to the "Professor" group.
+    """Check if the given user belongs to the 'Professor' group.
 
     Args:
         user (User): The user object to check.
 
     Returns:
-        bool: True if the user is in the "Professor" group, False otherwise.
+        bool: True if the user is a professor, False otherwise.
     """
     return user.groups.filter(name="Professor").exists()
 
 
 def is_ta(user):
-    """Checks if the given user belongs to the "TA" group.
+    """Check if the given user belongs to the 'TA' group.
 
     Args:
         user (User): The user object to check.
 
     Returns:
-        bool: True if the user is in the "TA" group, False otherwise.
+        bool: True if the user is a TA, False otherwise.
     """
     return user.groups.filter(name="TA").exists()
 
 
 def is_admin(user):
     """Check if a user has administrative privileges.
-
-    This function determines whether a given user has administrative rights
-    by checking if the user is marked as staff or a superuser.
 
     Args:
         user (User): The user object to check.
@@ -63,32 +55,17 @@ def is_admin(user):
 
 
 class IsProfessorOrTA(BasePermission):
-    """Permission class to check if the user is either a professor or a
-    teaching assistant (TA).
-
-    Methods:
-        has_permission(request, view):
-            Determines if the user has the required permissions to access the view.
-            Returns True if the user is authenticated and is either a professor or a TA, otherwise False.
-
-    Attributes:
-        Inherits from BasePermission.
-    """
+    """Allow access if the user is a professor or a TA."""
 
     def has_permission(self, request, view):
-        """Determines whether the requesting user has the necessary
-        permissions.
-
-        This method checks if the user is authenticated and if the user has a role
-        of either a professor or a teaching assistant (TA).
+        """Check if the user is a professor or TA.
 
         Args:
-            request: The HTTP request object containing user information.
-            view: The view being accessed (not used in this implementation).
+            request (HttpRequest): The incoming request.
+            view (View): The view being accessed.
 
         Returns:
-            bool: True if the user is authenticated and is either a professor or a TA,
-                  False otherwise.
+            bool: True if the user is authenticated and is a professor or TA.
         """
         return (
             request.user and
@@ -98,35 +75,17 @@ class IsProfessorOrTA(BasePermission):
 
 
 class IsProfessorOrAdmin(BasePermission):
-    """Permission class to grant access only to users who are either professors
-    or administrators.
-
-    Methods:
-        has_permission(request, view):
-            Checks if the user making the request is authenticated and has either professor or admin privileges.
-
-    Args:
-        request: The HTTP request object containing user information.
-        view: The view being accessed.
-
-    Returns:
-        bool: True if the user is authenticated and is either a professor or an admin, False otherwise.
-    """
+    """Allow access if the user is a professor or an admin."""
 
     def has_permission(self, request, view):
-        """Determines whether the requesting user has the necessary permissions
-        to access a view.
-
-        This method checks if the user is authenticated and if they have either professor
-        or admin privileges.
+        """Check if the user is a professor or admin.
 
         Args:
-            request (HttpRequest): The HTTP request object containing user information.
-            view (View): The view being accessed (not used in this implementation).
+            request (HttpRequest): The incoming request.
+            view (View): The view being accessed.
 
         Returns:
-            bool: True if the user is authenticated and has professor or admin privileges,
-            False otherwise.
+            bool: True if the user is authenticated and is a professor or admin.
         """
         return (
             request.user and
@@ -135,36 +94,18 @@ class IsProfessorOrAdmin(BasePermission):
         )
 
 
-# for more restrictive views
 class IsProfessor(BasePermission):
-    """Permission class to check if the requesting user is a professor.
-
-    This permission class ensures that the user making the request is authenticated
-    and has the necessary attributes to be identified as a professor.
-
-    Methods:
-        has_permission(request, view):
-            Returns True if the user is authenticated and is a professor, otherwise False.
-
-    Args:
-        request: The HTTP request object containing user information.
-        view: The view being accessed.
-
-    Returns:
-        bool: True if the user is authenticated and is a professor, False otherwise.
-    """
+    """Allow access only to professors."""
 
     def has_permission(self, request, view):
-        """Determines if the requesting user has the necessary permissions.
-
-        This method checks if the user is authenticated and has the role of a professor.
+        """Check if the user is a professor.
 
         Args:
-            request (HttpRequest): The HTTP request object containing user information.
-            view (View): The view being accessed (not used in this implementation).
+            request (HttpRequest): The incoming request.
+            view (View): The view being accessed.
 
         Returns:
-            bool: True if the user is authenticated and is a professor, False otherwise.
+            bool: True if the user is authenticated and is a professor.
         """
         return (
             request.user and
@@ -174,35 +115,20 @@ class IsProfessor(BasePermission):
 
 
 class IsAdmin(BasePermission):
-    """Permission class to check if the requesting user is an admin.
-
-    This class inherits from `BasePermission` and overrides the `has_permission` method
-    to determine whether the user has the required permissions to access a view.
-
-    Methods:
-        has_permission(request, view):
-            Checks if the user is authenticated and has admin privileges.
-
-    Args:
-        request: The HTTP request object containing user information.
-        view: The view being accessed.
-
-    Returns:
-        bool: True if the user is authenticated and is an admin, False otherwise.
-    """
+    """Allow access only to admin users."""
 
     def has_permission(self, request, view):
-        """Determines whether the requesting user has the necessary
-        permissions.
-
-        This method checks if the user is authenticated and has administrative privileges.
+        """Check if the user has admin privileges.
 
         Args:
-            request (HttpRequest): The HTTP request object containing user information.
+            request (HttpRequest): The incoming request.
             view (View): The view being accessed.
 
         Returns:
-            bool: True if the user is authenticated and is an admin, False otherwise.
+            bool: True if the user is authenticated and is an admin.
         """
-        return request.user and request.user.is_authenticated and is_admin(
-            request.user)
+        return (
+            request.user and
+            request.user.is_authenticated and
+            is_admin(request.user)
+        )

@@ -5,92 +5,70 @@ ingestion. Every builder will create a new error, and we can add the error
 information we need based on what we're checking.
 """
 
+"""Error builder for PRISM data ingestion.
+
+Provides a fluent interface for constructing DataIngestionError objects.
+"""
+
 import data_ingestion.errors.DataIngestionErrorFactory as ef
 
 
 class DataIngestionErrorBuilder:
-    """DataIngestionErrorBuilder is a builder class for constructing instances
-    of DataIngestionError with a fluent interface. It allows setting various
-    attributes of the error object step by step.
+    """Builder for constructing DataIngestionError objects.
 
-    Methods:
-        __init__():
-            Initializes the builder and creates a new instance of DataIngestionError
-            using the DataIngestionErrorFactory.
+    This class allows for building a DataIngestionError step by step
+    using a fluent interface.
 
-        createError():
-            Returns the constructed DataIngestionError object.
-
-        addFileName(fileName):
-            Sets the file name associated with the error.
-            Args:
-                fileName (str): The name of the file where the error occurred.
-            Returns:
-                DataIngestionErrorBuilder: The builder instance for method chaining.
-
-        addLine(line):
-            Sets the line number associated with the error.
-            Args:
-                line (int): The line number where the error occurred.
-            Returns:
-                DataIngestionErrorBuilder: The builder instance for method chaining.
-
-        addMsg(msg):
-            Sets the error message.
-            Args:
-                msg (str): The error message describing the issue.
-            Returns:
-                DataIngestionErrorBuilder: The builder instance for method chaining.
+    Attributes:
+        __error (DataIngestionError): The error object being built.
     """
 
-    __error = None  # Copy of Error object
+    __error = None
 
     def __init__(self):
-        """Initializes the DataIngestionErrorBuilder instance by creating a new
-        DataIngestionError object using the DataIngestionErrorFactory."""
+        """Initialize the builder with a new DataIngestionError instance."""
         self.__error = ef.DataIngestionErrorFactory().createError()
 
     def createError(self):
-        """Creates and returns the error object.
+        """Return the constructed DataIngestionError object.
 
         Returns:
-            object: The error object that has been built.
+            DataIngestionError: The completed error object.
         """
         return self.__error
 
     def addFileName(self, fileName):
-        """Sets the file name for the error being built.
+        """Set the file name for the error.
 
         Args:
-            fileName (str): The name of the file associated with the error.
+            fileName (str): The name of the file where the error occurred.
 
         Returns:
-            DataIngestionErrorBuilder: The current instance of the builder to allow method chaining.
+            DataIngestionErrorBuilder: The builder instance for method chaining.
         """
         self.__error.setFileName(fileName)
         return self
 
     def addLine(self, line):
-        """Sets the line number for the error being built and returns the
-        builder instance.
+        """Set the line reference for the error.
 
         Args:
-            line (int): The line number associated with the error.
+            line (int or str): The line number or content associated with the error.
 
         Returns:
-            DataIngestionErrorBuilder: The current instance of the builder to allow method chaining.
+            DataIngestionErrorBuilder: The builder instance for method chaining.
         """
         self.__error.setLine(line)
         return self
 
     def addMsg(self, msg):
-        """Adds a message to the error object being built.
+        """Set the error message.
 
         Args:
-            msg (str): The message to be set for the error.
+            msg (str): A descriptive error message.
 
         Returns:
-            DataIngestionErrorBuilder: The current instance of the builder to allow method chaining.
+            DataIngestionErrorBuilder: The builder instance for method chaining.
         """
         self.__error.setMsg(msg)
         return self

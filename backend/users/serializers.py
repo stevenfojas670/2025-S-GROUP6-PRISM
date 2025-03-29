@@ -16,6 +16,12 @@ class UserSerializer(serializers.ModelSerializer):
     # the serializer nees to know wich model is representing thast why the
     # model is get_user_model()
     class Meta:
+        """Metadata options for the user serializer or form.
+
+        Attributes:
+            model (Model): The user model retrieved via `get_user_model()`.
+        """
+
         model = get_user_model()
 
         # these are the list of fields we want to make available trhough the serializer

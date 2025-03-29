@@ -1,3 +1,4 @@
+"""This module defines the configuration for the 'prism' application in a Django project."""
 from django.apps import AppConfig
 
 

@@ -17,7 +17,7 @@ class DataIngestionErrorFactory:
     """
 
     def createError(self):
-        """Creates and returns an instance of the DataIngestionError class.
+        """Create and returns an instance of the DataIngestionError class.
 
         Returns:
             DataIngestionError: An instance of the DataIngestionError class.
