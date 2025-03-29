@@ -38,7 +38,7 @@ const LoginComponent: React.FC = () => {
 
 	const context = useAuth()
 
-	// Hydrated state added to handle mismatched rendering
+	// Hydrated statee added to handle mismatched rendering
 	const [hydrated, setHydrated] = useState(false)
 
 	useEffect(() => {
