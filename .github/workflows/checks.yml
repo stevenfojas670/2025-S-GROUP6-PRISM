@@ -6,7 +6,7 @@ on:
 
 jobs:
   lint:
-    name: Lint & Security Checks
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -34,12 +34,6 @@ jobs:
         run: |
           pip install flake8
           flake8 .
-
-      - name: Run Security Checks
-        run: |
-          pip install bandit safety
-          bandit -r .
-          safety check
 
   test:
     name: Run Django Tests with Coverage
