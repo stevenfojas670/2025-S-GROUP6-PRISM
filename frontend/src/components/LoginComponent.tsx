@@ -20,15 +20,21 @@ import { SignInButton } from "@/components/AuthenticationMethod" // Use SignInBu
 import { useRouter } from "next/navigation"
 
 const LoginComponent: React.FC = () => {
+	// for routing purposes, should be at the top of all files
 	const router = useRouter()
+
+	// variables for html and testing
 	const [username, setUsername] = useState<string>("")
 	const [password, setPassword] = useState<string>("")
 	const [message, setMessage] = useState<{
 		type: "success" | "error"
 		text: string
 	} | null>(null)
+
+	// for loading states
 	const [loading, setLoading] = useState(false);
-	// Hydrated statee added to handle mismatched rendering
+
+	// Hydrated state added to handle mismatched rendering
 	const [hydrated, setHydrated] = useState(false)
 
 	useEffect(() => {
@@ -37,7 +43,10 @@ const LoginComponent: React.FC = () => {
 
 	if (!hydrated) return null // Prevents SSR mismatches
 
+	// handles the submition of the html form to offer interactivity
+	// this gets activated when the form is submitted when login is attempted
 	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+		// creates a non-cancelable event
 		event.preventDefault()
 
 		// Validate there's input
@@ -46,7 +55,10 @@ const LoginComponent: React.FC = () => {
 			return;
 		}
 
+		// sets loading status
 		setLoading(true);
+
+		// handles the form submission by fetching the api call for logging in
 		try {
 			const response = await fetch("http://localhost:8000/api/login", {
 				method: "POST",
@@ -55,8 +67,10 @@ const LoginComponent: React.FC = () => {
 				credentials: "include",
 			})
 
+			// await data response
 			const data = await response.json()
 
+			// if the response is good, route to dashboard. error out otherwise
 			if (response.ok) {
 				// console.log("Logged in:", data)
 				router.push("/dashboard")
