@@ -11,9 +11,8 @@ unexpected happens.
 Provides a class for capturing, managing, and exporting data ingestion errors.
 """
 
+
 import json
-
-
 class DataIngestionError:
     """Represents a single data ingestion error.
 

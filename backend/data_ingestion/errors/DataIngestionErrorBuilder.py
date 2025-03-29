@@ -10,9 +10,8 @@ information we need based on what we're checking.
 Provides a fluent interface for constructing DataIngestionError objects.
 """
 
+
 import data_ingestion.errors.DataIngestionErrorFactory as ef
-
-
 class DataIngestionErrorBuilder:
     """Builder for constructing DataIngestionError objects.
 
