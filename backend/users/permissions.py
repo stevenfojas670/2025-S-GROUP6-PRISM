@@ -1,11 +1,13 @@
 from rest_framework.permissions import BasePermission
 import logging
 
-# used for logging access to views. This creates a 'logger' thats named based on this specific app (users.permissions)
+# used for logging access to views. This creates a 'logger' thats named
+# based on this specific app (users.permissions)
 logger = logging.getLogger(__name__)
 
 
-# to be used by a view. Its up to us to decide what gets logged this way, and what specifically is passed as 'action' and 'resource'
+# to be used by a view. Its up to us to decide what gets logged this way,
+# and what specifically is passed as 'action' and 'resource'
 def log_role_access(user, action, resource):
     """Logs the access of a user performing an action on a specific resource.
 
@@ -89,9 +91,9 @@ class IsProfessorOrTA(BasePermission):
                   False otherwise.
         """
         return (
-            request.user
-            and request.user.is_authenticated
-            and (is_professor(request.user) or is_ta(request.user))
+            request.user and
+            request.user.is_authenticated and
+            (is_professor(request.user) or is_ta(request.user))
         )
 
 
@@ -127,9 +129,9 @@ class IsProfessorOrAdmin(BasePermission):
             False otherwise.
         """
         return (
-            request.user
-            and request.user.is_authenticated
-            and (is_professor(request.user) or is_admin(request.user))
+            request.user and
+            request.user.is_authenticated and
+            (is_professor(request.user) or is_admin(request.user))
         )
 
 
@@ -165,9 +167,9 @@ class IsProfessor(BasePermission):
             bool: True if the user is authenticated and is a professor, False otherwise.
         """
         return (
-            request.user
-            and request.user.is_authenticated
-            and is_professor(request.user)
+            request.user and
+            request.user.is_authenticated and
+            is_professor(request.user)
         )
 
 
@@ -202,4 +204,5 @@ class IsAdmin(BasePermission):
         Returns:
             bool: True if the user is authenticated and is an admin, False otherwise.
         """
-        return request.user and request.user.is_authenticated and is_admin(request.user)
+        return request.user and request.user.is_authenticated and is_admin(
+            request.user)

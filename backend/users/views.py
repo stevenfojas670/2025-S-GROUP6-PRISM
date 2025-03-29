@@ -3,7 +3,8 @@
 # Views define how we handle requests
 # rest_framework handles a lot of the logic we need to create objects in our database for us
 # it does that by providing a bunch of base classes that we can configure for our views that will handle the request
-# in a default standarize way, also it give us the ability to override some of that behavior so we can modify it if we need it
+# in a default standarize way, also it give us the ability to override
+# some of that behavior so we can modify it if we need it
 from users import models, serializers
 from courses.models import Professor
 from rest_framework import viewsets, status
@@ -71,7 +72,9 @@ class UserVS(viewsets.ModelViewSet):
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST)
         except models.User.DoesNotExist:
             return Response(
                 {"error": "User not found."}, status=status.HTTP_404_NOT_FOUND

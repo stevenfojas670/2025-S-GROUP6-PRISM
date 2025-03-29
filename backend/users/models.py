@@ -51,11 +51,14 @@ class UserManager(BaseUserManager):
         if not extra_fields.get("username"):
             extra_fields["username"] = email
 
-        # django modelbase user manager you call self.model and its like creating a new User (our defined User class)
+        # django modelbase user manager you call self.model and its like
+        # creating a new User (our defined User class)
         user = self.model(email=self.normalize_email(email), **extra_fields)
-        # we hash the password cuz we cant just save the password in the databse
+        # we hash the password cuz we cant just save the password in the
+        # databse
         user.set_password(password)
-        # self._db supports adding multiple databse, best practice but we wont do this tho
+        # self._db supports adding multiple databse, best practice but we wont
+        # do this tho
         user.save(using=self._db)
         return user
 
@@ -110,12 +113,14 @@ class User(AbstractUser, PermissionsMixin):
     # linking the user manager to this custom user model
     objects = UserManager()
 
-    # default behavior is to create a username; here the username is the email field
+    # default behavior is to create a username; here the username is the email
+    # field
     USERNAME_FIELD = "email"
     # email is by default required; add any other required fields here
     REQUIRED_FIELDS = ["first_name", "last_name"]
 
-    groups = models.ManyToManyField(Group, related_name="custom_user_set", blank=True)
+    groups = models.ManyToManyField(
+        Group, related_name="custom_user_set", blank=True)
     user_permissions = models.ManyToManyField(
         Permission, related_name="custom_user_permissions_set", blank=True
     )

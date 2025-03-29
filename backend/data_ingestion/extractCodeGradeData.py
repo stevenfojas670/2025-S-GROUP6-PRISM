@@ -8,18 +8,18 @@ CodeGrade data files.
 """
 
 # Django setup
-import os, django
+from assignments.models import Student, Assignment, Submission
+import data_ingestion.errors.DataIngestionErrorBuilder as eb
+from data_ingestion.errors.DataIngestionError import DataIngestionError
+import json
+import math
+import pandas as pd
+from zipfile import ZipFile
+import os
+import django
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "prism_backend.settings")
 django.setup()
-
-from zipfile import ZipFile
-import pandas as pd
-import math
-import json
-from data_ingestion.errors.DataIngestionError import DataIngestionError
-import data_ingestion.errors.DataIngestionErrorBuilder as eb
-from assignments.models import Student, Assignment, Submission
 
 
 class CodeGradeDataIngestion:
@@ -87,7 +87,8 @@ class CodeGradeDataIngestion:
     """
 
     # Fields
-    __dirName = None  # Directory containing all data (should be 'codegrade_data')
+    # Directory containing all data (should be 'codegrade_data')
+    __dirName = None
     __submissionFileName = None  # Current course/assignment we are checking data for
     __className = None
     __section = None
@@ -160,7 +161,8 @@ class CodeGradeDataIngestion:
             - Appends an error to `self.__errors` if an issue is encountered.
         """
         for file in os.listdir(self.__dirName):
-            if file.endswith(".zip") and file not in CodeGradeDataIngestion.fileSeen:
+            if file.endswith(
+                    ".zip") and file not in CodeGradeDataIngestion.fileSeen:
                 self.__parseZipFileName(file)
                 self.__zipFileDirectory = (
                     f"{self.__dirName}/{self.__submissionFileName}"
@@ -356,7 +358,7 @@ class CodeGradeDataIngestion:
         for key, value in self.__submissions.items():
             try:
                 subID, studentName = self.__checkIfStudentFileExists(key)
-            except:
+            except BaseException:
                 continue
             else:
                 # ERROR CHECK #1: Make sure the submission ID matches
@@ -402,7 +404,7 @@ class CodeGradeDataIngestion:
 
             try:
                 subID, studentName = self.__checkIfStudentFileExists(key)
-            except:
+            except BaseException:
                 raise ValueError()
             else:
 
@@ -591,7 +593,7 @@ class CodeGradeDataIngestion:
                 self.__extractMetaDataFromCSV()
                 self.__verifyStudentSubmissionExists()
                 self.__verifyStudentUserExistsInMetaData()
-            except:
+            except BaseException:
                 for e in self.__errors:
                     CodeGradeDataIngestion.allErrors.append(e)
                 self.__errors = list()

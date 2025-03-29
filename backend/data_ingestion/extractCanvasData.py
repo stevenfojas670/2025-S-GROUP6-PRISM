@@ -217,7 +217,8 @@ class CanvasDataIngestion:
                     .createError()
                 )
 
-            self.courseInfo = self.__getCourseMetaData(student["Section"], rowCount)
+            self.courseInfo = self.__getCourseMetaData(
+                student["Section"], rowCount)
 
             # Error Check #2: Make sure the semester matches the semester
             #                 given in the file name

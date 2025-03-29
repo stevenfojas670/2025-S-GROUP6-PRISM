@@ -17,43 +17,10 @@ from users.permissions import (
 
 
 class PermissionTests(TestCase):
-    """PermissionTests is a test suite for verifying the behavior of helper
-    functions and permission classes related to user roles and access control
-    in the application.
+    """Test suite for verifying user role permissions.
 
-    Test Cases:
-    -----------
-    1. Helper Function Tests:
-        - `test_is_professor_true`: Verifies that a user in the "Professor" group is identified as a professor.
-        - `test_is_professor_false`: Verifies that a user not in the "Professor" group is not identified as a professor.
-        - `test_is_ta_true`: Verifies that a user in the "TA" group is identified as a teaching assistant.
-        - `test_is_ta_false`: Verifies that a user not in the "TA" group is not identified as a teaching assistant.
-        - `test_is_admin_staff`: Verifies that a staff user is identified as an admin.
-        - `test_is_admin_superuser`: Verifies that a superuser is identified as an admin.
-        - `test_is_admin_false`: Verifies that a regular user is not identified as an admin.
-
-    2. Permission Class Tests:
-        - `test_is_professor_or_ta_professor`: Verifies that a user in the "Professor" group has permission via `IsProfessorOrTA`.
-        - `test_is_professor_or_ta_ta`: Verifies that a user in the "TA" group has permission via `IsProfessorOrTA`.
-        - `test_is_professor_or_ta_none`: Verifies that a user in neither the "Professor" nor "TA" group does not have permission via `IsProfessorOrTA`.
-        - `test_is_professor_or_admin_professor`: Verifies that a user in the "Professor" group has permission via `IsProfessorOrAdmin`.
-        - `test_is_professor_or_admin_admin`: Verifies that an admin user has permission via `IsProfessorOrAdmin`.
-        - `test_is_professor_or_admin_none`: Verifies that a user who is neither a professor nor an admin does not have permission via `IsProfessorOrAdmin`.
-        - `test_is_professor_true`: Verifies that a user in the "Professor" group has permission via `IsProfessor`.
-        - `test_is_professor_false`: Verifies that a user not in the "Professor" group does not have permission via `IsProfessor`.
-        - `test_is_admin_true_staff`: Verifies that a staff user has permission via `IsAdmin`.
-        - `test_is_admin_true_superuser`: Verifies that a superuser has permission via `IsAdmin`.
-        - `test_is_admin_false`: Verifies that a regular user does not have permission via `IsAdmin`.
-
-    Setup:
-    ------
-    - Creates an APIRequestFactory instance for generating mock requests.
-    - Creates user groups for "Professor" and "TA" to test group-based permissions.
-
-    Purpose:
-    --------
-    This test suite ensures that the helper functions and permission classes correctly
-    identify user roles and enforce access control based on the application's requirements.
+    This suite checks helper functions and permission classes
+    to enforce role-based access control in the app.
     """
 
     def setUp(self):
@@ -122,11 +89,10 @@ class PermissionTests(TestCase):
         self.assertTrue(is_ta(user))
 
     def test_is_ta_false(self):
-        """Test case for the `is_ta` function to verify it returns False for a
-        regular user.
+        """Return False for a user not in the TA group.
 
-        This test creates a user with no teaching assistant (TA) privileges and asserts
-        that the `is_ta` function correctly identifies the user as not being a TA.
+        This test creates a user with no TA privileges and checks
+        that `is_ta()` returns False.
         """
         user = get_user_model().objects.create_user(
             email="regular@example.com", password="testpass"
@@ -134,11 +100,9 @@ class PermissionTests(TestCase):
         self.assertFalse(is_ta(user))
 
     def test_is_admin_staff(self):
-        """Test to verify that the `is_admin` function correctly identifies a
-        user with staff privileges as an admin.
+        """Return True for a user with staff privileges.
 
-        This test creates a user with `is_staff` set to True and asserts that
-        the `is_admin` function returns True for this user.
+        This test creates a staff user and checks that `is_admin()` returns True.
         """
         user = get_user_model().objects.create_user(
             email="staff@example.com", password="testpass", is_staff=True
@@ -146,11 +110,9 @@ class PermissionTests(TestCase):
         self.assertTrue(is_admin(user))
 
     def test_is_admin_superuser(self):
-        """Test to verify that the `is_admin` function correctly identifies a
-        superuser as an admin.
+        """Return True for a superuser.
 
-        This test creates a superuser using the `get_user_model` method and checks
-        if the `is_admin` function returns `True` for the created superuser.
+        This test creates a superuser and verifies that `is_admin()` returns True.
         """
         user = get_user_model().objects.create_superuser(
             email="super@example.com", password="testpass"
@@ -158,11 +120,9 @@ class PermissionTests(TestCase):
         self.assertTrue(is_admin(user))
 
     def test_is_admin_false(self):
-        """Test to verify that the `is_admin` function returns False for a
-        regular user.
+        """Return False for a regular user.
 
-        This test creates a user with standard permissions and checks that the
-        `is_admin` function correctly identifies the user as not having admin privileges.
+        This test checks that `is_admin()` returns False for a non-staff, non-superuser.
         """
         user = get_user_model().objects.create_user(
             email="regular@example.com", password="testpass"
@@ -202,7 +162,7 @@ class PermissionTests(TestCase):
         self.assertTrue(permission.has_permission(request, None))
 
     def test_is_professor_or_ta_ta(self):
-        """User is in TA group => has permission."""
+        """Test user in TA group has permission via IsProfessorOrTA."""
         permission = IsProfessorOrTA()
         request = self.factory.get("/")
         user = get_user_model().objects.create_user(
@@ -282,7 +242,7 @@ class PermissionTests(TestCase):
         self.assertFalse(permission.has_permission(request, None))
 
     def test_is_admin_true_staff(self):
-        """Staff user => has permission."""
+        """Test staff user has permission via IsAdmin."""
         permission = IsAdmin()
         request = self.factory.get("/")
         user = get_user_model().objects.create_user(

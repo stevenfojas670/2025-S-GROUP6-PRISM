@@ -21,51 +21,6 @@ import datetime
 
 class API_Data:
     """API_Data Class.
-
-    This class provides functionality to interact with the CodeGrade API for extracting and processing
-    course, assignment, and submission data. It includes methods for retrieving data, creating directories,
-    downloading submissions, generating JSON and CSV files, and creating zip archives.
-
-    Attributes:
-        client (object): Authenticated CodeGrade client.
-        course (object): Selected course object from CodeGrade.
-        course_name (str): Name of the selected course.
-        assignments (list): List of assignments in the selected course.
-        create_folder_path (str): Path to the directory for storing generated files.
-        course_info (dict): Dictionary containing course information.
-        all_assignments (list): List of all assignments in the course.
-        graders (list): List of graders for the course.
-        rubric_grades (list): List of tuples containing rubric grades.
-        rubrics (dict): Dictionary containing rubric details for assignments.
-        all_assignment_submissions (dict): Dictionary containing all assignment submissions.
-
-    Methods:
-        __init__(client): Initializes the API_Data object with the authenticated client.
-        handle_maybe(maybe): Handles exceptions and exits the program if necessary.
-        mkdir(dir): Creates a directory if it does not exist.
-        get_course(client): Retrieves and selects a course from the CodeGrade API.
-        get_assignments(): Retrieves assignments for the selected course.
-        get_course_info(): Retrieves and formats course information into a dictionary.
-        get_rubric_grades_dict(assignments): Retrieves rubric grades for all submissions in assignments.
-        get_rubric_value(rubric, grade_dict, sub_id_key): Parses rubric values into a dictionary.
-        get_all_submissions(assignment): Retrieves all submissions for a given assignment.
-        get_all_graders(assignment): Retrieves all graders for a given assignment.
-        get_rubric(assignment): Retrieves the rubric for a given assignment.
-        get_desc(assignment): Retrieves the description of a given assignment.
-        get_time_frames(assignment): Retrieves the timeframes for a given assignment.
-        get_feedback(assignment): Retrieves feedback for a given assignment.
-        get_users(course): Retrieves all users in the selected course.
-        get_all_user_submissions(course, user_id): Retrieves all submissions for a specific user in the course.
-        get_rubric_grade(submission_id): Retrieves the rubric grade for a specific submission.
-        get_json_file(stud_dict, file_path): Creates a JSON file with student data.
-        download_submission(submission, output_dir, retries=5): Downloads a submission as a zip file.
-        get_output_dir(course_name, assignment): Generates the output directory path for an assignment.
-        get_sorted_dict(studDict): Sorts and formats a dictionary of student data.
-        make_zip_archive(zip_file_name, dir_path): Creates a zip archive of a directory.
-        extract_all_assignments(assignments): Extracts all assignments and creates zip files for submissions.
-        get_grade(max_grade, grade_achieved): Calculates the grade percentage based on achieved and maximum grades.
-        extract_csv(assignments): Extracts assignment data into a CSV file.
-        delete_created_folder(): Deletes the created folder and its contents.
     """
 
     # variables
@@ -88,24 +43,6 @@ class API_Data:
     def __init__(self, client):
         """Initializes the class with the provided client and sets up various
         attributes for managing course and assignment data.
-
-        Args:
-            client: The client object used to interact with the API.
-
-        Attributes:
-            client: The client object passed during initialization.
-            course_name (str): The name of the course, initialized as an empty string.
-            course: The course data retrieved using the client.
-            assignments: The assignment data retrieved using the client.
-            create_folder_path (str): Path for creating folders, initialized as an empty string.
-            course_info (dict): A dictionary to store course information in a human-readable format.
-            all_assignments (list): A list to store all assignments, initialized as an empty list.
-            graders (list): A list to store grader information, initialized as an empty list.
-            rubric_grades (list): A list to store rubric grades, initialized as an empty list.
-            rubrics (dict): A dictionary to store rubric data for assignments,
-                            initialized as an empty dictionary with assignment IDs as keys.
-            all_assignment_submissions (dict): A dictionary to store submissions for each assignment,
-                                               initialized as an empty dictionary with assignment IDs as keys.
         """
         # main will handle the username and password
         # part(retrieve from frontend)
@@ -127,35 +64,11 @@ class API_Data:
     # helper functions
     def handle_maybe(self, maybe):
         """Handles a "maybe" object by attempting to extract its value using a
-        provided function.
-
-        Args:
-            maybe: An object that supports the `try_extract` method, which takes a callable
-                   and attempts to extract a value or handle an error.
-
-        Returns:
-            The result of the `try_extract` method, which may vary depending on the implementation
-            of the `maybe` object and the callable provided.
-
-        Raises:
-            SystemExit: If the extraction fails, the callable provided to `try_extract` will
-                        raise a `SystemExit` with exit code 1.
         """
         return maybe.try_extract(lambda: SystemExit(1))
 
     def mkdir(self, dir):
         """Creates a directory if it does not already exist.
-
-        Args:
-            dir (str): The path of the directory to create.
-
-        Returns:
-            bool: True if the directory was successfully created or already exists,
-                  False if an exception occurred during the creation process.
-
-        Raises:
-            Exception: Any exception that occurs during the directory creation
-                       process is caught and printed to standard error.
         """
         try:
             os.makedirs(dir, exist_ok=True)
@@ -167,19 +80,6 @@ class API_Data:
 
     def get_course(self, client):
         """Retrieves a course from the client by presenting a selection list to
-        the user.
-
-        Args:
-            client: An object that provides access to course data through a `get_all` method.
-
-        Returns:
-            The selected course object if successful, or an exception object if an error occurs.
-
-        Raises:
-            Exception: Propagates any exception that occurs during the course selection process.
-
-        Side Effects:
-            Sets the `course_name` attribute of the instance to the name of the selected course.
         """
         try:
             course = self.handle_maybe(
@@ -198,21 +98,12 @@ class API_Data:
     # Populate class vars and output data in a human readable format
     def get_assignments(self):
         """Retrieves the list of assignments associated with the course.
-
-        Returns:
-            list: A list of assignments for the course.
         """
         return self.course.assignments
 
     # TODO vvv finish these methods
     def get_course_info(self):
         """Retrieves information about a course and returns it as a dictionary.
-
-        Returns:
-            dict: A dictionary containing the following course information:
-                - "Course-ID" (str): The unique identifier of the course.
-                - "Name" (str): The name of the course.
-                - "Created-Date" (datetime): The date and time when the course was created.
         """
         course_dict = {}
         course_dict["Course-ID"] = self.course.id
@@ -222,36 +113,6 @@ class API_Data:
 
     def get_rubric_grades_dict(self, assignments):
         """Generates a dictionary containing rubric grades for student
-        submissions.
-
-        Args:
-            assignments (list): A list of assignment objects for which rubric grades
-                                need to be extracted.
-
-        Returns:
-            dict: A dictionary where each key is a string in the format
-                  "submissionID - Stud_name", and the value is a list of dictionaries
-                  containing the following keys:
-                    - "header" (str): The header or description of the rubric item.
-                    - "points_achieved" (float): The points achieved by the student
-                                                 for the rubric item.
-                    - "points_possible" (float): The maximum points possible for the
-                                                  rubric item.
-                    - "multiplier" (float): The multiplier applied to the rubric item.
-
-        Notes:
-            - The method retrieves all submissions for each assignment and processes
-              their rubric grades.
-            - The `get_rubric_value` method is used to populate the rubric grade
-              details for each submission.
-        """
-        """{"submissionID - Stud_name":
-                                    [{"header":          ''
-                                     "points_achieved":  0
-                                     "points_possible":  0
-                                     "multiplier":       0 },
-                                     {}]
-        submissionID = Stud_name...
         }
         """
         grade_dict = {}  # dictionary to return
@@ -270,17 +131,6 @@ class API_Data:
     # helper funciton:
     def get_rubric_value(self, rubric, grade_dict, sub_id_key):
         """Extracts and appends rubric data to the grade dictionary for a
-        specific subject ID key.
-
-        Args:
-            rubric (object): An object containing rubric information, including selected items
-                             and their corresponding details such as achieved points, possible points,
-                             and multipliers.
-            grade_dict (dict): A dictionary where the subject ID key maps to a list of rubric results.
-            sub_id_key (str): The key representing the subject ID in the grade dictionary.
-
-        Returns:
-            None: The function modifies the grade_dict in place by appending parsed rubric data.
         """
         # return a dictionary parsed with the info.
         index = 0
@@ -308,16 +158,6 @@ class API_Data:
     # ASSIGNMENT SERVICE TYPE
     def get_all_submissions(self, assignment):
         """Retrieves all submissions for a given assignment.
-
-        Args:
-            assignment (object): The assignment object containing the assignment ID.
-
-        Returns:
-            list: A list of submissions for the specified assignment if successful.
-            None: If an exception occurs during the retrieval process.
-
-        Raises:
-            Exception: Logs the exception message if an error occurs while fetching submissions.
         """
         try:
             submissions = self.client.assignment.get_all_submissions(
@@ -330,16 +170,6 @@ class API_Data:
 
     def get_all_graders(self, assignment):
         """Retrieves all graders for a given assignment.
-
-        Args:
-            assignment (object): The assignment object containing the assignment ID.
-
-        Returns:
-            list: A list of graders associated with the assignment if successful.
-            None: If an exception occurs during the retrieval process.
-
-        Raises:
-            Exception: Logs the exception message if an error occurs while fetching graders.
         """
         try:
             graders = self.client.assignment.get_all_graders(
@@ -352,19 +182,10 @@ class API_Data:
 
     def get_rubric(self, assignment):
         """Retrieves the rubric for a given assignment using the client API.
-
-        Args:
-            assignment (object): The assignment object containing the assignment ID.
-
-        Returns:
-            object: The rubric associated with the assignment if retrieval is successful.
-            None: If an exception occurs during the retrieval process.
-
-        Raises:
-            Exception: Prints the exception message if an error occurs while fetching the rubric.
         """
         try:
-            rubric = self.client.assignment.get_rubric(assignment_id=assignment.id)
+            rubric = self.client.assignment.get_rubric(
+                assignment_id=assignment.id)
         except Exception as e:
             print(str(e))
         else:
@@ -372,20 +193,10 @@ class API_Data:
 
     def get_desc(self, assignment):
         """Retrieves the description of a given assignment using the client
-        API.
-
-        Args:
-            assignment (object): An object representing the assignment, which must have an `id` attribute.
-
-        Returns:
-            str: The description of the assignment if successfully retrieved.
-            None: If an exception occurs during the retrieval process.
-
-        Raises:
-            Exception: Any exception raised during the API call is caught and printed.
         """
         try:
-            desc = self.client.assignment.get_description(assignment_id=assignment.id)
+            desc = self.client.assignment.get_description(
+                assignment_id=assignment.id)
         except Exception as e:
             print(str(e))
         else:
@@ -393,19 +204,10 @@ class API_Data:
 
     def get_time_frames(self, assignment):
         """Retrieves the time frames associated with a given assignment.
-
-        Args:
-            assignment (object): The assignment object containing the assignment ID.
-
-        Returns:
-            list: A list of time frames associated with the assignment if successful.
-            None: If an exception occurs during the retrieval process.
-
-        Raises:
-            Exception: Prints the exception message if an error occurs.
         """
         try:
-            times = self.client.assignment.get_timeframes(assignment_id=assignment.id)
+            times = self.client.assignment.get_timeframes(
+                assignment_id=assignment.id)
         except Exception as e:
             print(str(e))
         else:
@@ -413,16 +215,6 @@ class API_Data:
 
     def get_feedback(self, assignment):
         """Retrieves all feedback for a given assignment using the client API.
-
-        Args:
-            assignment (object): The assignment object containing the assignment ID.
-
-        Returns:
-            list: A list of feedback objects associated with the assignment,
-                  or None if an exception occurs.
-
-        Raises:
-            Exception: Captures and prints any exception that occurs during the API call.
         """
         try:
             feedback = self.client.assignment.get_all_feedback(
@@ -447,15 +239,6 @@ class API_Data:
     def get_users(self, course):
         """Retrieves all users enrolled in a specified course.
 
-        Args:
-            course (object): The course object containing the course ID.
-
-        Returns:
-            list: A list of user objects enrolled in the course if successful.
-            None: If an exception occurs during the API call.
-
-        Raises:
-            Exception: Logs the exception message if the API call fails.
         """
         try:
             users = self.client.course.get_all_users(course_id=course.id)
@@ -466,17 +249,6 @@ class API_Data:
 
     def get_all_user_submissions(self, course, user_id):
         """Retrieve all submissions made by a specific user in a given course.
-
-        Args:
-            course (object): The course object containing the course details.
-            user_id (int): The unique identifier of the user whose submissions are to be retrieved.
-
-        Returns:
-            list: A list of submissions made by the user in the specified course,
-                  or None if an exception occurs.
-
-        Raises:
-            Exception: If an error occurs during the API call, it is caught and printed.
         """
         # {'assignement_id':[extendedWork(...)]}
         try:
@@ -491,13 +263,6 @@ class API_Data:
     # SUBMISSION SERVICE TYPES:
     def get_rubric_grade(self, submission_id):
         """Retrieves the rubric grade for a given submission ID.
-
-        Args:
-            submission_id (int): The ID of the submission for which the rubric grade is to be retrieved.
-
-        Returns:
-            dict or None: The rubric grade as a dictionary if successfully retrieved,
-                          or None if an exception occurs during the process.
         """
         try:
             grade = self.client.submission.get_rubric_result(
@@ -512,21 +277,6 @@ class API_Data:
     def get_json_file(self, stud_dict, file_path):
         """Generates a JSON file from a given dictionary and saves it to the
         specified file path.
-
-        Args:
-            stud_dict (dict): The dictionary containing student data to be written to the JSON file.
-            file_path (str): The directory path where the JSON file will be created.
-
-        Returns:
-            None: The function does not return a value. If the directory creation fails, the function exits early.
-
-        Raises:
-            OSError: If there is an issue writing to the file or creating the directory.
-
-        Notes:
-            - The JSON file is named ".cg-info.json" and will be created in the specified directory.
-            - If the directory specified by `file_path` does not exist, it will attempt to create it using `self.mkdir(file_path)`.
-            - Prints a message indicating the creation of the JSON file.
         """
         # file_name
         file_output = os.path.join(file_path, ".cg-info.json")
@@ -539,28 +289,7 @@ class API_Data:
 
     def download_submission(self, submission, output_dir, *, retries=5):
         """Downloads a submission in ZIP format, extracts its contents, and
-        saves them to a specified output directory. Retries the download in
-        case of transient read errors.
 
-        Args:
-            submission (object): The submission object containing metadata about
-                the submission, including the user or group information.
-            output_dir (str): The directory where the extracted files will be saved.
-            retries (int, optional): The number of retry attempts in case of a
-                transient read error. Defaults to 5.
-
-        Raises:
-            httpx.ReadError: If the download fails after the specified number of retries.
-            zipfile.BadZipFile: If the downloaded file is not a valid ZIP file.
-
-        Notes:
-            - If the submission is associated with a group, the output directory
-              will include the group's name followed by "(Group)".
-            - If the submission is associated with an individual user, the output
-              directory will include the user's name.
-            - Ensures that the output directory exists before extracting files.
-            - Handles invalid ZIP files gracefully by printing an error message
-              to stderr.
         """
         try:
             zipinfo = self.client.submission.get(
@@ -601,7 +330,11 @@ class API_Data:
                     if not filename:
                         continue
                     source = zipf.open(file)
-                    target = open(os.path.join(student_output_dir, filename), "wb")
+                    target = open(
+                        os.path.join(
+                            student_output_dir,
+                            filename),
+                        "wb")
                     with source, target:
                         shutil.copyfileobj(source, target)
             except zipfile.BadZipFile:
@@ -610,14 +343,6 @@ class API_Data:
     # helper function for extract_all_assignments
     def get_output_dir(self, course_name, assignment):
         """Generates the output directory path for a given course and
-        assignment.
-
-        Args:
-            course_name (str): The name of the course.
-            assignment (object): An object representing the assignment, which must have a 'name' attribute.
-
-        Returns:
-            str: The full path to the output directory for the specified course and assignment.
         """
         self.create_folder_path = os.path.join(os.getcwd(), "cg_data")
         fileName = course_name + " - " + assignment.name
@@ -627,20 +352,6 @@ class API_Data:
     # helper function for extract_all_assignments
     def get_sorted_dict(self, studDict):
         """Sorts and restructures the nested dictionaries within the provided
-        student dictionary.
-
-        This method takes a dictionary containing student data, sorts the items in the
-        "submission_ids" and "user_ids" keys, and restructures the nested dictionaries
-        for all keys in the input dictionary.
-
-        Args:
-            studDict (dict): A dictionary containing student data with keys "submission_ids",
-                             "user_ids", and potentially other keys. Each key maps to a dictionary
-                             of key-value pairs.
-
-        Returns:
-            dict: The input dictionary with "submission_ids" and "user_ids" sorted by their keys,
-                  and all nested dictionaries restructured.
         """
         studDict["submission_ids"] = sorted(studDict["submission_ids"].items())
         studDict["user_ids"] = sorted(studDict["user_ids"].items())
@@ -654,23 +365,6 @@ class API_Data:
     # helper function for extract_all_assignments
     def make_zip_archive(self, zip_file_name, dir_path):
         """Creates a zip archive of a specified directory.
-
-        This method takes the name of the output zip file and the path to the
-        directory to be archived. It checks if the directory exists, and if so,
-        creates a zip archive in the specified destination path. If the directory
-        does not exist, it prints an error message and exits the function.
-
-            zip_file_name (str): The name of the resulting output .zip file (without extension).
-            dir_path (str): The path to the directory to be zipped.
-
-        Returns:
-            None
-        """
-        """Creates a zip archive of a directory.
-
-        Args:
-            zip_file_name (str): name of the resulting output .zip file
-            dir_path (str): Path to the directory to be zipped.
         """
         if not os.path.exists(dir_path):
             print(
@@ -729,7 +423,9 @@ class API_Data:
                 output_dir = self.get_output_dir(self.course.name, assignment)
                 # output_dir = 'C:\\Users\\ejera\\testenv\\CS 472 - Development - Businge - Assignment 0'
                 students = {"submission_ids": {}, "user_ids": {}}
-                print(f"\nExtracting submission source code for {assignment.name}:")
+                print(
+                    f"\nExtracting submission source code for {
+                        assignment.name}:")
                 for submission in submissions:
                     # populate the students dictionary
                     subID = submission.id
@@ -754,8 +450,8 @@ class API_Data:
                 self.make_zip_archive(fileName, output_dir)
             elif not after_lock_date:
                 print(
-                    f"Lock date ({lock_date}) has not been passed yet for {assignment.name}"
-                )
+                    f"Lock date ({lock_date}) has not been passed yet for {
+                        assignment.name}")
             else:
                 print(f"No submissions for {assignment.name}")
 
@@ -784,8 +480,8 @@ class API_Data:
         the student submisison including stud-id, username, name, and grade.
         """
         print(
-            f"\nExtracting .CSV file(s) for student(s) from class: '{self.course.name}'"
-        )
+            f"\nExtracting .CSV file(s) for student(s) from class: '{
+                self.course.name}'")
         for assignment in assignments:
             submissions = self.client.assignment.get_all_submissions(
                 assignment_id=assignment.id,
@@ -828,7 +524,8 @@ class API_Data:
                 writer.writerow(rows)
                 self.get_feedback(assignment)
                 for submission in submissions:
-                    grade = self.get_grade(assignment.max_grade, submission.grade)
+                    grade = self.get_grade(
+                        assignment.max_grade, submission.grade)
                     # find the grade
                     rows = [
                         submission.user.id,
@@ -844,8 +541,8 @@ class API_Data:
                 fileCSV.close()
             elif not after_lock_date:
                 print(
-                    f"Lock date ({lock_date}) has not been passed yet for {assignment.name}"
-                )
+                    f"Lock date ({lock_date}) has not been passed yet for {
+                        assignment.name}")
             else:
                 print(f"No submissions for {assignment.name}")
 
@@ -871,12 +568,14 @@ class API_Data:
         try:
             shutil.rmtree(self.create_folder_path)
             print(
-                f"Directory '{self.create_folder_path}' and its contents deleted successfully."
-            )
+                f"Directory '{
+                    self.create_folder_path}' and its contents deleted successfully.")
         except FileNotFoundError:
             print(f"Directory '{self.create_folder_path}' not found.")
         except PermissionError:
-            print(f"You do not have permission to delete '{self.create_folder_path}'.")
+            print(
+                f"You do not have permission to delete '{
+                    self.create_folder_path}'.")
         except OSError as e:
             print(f"Error deleting '{self.create_folder_path}': {e}")
 

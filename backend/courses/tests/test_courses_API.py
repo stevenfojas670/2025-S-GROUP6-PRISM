@@ -8,21 +8,18 @@ from django.contrib.auth import get_user_model
 from courses.models import Professor, Semester, Class, ProfessorClassSection
 
 
-# Helper function to create a user (for Professor)
 def create_user(
-    email="test@example.com",
-    password="pass123",
-    first_name="Test",
-    last_name="User",
-):
-    """Creates and returns a new user with the specified email, password, first
-    name, and last name.
+        email="test@example.com",
+        password="pass123",
+        first_name="Test",
+        last_name="User"):
+    """Create and return a new user.
 
     Args:
-        email (str): The email address of the user. Defaults to "test@example.com".
-        password (str): The password for the user. Defaults to "pass123".
-        first_name (str): The first name of the user. Defaults to "Test".
-        last_name (str): The last name of the user. Defaults to "User".
+        email (str): The email address of the user.
+        password (str): The password for the user.
+        first_name (str): The first name of the user.
+        last_name (str): The last name of the user.
 
     Returns:
         User: The created user instance.
@@ -35,13 +32,8 @@ def create_user(
     )
 
 
-# Helper function to create a Professor instance
 def create_professor(email, first_name, last_name):
-    """Creates and returns a Professor instance.
-
-    This function first creates a user with the provided email, first name,
-    and last name, along with a default password. Then, it creates a
-    Professor object associated with the created user.
+    """Create and return a Professor instance.
 
     Args:
         email (str): The email address of the professor.
@@ -61,69 +53,22 @@ def create_professor(email, first_name, last_name):
 
 
 class ProfessorAPITests(APITestCase):
-    """
-    ProfessorAPITests(APITestCase)
-    --------------------------------
-    This test class contains unit tests for the Professor API endpoints. It ensures
-    that the API behaves as expected when performing operations such as listing,
-    filtering, ordering, and searching for professors.
-    Methods:
-    --------
-    - setUp():
-        Sets up the test environment by creating two sample professor objects.
-    - test_list_professors():
-        Verifies that the API correctly retrieves a list of all professors.
-    - test_filter_professors_by_first_name():
-        Tests the filtering functionality of the API by filtering professors based
-        on their first name.
-    - test_ordering_professors():
-        Ensures that the API supports ordering professors in descending order by
-        their first name.
-    - test_search_professors():
-        Confirms that the API allows searching for professors by their first name.
-    """
-
-    """Tests for the Professor API endpoints."""
+    """Test suite for the Professor API endpoints."""
 
     def setUp(self):
-        """Set up the test environment for the courses API tests.
-
-        This method creates two professor instances:
-        - `self.prof1`: A professor with the email "john@example.com", first name "John", and last name "Doe".
-        - `self.prof2`: A professor with the email "jane@example.com", first name "Jane", and last name "Smith".
-
-        These instances are used in the test cases to simulate interactions with the courses API.
-        """
+        """Set up the test environment."""
         self.prof1 = create_professor("john@example.com", "John", "Doe")
         self.prof2 = create_professor("jane@example.com", "Jane", "Smith")
 
     def test_list_professors(self):
-        """Test case for retrieving a list of professors.
-
-        This test ensures that the API endpoint for listing professors returns
-        a successful HTTP 200 response and that the number of professors in the
-        response matches the expected count.
-        """
+        """Test retrieving a list of professors."""
         url = reverse("professor-list")
         res = self.client.get(url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 2)
 
     def test_filter_professors_by_first_name(self):
-        """Test filtering professors by their first name.
-
-        This test ensures that the API endpoint for listing professors can filter
-        results based on the `user__first_name` query parameter. It verifies that
-        the response contains only the professors whose first name matches the
-        specified value.
-        Steps:
-        1. Construct the URL with the query parameter `user__first_name=Jane`.
-        2. Send a GET request to the `professor-list` endpoint.
-        3. Assert that the response status code is 200 (OK).
-        4. Assert that the response contains exactly one professor.
-        5. Assert that the first name of the returned professor is "Jane".
-        """
-
+        """Test filtering professors by first name."""
         url = reverse("professor-list") + "?user__first_name=Jane"
         res = self.client.get(url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -131,20 +76,7 @@ class ProfessorAPITests(APITestCase):
         self.assertEqual(res.data[0]["user"]["first_name"], "Jane")
 
     def test_ordering_professors(self):
-        """Test the ordering of professors by their first names in descending
-        order.
-
-        This test verifies that the API endpoint for listing professors correctly
-        orders the results based on the `user__first_name` field in descending order
-        when the `ordering=-user__first_name` query parameter is provided.
-        Steps:
-        1. Construct the URL for the professor list endpoint with the ordering parameter.
-        2. Send a GET request to the endpoint.
-        3. Assert that the response status code is 200 (OK).
-        4. Extract the `first_name` values from the response data.
-        5. Assert that the extracted first names are sorted in descending order.
-        """
-
+        """Test ordering professors by first name descending."""
         url = reverse("professor-list") + "?ordering=-user__first_name"
         res = self.client.get(url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -152,93 +84,31 @@ class ProfessorAPITests(APITestCase):
         self.assertEqual(first_names, sorted(first_names, reverse=True))
 
     def test_search_professors(self):
-        """Test case for searching professors by their first name.
-
-        This test verifies that the API endpoint for listing professors
-        supports searching by the first name. It sends a GET request with
-        a search query parameter and checks the following:
-
-        - The response status code is 200 (HTTP_200_OK).
-        - At least one professor in the response data has the first name
-          matching the search query ("John").
-        """
+        """Test searching professors by first name."""
         url = reverse("professor-list") + "?search=John"
         res = self.client.get(url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertTrue(any("John" in item["user"]["first_name"] for item in res.data))
+        self.assertTrue(
+            any("John" in item["user"]["first_name"] for item in res.data))
 
 
 class SemesterAPITests(APITestCase):
-    """
-    SemesterAPITests(APITestCase)
-    -----------------------------
-    This test class contains unit tests for the Semester API endpoints. It ensures
-    that the API behaves as expected when listing, filtering, and searching for
-    semesters.
-    Methods:
-        setUp():
-            Sets up the test environment by creating two Semester objects:
-            "Fall 2023" and "Spring 2023".
-        test_list_semesters():
-            Tests the retrieval of a list of all semesters. Verifies that the
-            response status code is 200 (OK) and that the correct number of
-            semesters is returned.
-        test_filter_semesters_by_name():
-            Tests filtering semesters by their name. Verifies that the response
-            status code is 200 (OK), and that the filtered result matches the
-            expected semester name.
-        test_search_semesters():
-            Tests searching for semesters using a query string. Verifies that the
-            response status code is 200 (OK), and that the search result matches
-            the expected semester name.
-    """
+    """Test suite for the Semester API endpoints."""
 
     def setUp(self):
-        """Set up the test environment for the courses API tests.
-
-        This method creates two Semester objects:
-        - `sem1`: Represents the "Fall 2023" semester.
-        - `sem2`: Represents the "Spring 2023" semester.
-
-        These objects are used as test data for validating the functionality
-        of the courses API.
-        """
+        """Set up the test environment."""
         self.sem1 = Semester.objects.create(name="Fall 2023")
         self.sem2 = Semester.objects.create(name="Spring 2023")
 
     def test_list_semesters(self):
-        """Test the API endpoint for retrieving a list of semesters.
-
-        This test ensures that the `semester-list` endpoint returns a
-        successful HTTP 200 response and that the number of semesters
-        in the response matches the expected count.
-
-        Steps:
-        1. Reverse the URL for the `semester-list` endpoint.
-        2. Perform a GET request to the endpoint.
-        3. Assert that the response status code is HTTP 200 OK.
-        4. Assert that the length of the response data is 2.
-
-        Expected Outcome:
-        - The API should return a status code of 200.
-        - The response data should contain exactly 2 semesters.
-        """
+        """Test retrieving a list of semesters."""
         url = reverse("semester-list")
         res = self.client.get(url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 2)
 
     def test_filter_semesters_by_name(self):
-        """Test filtering semesters by name. This test ensures that the API
-        endpoint for listing semesters can filter semesters based on their
-        name. It sends a GET request with a query parameter.
-
-        specifying the semester name and verifies the following:
-        - The response status code is 200 (HTTP_200_OK).
-        - The response contains exactly one semester.
-        - The name of the returned semester matches the queried name ("Fall 2023").
-        """
-
+        """Test filtering semesters by name."""
         url = reverse("semester-list") + "?name=Fall 2023"
         res = self.client.get(url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -246,22 +116,7 @@ class SemesterAPITests(APITestCase):
         self.assertEqual(res.data[0]["name"], "Fall 2023")
 
     def test_search_semesters(self):
-        """Test the search functionality for semesters in the API. This test
-        verifies that the API correctly filters and returns semesters.
-
-        based on a search query. Specifically, it checks that:
-        - The API endpoint returns a 200 OK status code.
-        - The first result in the response matches the expected semester name.
-        Steps:
-        1. Construct the URL for the semester list endpoint with a search query.
-        2. Perform a GET request to the constructed URL.
-        3. Assert that the response status code is 200.
-        4. Assert that the first semester in the response matches the expected name.
-        Expected Result:
-        - The API should return a list of semesters filtered by the search term.
-        - The first semester in the list should match the expected name "Spring 2023".
-        """
-
+        """Test searching semesters by name."""
         url = reverse("semester-list") + "?search=Spring"
         res = self.client.get(url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -269,65 +124,22 @@ class SemesterAPITests(APITestCase):
 
 
 class ClassAPITests(APITestCase):
-    """ClassAPITests contains test cases for the Class API endpoints.
-
-    Methods:
-        setUp():
-            Sets up test data by creating two Class objects for testing.
-        test_list_classes():
-            Tests the retrieval of a list of classes from the API.
-            Verifies that the response status is HTTP 200 OK and that
-            the number of classes returned matches the expected count.
-        test_search_classes():
-            Tests the search functionality of the API for classes by name.
-            Verifies that the response status is HTTP 200 OK, the number
-            of results matches the expected count, and the returned class
-            name matches the search query.
-    """
+    """Test suite for the Class API endpoints."""
 
     def setUp(self):
-        """Set up the test environment for the courses API tests.
-
-        This method creates two Class objects:
-        - `class1`: Represents a class named "Math 101".
-        - `class2`: Represents a class named "History 101".
-
-        These objects are used in the test cases to validate the functionality
-        of the courses API.
-        """
+        """Set up the test environment."""
         self.class1 = Class.objects.create(name="Math 101")
         self.class2 = Class.objects.create(name="History 101")
 
     def test_list_classes(self):
-        """Test the API endpoint for listing classes.
-
-        This test ensures that the "class-list" endpoint returns a 200 OK status
-        and that the response contains the expected number of class objects.
-
-        Assertions:
-            - The HTTP status code of the response is 200 (OK).
-            - The number of classes in the response data matches the expected count.
-        """
+        """Test retrieving a list of classes."""
         url = reverse("class-list")
         res = self.client.get(url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 2)
 
     def test_search_classes(self):
-        """Test the search functionality of the class list API endpoint.
-
-        This test verifies that the API correctly filters and returns classes
-        based on a search query. Specifically, it checks that:
-        - The response status code is HTTP 200 OK.
-        - The number of classes returned matches the expected count.
-        - The name of the first class in the response matches the expected value.
-
-        Steps:
-        1. Perform a GET request to the "class-list" endpoint with a search query for "Math".
-        2. Assert that the response status code is 200.
-        3. Assert that the response contains exactly one class.
-        4. Assert that the name of the returned class is "Math 101".
-        """
+        """Test searching classes by name."""
         url = reverse("class-list") + "?search=Math"
         res = self.client.get(url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -336,41 +148,15 @@ class ClassAPITests(APITestCase):
 
 
 class ProfessorClassSectionAPITests(APITestCase):
-    """
-    Test suite for the ProfessorClassSection API.
-    This test suite includes the following test cases:
-    1. `test_list_professor_class_sections`: Verifies that the API correctly retrieves a list of all professor class sections.
-    2. `test_filter_by_semester_name`: Ensures that the API supports filtering professor class sections by semester name.
-    3. `test_search_professor_class_sections`: Confirms that the API allows searching professor class sections by class name.
-    Setup:
-    - Creates two professors, a semester, and a class.
-    - Creates two `ProfessorClassSection` instances, each associated with a different professor but the same class and semester.
-    Test Cases:
-    - `test_list_professor_class_sections`: Sends a GET request to the `sectionclassprof-list` endpoint and checks that the response contains all created sections.
-    - `test_filter_by_semester_name`: Sends a GET request with a filter query for the semester name and verifies the response contains the correct sections.
-    - `test_search_professor_class_sections`: Sends a GET request with a search query for the class name and ensures the response includes all matching sections.
-    """
+    """Test suite for the ProfessorClassSection API."""
 
     def setUp(self):
-        """Set up the test environment for the courses API tests.
-
-        This method initializes the following:
-        - Creates two professors with their respective email addresses and names.
-        - Creates a semester instance for "Fall 2023".
-        - Creates a class instance named "Physics 101".
-        - Creates two ProfessorClassSection instances:
-            - The first section is associated with the first professor, the class instance,
-              the semester, and has a section number of 1.
-            - The second section is associated with the second professor, the class instance,
-              the semester, and has a section number of 2.
-        """
-        # Create two professors
-        self.prof1 = create_professor("alice@example.com", "Alice", "Wonderland")
+        """Set up the test environment."""
+        self.prof1 = create_professor(
+            "alice@example.com", "Alice", "Wonderland")
         self.prof2 = create_professor("bob@example.com", "Bob", "Builder")
-        # Create a semester and a class
         self.semester = Semester.objects.create(name="Fall 2023")
         self.class_obj = Class.objects.create(name="Physics 101")
-        # Create two ProfessorClassSection instances
         self.section1 = ProfessorClassSection.objects.create(
             professor=self.prof1,
             class_instance=self.class_obj,
@@ -385,52 +171,22 @@ class ProfessorClassSectionAPITests(APITestCase):
         )
 
     def test_list_professor_class_sections(self):
-        """Test the API endpoint for listing professor class sections.
-
-        This test verifies that the endpoint "sectionclassprof-list" returns a
-        successful HTTP 200 response and that the number of class sections
-        returned matches the expected count.
-
-        Assertions:
-            - The response status code is HTTP 200 OK.
-            - The length of the response data is 2.
-        """
+        """Test retrieving a list of professor class sections."""
         url = reverse("sectionclassprof-list")
         res = self.client.get(url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 2)
 
     def test_filter_by_semester_name(self):
-        """Test filtering sections by semester name.
-
-        This test verifies that the API endpoint for listing section-class-professor
-        relationships correctly filters results based on the provided semester name
-        query parameter. It ensures that the response status is HTTP 200 OK and that
-        the number of returned results matches the expected count.
-
-        Assertions:
-            - The response status code is 200 (HTTP_200_OK).
-            - The number of items in the response data is 2.
-        """
+        """Test filtering professor class sections by semester name."""
         url = reverse("sectionclassprof-list") + "?semester__name=Fall 2023"
         res = self.client.get(url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 2)
 
     def test_search_professor_class_sections(self):
-        """Test the search functionality for professor class sections.
-
-        This test verifies that the API endpoint for searching class sections
-        by professor or class name works as expected. Specifically, it checks
-        that searching for "Physics" returns the correct number of matching
-        sections.
-
-        Assertions:
-            - The response status code is 200 (HTTP OK).
-            - The number of sections returned matches the expected count (2).
-        """
+        """Test searching professor class sections by class name."""
         url = reverse("sectionclassprof-list") + "?search=Physics"
         res = self.client.get(url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        # Expect both sections to match since they use the same class name.
         self.assertEqual(len(res.data), 2)

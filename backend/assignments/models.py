@@ -1,93 +1,84 @@
+"""Assignment-related models for students, professors, and submissions.
+
+This module defines models to manage academic workflows including assignments,
+submissions, flagged results, and confirmed cheating detections.
+"""
+
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 
 class Student(models.Model):
-    """Represents a student entity with personal and academic information.
+    """Represent a student entity with personal and academic information.
 
     Attributes:
-        email (EmailField): The unique email address of the student.
-        codeGrade_id (IntegerField): A unique identifier for the student in CodeGrade.
-        username (CharField): The optional username of the student, which may be provided by CodeGrade.
-        first_name (CharField): The first name of the student.
-        last_name (CharField): The last name of the student.
+        email (EmailField): Unique email address of the student.
+        codeGrade_id (IntegerField): Unique CodeGrade identifier.
+        username (CharField): Optional CodeGrade username.
+        first_name (CharField): First name of the student.
+        last_name (CharField): Last name of the student.
+
     Methods:
-        __str__(): Returns a string representation of the student in the format
-                "FirstName LastName (Email)".
+        __str__(): Return string as "FirstName LastName (Email)".
     """
 
     email = models.EmailField(max_length=100, unique=True)
-    codeGrade_id = models.IntegerField(
-        unique=True
-    )  # This is for the code_gradeID field in codegrade
-    username = models.CharField(
-        max_length=50, blank=True, null=True
-    )  # Optional; maybe CodeGrade has this info?
+    codeGrade_id = models.IntegerField(unique=True)
+    username = models.CharField(max_length=50, blank=True, null=True)
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
 
     def __str__(self):
-        """Returns a string representation of the object, including the first
-        name, last name, and email in the format: "FirstName LastName
-        (Email)"."""
+        """Return string representation of the student."""
         return f"{self.first_name} {self.last_name} ({self.email})"
 
 
 class Assignment(models.Model):
-    """Represents an assignment for a specific class instance, linked to a
-    professor.
+    """Represent an assignment for a specific class and professor.
 
     Attributes:
-        class_instance (ForeignKey): A foreign key linking the assignment to a specific class instance.
-        professor (ForeignKey): A foreign key linking the assignment to a professor.
-        assignment_number (IntegerField): The unique number of the assignment within the class instance.
-        title (CharField): The title of the assignment, with a maximum length of 100 characters.
-        due_date (DateField): The due date of the assignment.
-    Meta:
-        unique_together: Ensures that the combination of `class_instance` and `assignment_number` is unique.
+        class_instance (ForeignKey): Link to class.
+        professor (ForeignKey): Link to professor.
+        assignment_number (IntegerField): Assignment sequence number.
+        title (CharField): Title of the assignment.
+        due_date (DateField): Due date of the assignment.
+
     Methods:
-        __str__(): Returns a string representation of the assignment in the format
-                   "Assignment {assignment_number}: {title}".
+        __str__(): Return formatted title string.
     """
 
-    class_instance = models.ForeignKey("courses.Class", on_delete=models.CASCADE)
+    class_instance = models.ForeignKey(
+        "courses.Class", on_delete=models.CASCADE)
     professor = models.ForeignKey(
-        "courses.Professor", on_delete=models.CASCADE
-    )  # Link to professor
+        "courses.Professor",
+        on_delete=models.CASCADE)
     assignment_number = models.IntegerField()
     title = models.CharField(max_length=100)
     due_date = models.DateField()
 
     class Meta:
-        unique_together = (
-            "class_instance",
-            "assignment_number",
-        )  # Unique per class
+        """Meta options for Assignment."""
+
+        unique_together = ("class_instance", "assignment_number")
 
     def __str__(self):
-        """Returns a string representation of the Assignment object.
-
-        The string includes the assignment number and title in the format:
-        "Assignment <assignment_number>: <title>".
-
-        Returns:
-            str: A formatted string representing the assignment.
-        """
+        """Return string representation of the assignment."""
         return f"Assignment {self.assignment_number}: {self.title}"
 
 
 class Submission(models.Model):
-    """Represents a submission made by a student for a specific assignment.
+    """Represent a student's submission for an assignment.
 
     Attributes:
-        student (Student): The student who made the submission. Linked via a foreign key.
-        assignment (Assignment): The assignment for which the submission was made. Linked via a foreign key.
-        grade (int): The grade assigned to the submission. Must be between 0 and 100.
-        created_at (date): The date when the submission was created. Automatically set on creation.
-        flagged (bool): Indicates whether the submission has been flagged for review. Defaults to False.
-        professor (Professor): The professor associated with the submission. Linked via a foreign key.
+        student (ForeignKey): Link to student.
+        assignment (ForeignKey): Link to assignment.
+        grade (IntegerField): Grade from 0–100.
+        created_at (DateField): Auto-set date of submission.
+        flagged (BooleanField): Whether the submission is flagged.
+        professor (ForeignKey): Link to professor.
+
     Methods:
-        __str__(): Returns a string representation of the submission, including the student and assignment details.
+        __str__(): Return formatted summary string.
     """
 
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
@@ -98,34 +89,25 @@ class Submission(models.Model):
     created_at = models.DateField(auto_now_add=True)
     flagged = models.BooleanField(default=False)
     professor = models.ForeignKey(
-        "courses.Professor", on_delete=models.CASCADE
-    )  # Link to professor
+        "courses.Professor",
+        on_delete=models.CASCADE)
 
     def __str__(self):
-        """Returns a string representation of the submission, including the
-        student's name and the associated assignment."""
+        """Return string representation of the submission."""
         return f"Submission by {self.student} for {self.assignment}"
 
 
 class FlaggedSubmission(models.Model):
-    """Represents a flagged submission in the system, typically used to
-    indicate potential plagiarism or similarity issues between student
-    submissions.
+    """Represent a flagged submission with high similarity.
 
     Attributes:
-        submission (ForeignKey): A reference to the related `Submission` object.
-            If the related submission is deleted, this flagged submission will
-            also be deleted.
-        file_name (CharField): The name of the file associated with the flagged
-            submission. Maximum length is 50 characters.
-        percentage (IntegerField): The percentage similarity of the flagged
-            submission. Must be between 20 and 100, inclusive.
-        similarity_with (ManyToManyField): A many-to-many relationship with
-            `Student` objects, representing other students whose submissions
-            have similarities with this flagged submission.
+        submission (ForeignKey): Link to related submission.
+        file_name (CharField): Name of submitted file.
+        percentage (IntegerField): Similarity percentage.
+        similarity_with (ManyToManyField): Related students.
+
     Methods:
-        __str__(): Returns a string representation of the flagged submission,
-            including the file name and similarity percentage.
+        __str__(): Return formatted flagged summary.
     """
 
     submission = models.ForeignKey(Submission, on_delete=models.CASCADE)
@@ -135,43 +117,33 @@ class FlaggedSubmission(models.Model):
     )
     similarity_with = models.ManyToManyField(
         Student, related_name="similar_submissions"
-    )  # Supports multiple similarities
+    )
 
     def __str__(self):
-        """Returns a string representation of the flagged submission, including
-        the file name and the percentage value.
-
-        Returns:
-            str: A formatted string in the format "Flagged Submission: <file_name> (<percentage>%)".
-        """
+        """Return string representation of the flagged submission."""
         return f"Flagged Submission: {self.file_name} ({self.percentage}%)"
 
 
 class FlaggedStudent(models.Model):
-    """Represents a student who has been flagged for exceeding a certain
-    threshold.
+    """Represent a student flagged multiple times for exceeding threshold.
 
     Attributes:
-        student (ForeignKey): A reference to the flagged student, linked to the Student model.
-        professor (ForeignKey): A reference to the professor who flagged the student, linked to the Professor model in the courses app.
-        times_over_threshold (IntegerField): The number of times the student has exceeded the threshold. Defaults to 0.
+        student (ForeignKey): Link to student.
+        professor (ForeignKey): Link to professor.
+        times_over_threshold (IntegerField): Count of times flagged.
+
     Methods:
-        __str__(): Returns a string representation of the flagged student and the number of times they have been flagged.
+        __str__(): Return summary string.
     """
 
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    professor = models.ForeignKey("courses.Professor", on_delete=models.CASCADE)
+    professor = models.ForeignKey(
+        "courses.Professor",
+        on_delete=models.CASCADE)
     times_over_threshold = models.IntegerField(default=0)
 
     def __str__(self):
-        """Returns a string representation of the object, indicating the
-        flagged student and the number of times they have exceeded the
-        threshold.
-
-        Returns:
-            str: A formatted string containing the student's name and the count of times
-            they were flagged over the threshold.
-        """
+        """Return string representation of flagged student."""
         return (
             f"Flagged Student: {self.student} "
             f"flagged {self.times_over_threshold} times"
@@ -179,28 +151,27 @@ class FlaggedStudent(models.Model):
 
 
 class ConfirmedCheater(models.Model):
-    """Model representing a confirmed cheater in the system.
+    """Represent a student confirmed as cheating.
 
     Attributes:
-        student (ForeignKey): A foreign key linking to the Student model, representing the student confirmed as a cheater.
-        professor (ForeignKey): A foreign key linking to the Professor model in the "courses" app, representing the professor who confirmed the cheating.
-        confirmed_date (DateField): The date when the cheating was confirmed. Automatically set to the current date when the record is created.
-        threshold_used (IntegerField): The threshold percentage used to confirm the cheating. Defaults to 40.
+        student (ForeignKey): Link to student.
+        professor (ForeignKey): Link to professor.
+        confirmed_date (DateField): Date cheating was confirmed.
+        threshold_used (IntegerField): Similarity threshold used.
+
     Methods:
-        __str__(): Returns a string representation of the confirmed cheater, including the student's name, confirmation date, and threshold used.
+        __str__(): Return formatted confirmation summary.
     """
 
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    professor = models.ForeignKey("courses.Professor", on_delete=models.CASCADE)
+    professor = models.ForeignKey(
+        "courses.Professor",
+        on_delete=models.CASCADE)
     confirmed_date = models.DateField(auto_now_add=True)
-    threshold_used = models.IntegerField(
-        default=40
-    )  # Tracks threshold used at confirmation
+    threshold_used = models.IntegerField(default=40)
 
     def __str__(self):
-        """Returns a string representation of the object, providing details
-        about a confirmed cheater, including the student's name, the date of
-        confirmation, and the threshold percentage used."""
+        """Return string representation of the confirmed cheater."""
         return (
             f"Confirmed Cheater: {self.student} "
             f"on {self.confirmed_date} "

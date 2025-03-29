@@ -48,7 +48,8 @@ class GoogleAuthView(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        # The token is in this response, create a new response so we don't expose the actual token to the client
+        # The token is in this response, create a new response so we don't
+        # expose the actual token to the client
         response = Response(data, status=status.HTTP_200_OK)
 
         set_jwt_cookies(
