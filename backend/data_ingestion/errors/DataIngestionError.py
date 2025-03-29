@@ -1,16 +1,12 @@
-"""Created by Daniel Levy, 3/17/2025.
-
-This is an Error class to handle any errors from PRISM's data ingestion. The
-likelihood of errors is low, especially since we are trying to automate it.
-However, it doesn't mean we should have a safety net in case something
-unexpected happens.
 """
+Created by Daniel Levy, 3/17/2025.
 
-"""Error handling for PRISM data ingestion.
+Error handling for PRISM data ingestion.
 
-Provides a class for capturing, managing, and exporting data ingestion errors.
+This module provides a class for capturing, managing, and exporting data
+ingestion errors. Although the likelihood of errors is low, a safety net is
+provided in case something unexpected happens.
 """
-
 
 import json
 

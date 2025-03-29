@@ -15,7 +15,7 @@ from zipfile import ZipFile
 import django
 import pandas as pd
 
-from assignments.models import Student, Assignment, Submission
+from assignments.models import Student
 import data_ingestion.errors.DataIngestionErrorBuilder as eb
 from data_ingestion.errors.DataIngestionError import DataIngestionError
 

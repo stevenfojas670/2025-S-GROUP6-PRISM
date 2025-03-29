@@ -13,7 +13,6 @@ It verifies:
 
 import pytest
 import json
-import zipfile
 import csv
 import shutil
 import os

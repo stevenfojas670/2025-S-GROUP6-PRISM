@@ -2,7 +2,7 @@
 
 import os
 from django.core.asgi import get_asgi_application
-from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.routing import ProtocolTypeRouter
 import prism_backend.routing  # Ensure it's imported
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "prism_backend.settings")

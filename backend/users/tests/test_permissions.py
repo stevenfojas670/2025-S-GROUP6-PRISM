@@ -11,7 +11,6 @@ from users.permissions import (
     is_admin,
     IsProfessorOrTA,
     IsProfessorOrAdmin,
-    IsProfessor,
     IsAdmin,
 )
 

@@ -68,8 +68,7 @@ class IsProfessorOrTA(BasePermission):
             bool: True if the user is authenticated and is a professor or TA.
         """
         return (
-            request.user
-            and request.user.is_authenticated
+            request.user and request.user.is_authenticated
             and (is_professor(request.user) or is_ta(request.user))
         )
 
