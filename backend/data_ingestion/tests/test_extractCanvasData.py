@@ -87,16 +87,18 @@ class TestExportCanvasData:
     def test_non_matching_user_login_ids(self):
         """Ensure mismatched User ID and Login ID triggers an error."""
         with open(self.fileName, "a") as file:
-            csv.writer(file).writerows([
+            csv.writer(file).writerows(
                 [
-                    "Student3, Test",
-                    "0000",
-                    "stude",
-                    "studet",
-                    "5000000000",
-                    "2245-CS-135-SEC1000-50000",
+                    [
+                        "Student3, Test",
+                        "0000",
+                        "stude",
+                        "studet",
+                        "5000000000",
+                        "2245-CS-135-SEC1000-50000",
+                    ]
                 ]
-            ])
+            )
 
         expected = "The User ID for Test Student3 does not match the Login ID"
         assert self.runAndProduceError() == expected
@@ -104,16 +106,18 @@ class TestExportCanvasData:
     def test_non_matching_semester_ids(self):
         """Ensure mismatched semester in Canvas meta ID triggers an error."""
         with open(self.fileName, "a") as file:
-            csv.writer(file).writerows([
+            csv.writer(file).writerows(
                 [
-                    "Student4, Test",
-                    "0000",
-                    "studet",
-                    "studet",
-                    "5000000000",
-                    "2248-CS-135-SEC1000-50000",
+                    [
+                        "Student4, Test",
+                        "0000",
+                        "studet",
+                        "studet",
+                        "5000000000",
+                        "2248-CS-135-SEC1000-50000",
+                    ]
                 ]
-            ])
+            )
 
         expected = "The semester for Test Student4 does not match the Canvas semester."
         assert self.runAndProduceError() == expected
@@ -121,16 +125,18 @@ class TestExportCanvasData:
     def test_non_matching_course_names(self):
         """Ensure mismatched course name triggers an error."""
         with open(self.fileName, "a") as file:
-            csv.writer(file).writerows([
+            csv.writer(file).writerows(
                 [
-                    "Student5, Test",
-                    "0000",
-                    "studet",
-                    "studet",
-                    "5000000000",
-                    "2245-CS-202-SEC1000-50000",
+                    [
+                        "Student5, Test",
+                        "0000",
+                        "studet",
+                        "studet",
+                        "5000000000",
+                        "2245-CS-202-SEC1000-50000",
+                    ]
                 ]
-            ])
+            )
 
         expected = (
             "The course name for Test Student5 does not match the Canvas course name."
@@ -140,16 +146,18 @@ class TestExportCanvasData:
     def test_non_matching_section_ids(self):
         """Ensure mismatched section ID triggers an error."""
         with open(self.fileName, "a") as file:
-            csv.writer(file).writerows([
+            csv.writer(file).writerows(
                 [
-                    "Student6, Test",
-                    "0000",
-                    "studet",
-                    "studet",
-                    "5000000000",
-                    "2245-CS-135-SEC1001-50000",
+                    [
+                        "Student6, Test",
+                        "0000",
+                        "studet",
+                        "studet",
+                        "5000000000",
+                        "2245-CS-135-SEC1001-50000",
+                    ]
                 ]
-            ])
+            )
 
         expected = (
             "The section number for Test Student6 does not match the Canvas section."
@@ -159,34 +167,36 @@ class TestExportCanvasData:
     def test_non_matching_canvas_ids(self):
         """Ensure mismatched Canvas metadata ID triggers an error."""
         with open(self.fileName, "a", newline="") as file:
-            csv.writer(file).writerows([
+            csv.writer(file).writerows(
                 [
-                    "Student7, Test",
-                    "0000",
-                    "studet",
-                    "studet",
-                    "5000000000",
-                    "3245-CS-135-SEC1000-50000",
+                    [
+                        "Student7, Test",
+                        "0000",
+                        "studet",
+                        "studet",
+                        "5000000000",
+                        "3245-CS-135-SEC1000-50000",
+                    ]
                 ]
-            ])
+            )
 
-        expected = (
-            "The Canvas metadata ID does not match for Test Student7."
-        )
+        expected = "The Canvas metadata ID does not match for Test Student7."
         assert self.runAndProduceError() == expected
 
     def test_invalid_semester_id(self):
         """Ensure invalid semester ID format triggers an error."""
         with open(self.fileName, "a") as file:
-            csv.writer(file).writerows([
+            csv.writer(file).writerows(
                 [
-                    "Student8, Test",
-                    "0000",
-                    "studet",
-                    "studet",
-                    "5000000000",
-                    "2249-CS-135-SEC1000-50000",
+                    [
+                        "Student8, Test",
+                        "0000",
+                        "studet",
+                        "studet",
+                        "5000000000",
+                        "2249-CS-135-SEC1000-50000",
+                    ]
                 ]
-            ])
+            )
 
         assert self.runAndProduceError() == "The semester is invalid."

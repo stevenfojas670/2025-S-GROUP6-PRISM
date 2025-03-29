@@ -92,12 +92,14 @@ class API_Data:
     def get_rubric_value(self, rubric, grade_dict, sub_key):
         """Extract rubric info and append to grade_dict for a submission."""
         for i, obj in enumerate(rubric.selected):
-            grade_dict[sub_key].append({
-                "header": rubric.rubrics[i].header,
-                "points_achieved": obj.achieved_points,
-                "points_possible": obj.points,
-                "multiplier": obj.multiplier,
-            })
+            grade_dict[sub_key].append(
+                {
+                    "header": rubric.rubrics[i].header,
+                    "points_achieved": obj.achieved_points,
+                    "points_possible": obj.points,
+                    "multiplier": obj.multiplier,
+                }
+            )
 
     def get_all_submissions(self, assignment):
         """Return all submissions for a given assignment."""
@@ -111,45 +113,35 @@ class API_Data:
     def get_all_graders(self, assignment):
         """Return all graders for a given assignment."""
         try:
-            return self.client.assignment.get_all_graders(
-                assignment_id=assignment.id
-            )
+            return self.client.assignment.get_all_graders(assignment_id=assignment.id)
         except Exception as e:
             print(str(e))
 
     def get_rubric(self, assignment):
         """Return the rubric for a given assignment."""
         try:
-            return self.client.assignment.get_rubric(
-                assignment_id=assignment.id
-            )
+            return self.client.assignment.get_rubric(assignment_id=assignment.id)
         except Exception as e:
             print(str(e))
 
     def get_desc(self, assignment):
         """Return the description for an assignment."""
         try:
-            return self.client.assignment.get_description(
-                assignment_id=assignment.id
-            )
+            return self.client.assignment.get_description(assignment_id=assignment.id)
         except Exception as e:
             print(str(e))
 
     def get_time_frames(self, assignment):
         """Return timeframes for an assignment."""
         try:
-            return self.client.assignment.get_timeframes(
-                assignment_id=assignment.id
-            )
+            return self.client.assignment.get_timeframes(assignment_id=assignment.id)
         except Exception as e:
             print(str(e))
 
     def get_feedback(self, assignment):
         """Return all feedback for a given assignment."""
         try:
-            return self.client.assignment.get_all_feedback(
-                assignment_id=assignment.id
-            )
+            return self.client.assignment.get_all_feedback(assignment_id=assignment.id)
         except Exception as e:
             print(str(e))
 
@@ -164,8 +156,7 @@ class API_Data:
         """Return all submissions by a specific user."""
         try:
             return self.client.course.get_submissions_by_user(
-                course_id=course.id,
-                user_id=user_id
+                course_id=course.id, user_id=user_id
             )
         except Exception as e:
             print(str(e))
@@ -173,9 +164,7 @@ class API_Data:
     def get_rubric_grade(self, submission_id):
         """Return rubric grade for a given submission ID."""
         try:
-            return self.client.submission.get_rubric_result(
-                submission_id=submission_id
-            )
+            return self.client.submission.get_rubric_result(submission_id=submission_id)
         except Exception:
             return None
 
@@ -201,9 +190,7 @@ class API_Data:
             if not retries:
                 raise
             time.sleep(1)
-            return self.download_submission(
-                submission, output_dir, retries=retries - 1
-            )
+            return self.download_submission(submission, output_dir, retries=retries - 1)
 
         username = (
             submission.user.group.name + " (Group)"
@@ -231,13 +218,13 @@ class API_Data:
     def get_output_dir(self, course_name, assignment):
         """Return output directory path for storing extracted files."""
         self.create_folder_path = os.path.join(os.getcwd(), "cg_data")
-        return os.path.join(self.create_folder_path,
-                            f"{course_name} - {assignment.name}")
+        return os.path.join(
+            self.create_folder_path, f"{course_name} - {assignment.name}"
+        )
 
     def get_sorted_dict(self, student_dict):
         """Sort student submission/user ID dictionaries."""
-        student_dict["submission_ids"] = sorted(
-            student_dict["submission_ids"].items())
+        student_dict["submission_ids"] = sorted(student_dict["submission_ids"].items())
         student_dict["user_ids"] = sorted(student_dict["user_ids"].items())
 
         for key in student_dict:
@@ -271,8 +258,12 @@ class API_Data:
 
             lock_date = assignment.lock_date or assignment.deadline
             lock_dt = datetime.datetime(
-                lock_date.year, lock_date.month, lock_date.day,
-                lock_date.hour, lock_date.minute, lock_date.second
+                lock_date.year,
+                lock_date.month,
+                lock_date.day,
+                lock_date.hour,
+                lock_date.minute,
+                lock_date.second,
             )
 
             if not submissions:
@@ -281,7 +272,8 @@ class API_Data:
             if lock_dt > now:
                 print(
                     f"Lock date ({lock_dt}) not passed yet for {
-                        assignment.name}")
+                        assignment.name}"
+                )
                 continue
 
             print(f"\nExtracting submission source code for {assignment.name}")
@@ -321,8 +313,12 @@ class API_Data:
 
             lock_date = assignment.lock_date or assignment.deadline
             lock_dt = datetime.datetime(
-                lock_date.year, lock_date.month, lock_date.day,
-                lock_date.hour, lock_date.minute, lock_date.second
+                lock_date.year,
+                lock_date.month,
+                lock_date.day,
+                lock_date.hour,
+                lock_date.minute,
+                lock_date.second,
             )
 
             if not submissions:
@@ -331,24 +327,25 @@ class API_Data:
             if lock_dt > datetime.datetime.now():
                 print(
                     f"Lock date ({lock_dt}) not passed yet for {
-                        assignment.name}")
+                        assignment.name}"
+                )
                 continue
 
-            file_path = self.get_output_dir(
-                self.course.name, assignment) + ".csv"
+            file_path = self.get_output_dir(self.course.name, assignment) + ".csv"
             with open(file_path, "w", newline="") as f:
                 writer = csv.writer(f)
                 writer.writerow(["Id", "Username", "Name", "Grade"])
                 self.get_feedback(assignment)
                 for submission in submissions:
-                    grade = self.get_grade(
-                        assignment.max_grade, submission.grade)
-                    writer.writerow([
-                        submission.user.id,
-                        submission.user.username,
-                        submission.user.name,
-                        round(grade, 2),
-                    ])
+                    grade = self.get_grade(assignment.max_grade, submission.grade)
+                    writer.writerow(
+                        [
+                            submission.user.id,
+                            submission.user.username,
+                            submission.user.name,
+                            round(grade, 2),
+                        ]
+                    )
             print(f"SUCCESS! CSV file '{file_path}' created.")
 
     def delete_created_folder(self):
@@ -357,7 +354,8 @@ class API_Data:
             shutil.rmtree(self.create_folder_path)
             print(
                 f"Directory '{
-                    self.create_folder_path}' deleted successfully.")
+                    self.create_folder_path}' deleted successfully."
+            )
         except FileNotFoundError:
             print(f"Directory '{self.create_folder_path}' not found.")
         except PermissionError:

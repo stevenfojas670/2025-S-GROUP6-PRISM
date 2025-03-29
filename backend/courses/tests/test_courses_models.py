@@ -8,10 +8,8 @@ from courses import models as course_models
 
 
 def create_user(
-        email="test@example.com",
-        password="testpass",
-        first_name="Test",
-        last_name="User"):
+    email="test@example.com", password="testpass", first_name="Test", last_name="User"
+):
     """Create and return a test user.
 
     Args:
@@ -65,7 +63,8 @@ class ModelTests(TestCase):
             section_number=section_number,
         )
         expected_str = (
-            f"{professor} - {class_obj} - {semester} (Section {section_number})")
+            f"{professor} - {class_obj} - {semester} (Section {section_number})"
+        )
         self.assertEqual(str(section), expected_str)
 
     def test_class_professors_relationship(self):

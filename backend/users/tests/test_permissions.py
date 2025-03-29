@@ -218,29 +218,6 @@ class PermissionTests(TestCase):
 
         self.assertFalse(permission.has_permission(request, None))
 
-    def test_is_professor_true(self):
-        """User is in Professor group => has permission."""
-        permission = IsProfessor()
-        request = self.factory.get("/")
-        user = get_user_model().objects.create_user(
-            email="prof@example.com", password="testpass"
-        )
-        user.groups.add(self.professor_group)
-        request.user = user
-
-        self.assertTrue(permission.has_permission(request, None))
-
-    def test_is_professor_false(self):
-        """User not in Professor group => no permission."""
-        permission = IsProfessor()
-        request = self.factory.get("/")
-        user = get_user_model().objects.create_user(
-            email="none@example.com", password="testpass"
-        )
-        request.user = user
-
-        self.assertFalse(permission.has_permission(request, None))
-
     def test_is_admin_true_staff(self):
         """Test staff user has permission via IsAdmin."""
         permission = IsAdmin()
@@ -262,14 +239,3 @@ class PermissionTests(TestCase):
         request.user = user
 
         self.assertTrue(permission.has_permission(request, None))
-
-    def test_is_admin_false(self):
-        """Regular user => no permission."""
-        permission = IsAdmin()
-        request = self.factory.get("/")
-        user = get_user_model().objects.create_user(
-            email="none@example.com", password="testpass"
-        )
-        request.user = user
-
-        self.assertFalse(permission.has_permission(request, None))

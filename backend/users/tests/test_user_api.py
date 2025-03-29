@@ -73,9 +73,7 @@ class PublicUserApiTests(TestCase):
         res = self.client.post(USER_LIST_URL, payload)
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
-        user_exists = get_user_model().objects.filter(
-            email=payload["email"]
-        ).exists()
+        user_exists = get_user_model().objects.filter(email=payload["email"]).exists()
         self.assertFalse(user_exists)
 
     def test_create_user_also_creates_professor(self):
@@ -91,6 +89,7 @@ class PublicUserApiTests(TestCase):
 
         user = get_user_model().objects.get(email=payload["email"])
         from courses.models import Professor
+
         professor_exists = Professor.objects.filter(user=user).exists()
         self.assertTrue(professor_exists)
 
@@ -287,10 +286,6 @@ class PublicUserApiTests(TestCase):
         url = detail_user_url(user.id)
         res = self.client.delete(url)
         if res.status_code == status.HTTP_204_NO_CONTENT:
-            self.assertFalse(
-                get_user_model().objects.filter(
-                    id=user.id).exists())
+            self.assertFalse(get_user_model().objects.filter(id=user.id).exists())
         else:
-            self.assertEqual(
-                res.status_code,
-                status.HTTP_405_METHOD_NOT_ALLOWED)
+            self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)

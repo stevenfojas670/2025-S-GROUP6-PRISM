@@ -64,13 +64,17 @@ class GoogleAuthSerializer(serializers.Serializer):
             refresh = RefreshToken.for_user(user)
             access_token = refresh.access_token
 
-            access_exp = datetime.fromtimestamp(
-                access_token["exp"], tz=timezone.utc
-            ).isoformat().replace("+00:00", "Z")
+            access_exp = (
+                datetime.fromtimestamp(access_token["exp"], tz=timezone.utc)
+                .isoformat()
+                .replace("+00:00", "Z")
+            )
 
-            refresh_exp = datetime.fromtimestamp(
-                refresh["exp"], tz=timezone.utc
-            ).isoformat().replace("+00:00", "Z")
+            refresh_exp = (
+                datetime.fromtimestamp(refresh["exp"], tz=timezone.utc)
+                .isoformat()
+                .replace("+00:00", "Z")
+            )
 
             return {
                 "access": str(refresh.access_token),

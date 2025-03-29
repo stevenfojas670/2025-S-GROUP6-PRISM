@@ -98,8 +98,7 @@ class CodeGradeDataIngestion:
             - Appends an error to __errors if an issue is encountered.
         """
         for file in os.listdir(self.__dirName):
-            if file.endswith(
-                    ".zip") and file not in CodeGradeDataIngestion.fileSeen:
+            if file.endswith(".zip") and file not in CodeGradeDataIngestion.fileSeen:
                 self.__parseZipFileName(file)
                 self.__zipFileDirectory = f"{
                     self.__dirName}/{
@@ -112,10 +111,14 @@ class CodeGradeDataIngestion:
                 return
 
         self.__errors.append(
-            eb.DataIngestionErrorBuilder() .addFileName(
-                self.__dirName) .addMsg(
+            eb.DataIngestionErrorBuilder()
+            .addFileName(self.__dirName)
+            .addMsg(
                 f"A duplicate .zip file was found containing student submission in {
-                    self.__dirName}") .createError())
+                    self.__dirName}"
+            )
+            .createError()
+        )
         raise ValueError()
 
     def __parseZipFileName(self, name):
@@ -202,11 +205,15 @@ class CodeGradeDataIngestion:
                 return
 
         self.__errors.append(
-            eb.DataIngestionErrorBuilder() .addFileName(
-                self.__submissionFileName) .addMsg(
+            eb.DataIngestionErrorBuilder()
+            .addFileName(self.__submissionFileName)
+            .addMsg(
                 f"{
                     self.__submissionFileName}.csv was not found in {
-                    self.__dirName}.") .createError())
+                    self.__dirName}."
+            )
+            .createError()
+        )
         raise ValueError()
 
     def __verifyStudentSubmissionExists(self):
@@ -310,9 +317,7 @@ class CodeGradeDataIngestion:
             self.__errors.append(
                 eb.DataIngestionErrorBuilder()
                 .addFileName(self.__submissionFileName)
-                .addMsg(
-                    f"Submission for {studentName} is missing in zip directory."
-                )
+                .addMsg(f"Submission for {studentName} is missing in zip directory.")
                 .createError()
             )
             raise ValueError()

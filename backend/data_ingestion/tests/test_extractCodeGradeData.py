@@ -38,29 +38,35 @@ class TestExportCodeGradeData:
         self.ingest = CodeGradeDataIngestion(self.test_directory)
 
         self.createSubmissions(
-            ["0 - Mary Smith", "23 - James Johnson", "34 - John Jones"])
+            ["0 - Mary Smith", "23 - James Johnson", "34 - John Jones"]
+        )
 
-        self.createJSON({
-            "submission_ids": {
-                "0 - Mary Smith": 0,
-                "23 - James Johnson": 23,
-                "34 - John Jones": 34,
-            },
-            "user_ids": {
-                "0 - Mary Smith": 100000,
-                "23 - James Johnson": 100001,
-                "34 - John Jones": 100003,
-            },
-        })
+        self.createJSON(
+            {
+                "submission_ids": {
+                    "0 - Mary Smith": 0,
+                    "23 - James Johnson": 23,
+                    "34 - John Jones": 34,
+                },
+                "user_ids": {
+                    "0 - Mary Smith": 100000,
+                    "23 - James Johnson": 100001,
+                    "34 - John Jones": 100003,
+                },
+            }
+        )
 
         self.createZIP(self.test_file)
 
-        self.createCSV([
-            ["Id", "Username", "Name", "Grade"],
-            ["100000", "smithm", "Mary Smith", "79.1"],
-            ["100001", "johnsj", "James Johnson", "81.7"],
-            ["100003", "jonesj", "John Jones", "63.2"],
-        ], self.test_file)
+        self.createCSV(
+            [
+                ["Id", "Username", "Name", "Grade"],
+                ["100000", "smithm", "Mary Smith", "79.1"],
+                ["100001", "johnsj", "James Johnson", "81.7"],
+                ["100003", "jonesj", "John Jones", "63.2"],
+            ],
+            self.test_file,
+        )
 
         yield
 
@@ -86,10 +92,8 @@ class TestExportCodeGradeData:
         shutil.rmtree(self.test_directory)
         os.mkdir(self.test_directory)
         shutil.move(
-            f"{fileName}.zip",
-            os.path.join(
-                self.test_directory,
-                f"{fileName}.zip"))
+            f"{fileName}.zip", os.path.join(self.test_directory, f"{fileName}.zip")
+        )
 
     def createCSV(self, csvData, fileName):
         """Create a CSV file in the test directory with given data."""
@@ -114,11 +118,14 @@ class TestExportCodeGradeData:
         """Detect and report duplicate .zip files in the directory."""
         open(
             os.path.join(
-                self.test_directory, f"{
-                    self.test_file}.zip"), "w").close()
-        expected = (
-            f"A duplicate .zip file was found containing student submission in {
-                self.test_directory}")
+                self.test_directory,
+                f"{
+                    self.test_file}.zip",
+            ),
+            "w",
+        ).close()
+        expected = f"A duplicate .zip file was found containing student submission in {
+            self.test_directory}"
         assert self.runAndProduceError() == expected
 
     def test_missing_cg_json_file(self):
@@ -130,10 +137,12 @@ class TestExportCodeGradeData:
     def test_invalid_csv_file_name(self):
         """Detect CSV file mismatch based on expected name."""
         self.createSubmissions(["0 - Mary Smith"])
-        self.createJSON({
-            "submission_ids": {"0 - Mary Smith": 0},
-            "user_ids": {"0 - Mary Smith": 100000},
-        })
+        self.createJSON(
+            {
+                "submission_ids": {"0 - Mary Smith": 0},
+                "user_ids": {"0 - Mary Smith": 100000},
+            }
+        )
         self.createZIP("CS 135 1001 - 2024 Fall - Assignment 1")
         self.createCSV(["error"], "CS 135 1001 - 2024 Fall - Assignment 2")
         expected = (
@@ -145,10 +154,12 @@ class TestExportCodeGradeData:
     def test_non_matching_student_submission_id(self):
         """Detect when student folder ID does not match JSON submission ID."""
         self.createSubmissions(["0 - Mary Smith"])
-        self.createJSON({
-            "submission_ids": {"0 - Mary Smith": 2},
-            "user_ids": {"0 - Mary Smith": 100000},
-        })
+        self.createJSON(
+            {
+                "submission_ids": {"0 - Mary Smith": 2},
+                "user_ids": {"0 - Mary Smith": 100000},
+            }
+        )
         self.createZIP("CS 135 1001 - 2024 Fall - Assignment 1")
         self.createCSV(["error"], "CS 135 1001 - 2024 Fall - Assignment 1")
         expected = "The submission ID #0 for Mary Smith is not correct."
@@ -157,65 +168,84 @@ class TestExportCodeGradeData:
     def test_no_student_metadata(self):
         """Detect absence of student metadata in CSV file."""
         self.createSubmissions(["0 - Mary Smith"])
-        self.createJSON({
-            "submission_ids": {"0 - Mary Smith": 0},
-            "user_ids": {"0 - Mary Smith": 100000},
-        })
+        self.createJSON(
+            {
+                "submission_ids": {"0 - Mary Smith": 0},
+                "user_ids": {"0 - Mary Smith": 100000},
+            }
+        )
         self.createZIP("CS 135 1001 - 2024 Fall - Assignment 2")
-        self.createCSV([["Id", "Username", "Name", "Grade"]],
-                       "CS 135 1001 - 2024 Fall - Assignment 2")
+        self.createCSV(
+            [["Id", "Username", "Name", "Grade"]],
+            "CS 135 1001 - 2024 Fall - Assignment 2",
+        )
         expected = "User ID 100000 does not have any metadata associated with it."
         assert self.runAndProduceError() == expected
 
     def test_multiple_student_metadata(self):
         """Detect duplicate user ID entries in the metadata file."""
         self.createSubmissions(["0 - Mary Smith"])
-        self.createJSON({
-            "submission_ids": {"0 - Mary Smith": 0},
-            "user_ids": {"0 - Mary Smith": 100000},
-        })
+        self.createJSON(
+            {
+                "submission_ids": {"0 - Mary Smith": 0},
+                "user_ids": {"0 - Mary Smith": 100000},
+            }
+        )
         self.createZIP("CS 135 1001 - 2024 Fall - Assignment 3")
-        self.createCSV([
-            ["Id", "Username", "Name", "Grade"],
-            ["100000", "smithm", "Mary Smith", "79.1"],
-            ["100000", "smithm", "Mary Smith", "78.1"],
-        ], "CS 135 1001 - 2024 Fall - Assignment 3")
+        self.createCSV(
+            [
+                ["Id", "Username", "Name", "Grade"],
+                ["100000", "smithm", "Mary Smith", "79.1"],
+                ["100000", "smithm", "Mary Smith", "78.1"],
+            ],
+            "CS 135 1001 - 2024 Fall - Assignment 3",
+        )
         expected = "User ID 100000 has multiple metadata entries associated with it."
         assert self.runAndProduceError() == expected
 
     def test_student_name_not_matching_user_id(self):
         """Detect name mismatch between metadata and user ID."""
         self.createSubmissions(["0 - Mary Smith"])
-        self.createJSON({
-            "submission_ids": {"0 - Mary Smith": 0},
-            "user_ids": {"0 - Mary Smith": 100000},
-        })
+        self.createJSON(
+            {
+                "submission_ids": {"0 - Mary Smith": 0},
+                "user_ids": {"0 - Mary Smith": 100000},
+            }
+        )
         self.createZIP("CS 135 1001 - 2024 Fall - Assignment 4")
-        self.createCSV([
-            ["Id", "Username", "Name", "Grade"],
-            ["100000", "smithm", "Mary Jane", "79.1"],
-        ], "CS 135 1001 - 2024 Fall - Assignment 4")
+        self.createCSV(
+            [
+                ["Id", "Username", "Name", "Grade"],
+                ["100000", "smithm", "Mary Jane", "79.1"],
+            ],
+            "CS 135 1001 - 2024 Fall - Assignment 4",
+        )
         expected = "User ID 100000 does not match the given name in the metadata file."
         assert self.runAndProduceError() == expected
 
     def test_student_missing_submission_in_zip(self):
         """Detect missing submission folder for a student defined in JSON."""
         self.createSubmissions(["23 - Paul Jones"])
-        self.createJSON({
-            "submission_ids": {
-                "0 - Mary Smith": 0,
-                "23 - Paul Jones": 23,
-            },
-            "user_ids": {
-                "0 - Mary Smith": 100000,
-                "23 - Paul Jones": 100001,
-            },
-        })
+        self.createJSON(
+            {
+                "submission_ids": {
+                    "0 - Mary Smith": 0,
+                    "23 - Paul Jones": 23,
+                },
+                "user_ids": {
+                    "0 - Mary Smith": 100000,
+                    "23 - Paul Jones": 100001,
+                },
+            }
+        )
         self.createZIP("CS 135 1001 - 2024 Fall - Assignment 5")
-        self.createCSV([
-            ["Id", "Username", "Name", "Grade"],
-            ["100000", "smithm", "Mary Jane", "79.1"],
-            ["100001", "jonesj", "Paul Jones", "89.3"],
-        ], "CS 135 1001 - 2024 Fall - Assignment 5")
+        self.createCSV(
+            [
+                ["Id", "Username", "Name", "Grade"],
+                ["100000", "smithm", "Mary Jane", "79.1"],
+                ["100001", "jonesj", "Paul Jones", "89.3"],
+            ],
+            "CS 135 1001 - 2024 Fall - Assignment 5",
+        )
         expected = "Submission for Mary Smith is missing in zip directory."
         assert self.runAndProduceError() == expected

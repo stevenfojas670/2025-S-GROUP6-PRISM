@@ -1,4 +1,5 @@
 """Admin configuration for the assignments app."""
+
 from django.contrib import admin
 from assignments import models
 

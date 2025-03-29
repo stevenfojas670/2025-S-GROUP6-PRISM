@@ -1,4 +1,5 @@
 """users.apps - Configuration for the 'users' application in a Django project."""
+
 from django.apps import AppConfig
 
 

@@ -43,10 +43,7 @@ def create_user(
     )
 
 
-def create_professor(
-        email="prof@example.com",
-        first_name="Prof",
-        last_name="One"):
+def create_professor(email="prof@example.com", first_name="Prof", last_name="One"):
     """Create and return a Professor instance with an associated User.
 
     Args:
@@ -142,8 +139,7 @@ class FlaggedStudentAPITests(APITestCase):
 
     def test_filter_flagged_students(self):
         """Test filtering flagged students by professor ID."""
-        url = reverse("flagged-student-list") + \
-            f"?professor__id={self.prof.id}"
+        url = reverse("flagged-student-list") + f"?professor__id={self.prof.id}"
         res = self.client.get(url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 1)
@@ -256,9 +252,7 @@ class SubmissionAPITests(APITestCase):
         url = reverse("submissions-list") + "?search=World History"
         res = self.client.get(url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(
-            res.data[0]["assignment"]["title"],
-            "World History Assignment")
+        self.assertEqual(res.data[0]["assignment"]["title"], "World History Assignment")
 
 
 class FlaggedSubmissionAPITests(APITestCase):

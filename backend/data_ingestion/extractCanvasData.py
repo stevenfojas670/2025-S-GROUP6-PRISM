@@ -115,8 +115,7 @@ class CanvasDataIngestion:
                     .createError()
                 )
 
-            self.courseInfo = self.__getCourseMetaData(
-                student["Section"], rowCount)
+            self.courseInfo = self.__getCourseMetaData(student["Section"], rowCount)
 
             # Error Check #2: Make sure the semester matches
             if self.courseInfo[0] != self.__semester:
@@ -160,9 +159,7 @@ class CanvasDataIngestion:
                     eb.DataIngestionErrorBuilder()
                     .addFileName(self.__fileName)
                     .addLine(rowCount)
-                    .addMsg(
-                        f"The Canvas metadata ID does not match for {studentName}."
-                    )
+                    .addMsg(f"The Canvas metadata ID does not match for {studentName}.")
                     .createError()
                 )
 
@@ -214,7 +211,8 @@ class CanvasDataIngestion:
         """
         try:
             semester = Semester.objects.get_or_create(
-                name=self.__semester + self.__year)
+                name=self.__semester + self.__year
+            )
         except Semester.DoesNotExist:
             semester = Semester(name=self.__semester + self.__year)
             semester.save()
@@ -258,7 +256,8 @@ class CanvasDataIngestion:
 
         if len(CanvasDataIngestion.errors) > 0:
             DataIngestionError.createErrorJSON(
-                "canvas_data_errors", CanvasDataIngestion.errors)
+                "canvas_data_errors", CanvasDataIngestion.errors
+            )
             CanvasDataIngestion.errors = list()
 
 

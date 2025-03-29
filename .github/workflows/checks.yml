@@ -37,7 +37,7 @@ jobs:
             --max-line-length=79 \
             --extend-ignore=E501 \
             --select=C,E,F,W,D \
-            --exclude=venv,__pycache__,migrations,.env
+            --exclude=venv,__pycache__,migrations,.env,**/__init__.py
 
       - name: Run Security Checks
         run: |
