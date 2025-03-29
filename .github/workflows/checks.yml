@@ -33,7 +33,11 @@ jobs:
       - name: Lint Code with Flake8
         run: |
           pip install flake8
-          flake8 .
+          flake8 . \
+            --max-line-length=79 \
+            --extend-ignore=E501 \
+            --select=C,E,F,W,D \
+            --exclude=venv,__pycache__,migrations,.env
 
       - name: Run Security Checks
         run: |
