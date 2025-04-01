@@ -1,13 +1,10 @@
-"""
-Courses Views with Enhanced Filtering, Ordering, and Search Capabilities.
-"""
+"""Courses Views with Enhanced Filtering, Ordering, and Search Capabilities."""
 
-from courses import serializers
-from courses import models
-from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters import rest_framework as filters
+from courses import serializers
+from courses import models
 
 
 class ProfessorVS(viewsets.ModelViewSet):
@@ -55,8 +52,11 @@ class ProfessorClassSectionVS(viewsets.ModelViewSet):
 
     queryset = models.ProfessorClassSection.objects.all()
     serializer_class = serializers.ProfessorClassSectionSerializer
-    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
-    # Filtering on related fields using dictionary syntax to allow multiple lookup types.
+    filter_backends = [
+        filters.DjangoFilterBackend,
+        OrderingFilter,
+        SearchFilter,
+    ]
     filterset_fields = {
         "professor__id": ["exact"],
         "class_instance__name": ["exact", "icontains"],
