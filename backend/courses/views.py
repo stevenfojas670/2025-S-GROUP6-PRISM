@@ -12,15 +12,8 @@ class ProfessorVS(viewsets.ModelViewSet):
 
     queryset = models.Professor.objects.all()
     serializer_class = serializers.ProfessorSerializer
-    filter_backends = [
-        filters.DjangoFilterBackend,
-        OrderingFilter,
-        SearchFilter]
-    filterset_fields = {
-        "id": ["exact"],
-        "user__first_name": [
-            "exact",
-            "icontains"]}
+    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
+    filterset_fields = {"id": ["exact"], "user__first_name": ["exact", "icontains"]}
     ordering_fields = ["user__first_name"]
     ordering = ["user__first_name"]
     search_fields = ["user__first_name"]
@@ -31,10 +24,7 @@ class SemesterVS(viewsets.ModelViewSet):
 
     queryset = models.Semester.objects.all()
     serializer_class = serializers.SemesterSerializer
-    filter_backends = [
-        filters.DjangoFilterBackend,
-        OrderingFilter,
-        SearchFilter]
+    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
     filterset_fields = {"id": ["exact"], "name": ["exact", "icontains"]}
     ordering_fields = [
         "name",
@@ -48,10 +38,7 @@ class ClassVS(viewsets.ModelViewSet):
 
     queryset = models.Class.objects.all()
     serializer_class = serializers.ClassSerializer
-    filter_backends = [
-        filters.DjangoFilterBackend,
-        OrderingFilter,
-        SearchFilter]
+    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
     filterset_fields = {"id": ["exact"], "name": ["exact", "icontains"]}
     ordering_fields = [
         "name",
@@ -91,10 +78,7 @@ class EnrollmentVS(viewsets.ModelViewSet):
     queryset = models.Enrollment.objects.all()
     serializer_class = serializers.EnrollmentSerializer
     # permission_classes = [IsAuthenticated]
-    filter_backends = [
-        filters.DjangoFilterBackend,
-        OrderingFilter,
-        SearchFilter]
+    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
 
     # Allow filtering by student, class, and semester. Similar idea to other VS
     filterset_fields = {

@@ -113,40 +113,35 @@ class API_Data:
     def get_all_graders(self, assignment):
         """Return all graders for a given assignment."""
         try:
-            return self.client.assignment.get_all_graders(
-                assignment_id=assignment.id)
+            return self.client.assignment.get_all_graders(assignment_id=assignment.id)
         except Exception as e:
             print(str(e))
 
     def get_rubric(self, assignment):
         """Return the rubric for a given assignment."""
         try:
-            return self.client.assignment.get_rubric(
-                assignment_id=assignment.id)
+            return self.client.assignment.get_rubric(assignment_id=assignment.id)
         except Exception as e:
             print(str(e))
 
     def get_desc(self, assignment):
         """Return the description for an assignment."""
         try:
-            return self.client.assignment.get_description(
-                assignment_id=assignment.id)
+            return self.client.assignment.get_description(assignment_id=assignment.id)
         except Exception as e:
             print(str(e))
 
     def get_time_frames(self, assignment):
         """Return timeframes for an assignment."""
         try:
-            return self.client.assignment.get_timeframes(
-                assignment_id=assignment.id)
+            return self.client.assignment.get_timeframes(assignment_id=assignment.id)
         except Exception as e:
             print(str(e))
 
     def get_feedback(self, assignment):
         """Return all feedback for a given assignment."""
         try:
-            return self.client.assignment.get_all_feedback(
-                assignment_id=assignment.id)
+            return self.client.assignment.get_all_feedback(assignment_id=assignment.id)
         except Exception as e:
             print(str(e))
 
@@ -169,8 +164,7 @@ class API_Data:
     def get_rubric_grade(self, submission_id):
         """Return rubric grade for a given submission ID."""
         try:
-            return self.client.submission.get_rubric_result(
-                submission_id=submission_id)
+            return self.client.submission.get_rubric_result(submission_id=submission_id)
         except Exception:
             return None
 
@@ -196,8 +190,7 @@ class API_Data:
             if not retries:
                 raise
             time.sleep(1)
-            return self.download_submission(
-                submission, output_dir, retries=retries - 1)
+            return self.download_submission(submission, output_dir, retries=retries - 1)
 
         username = (
             submission.user.group.name + " (Group)"
@@ -231,8 +224,7 @@ class API_Data:
 
     def get_sorted_dict(self, student_dict):
         """Sort student submission/user ID dictionaries."""
-        student_dict["submission_ids"] = sorted(
-            student_dict["submission_ids"].items())
+        student_dict["submission_ids"] = sorted(student_dict["submission_ids"].items())
         student_dict["user_ids"] = sorted(student_dict["user_ids"].items())
 
         for key in student_dict:
@@ -339,15 +331,13 @@ class API_Data:
                 )
                 continue
 
-            file_path = self.get_output_dir(
-                self.course.name, assignment) + ".csv"
+            file_path = self.get_output_dir(self.course.name, assignment) + ".csv"
             with open(file_path, "w", newline="") as f:
                 writer = csv.writer(f)
                 writer.writerow(["Id", "Username", "Name", "Grade"])
                 self.get_feedback(assignment)
                 for submission in submissions:
-                    grade = self.get_grade(
-                        assignment.max_grade, submission.grade)
+                    grade = self.get_grade(assignment.max_grade, submission.grade)
                     writer.writerow(
                         [
                             submission.user.id,

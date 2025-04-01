@@ -91,10 +91,8 @@ class TestExportCodeGradeData:
         shutil.rmtree(self.test_directory)
         os.mkdir(self.test_directory)
         shutil.move(
-            f"{fileName}.zip",
-            os.path.join(
-                self.test_directory,
-                f"{fileName}.zip"))
+            f"{fileName}.zip", os.path.join(self.test_directory, f"{fileName}.zip")
+        )
 
     def createCSV(self, csvData, fileName):
         """Create a CSV file in the test directory with given data."""
