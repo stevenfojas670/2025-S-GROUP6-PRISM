@@ -68,8 +68,8 @@ class IsProfessorOrTA(BasePermission):
             bool: True if the user is authenticated and is a professor or TA.
         """
         return (
-            request.user and request.user.is_authenticated
-            and (is_professor(request.user) or is_ta(request.user))
+            request.user and request.user.is_authenticated and
+            (is_professor(request.user) or is_ta(request.user))
         )
 
 
@@ -87,9 +87,9 @@ class IsProfessorOrAdmin(BasePermission):
             bool: True if the user is authenticated and is a professor or admin.
         """
         return (
-            request.user
-            and request.user.is_authenticated
-            and (is_professor(request.user) or is_admin(request.user))
+            request.user and
+            request.user.is_authenticated and
+            (is_professor(request.user) or is_admin(request.user))
         )
 
 
@@ -107,9 +107,9 @@ class IsProfessor(BasePermission):
             bool: True if the user is authenticated and is a professor.
         """
         return (
-            request.user
-            and request.user.is_authenticated
-            and is_professor(request.user)
+            request.user and
+            request.user.is_authenticated and
+            is_professor(request.user)
         )
 
 
@@ -126,4 +126,5 @@ class IsAdmin(BasePermission):
         Returns:
             bool: True if the user is authenticated and is an admin.
         """
-        return request.user and request.user.is_authenticated and is_admin(request.user)
+        return request.user and request.user.is_authenticated and is_admin(
+            request.user)

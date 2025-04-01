@@ -19,8 +19,14 @@ router.register("submissions", SubmissionVS, basename="submissions")
 router.register(
     "flagged-submission", FlaggedSubmissionVS, basename="flagged-submission"
 )
-router.register("flagged-student", FlaggedStudentVS, basename="flagged-student")
-router.register("confirmed-cheater", ConfirmedCheaterVS, basename="confirmed-cheater")
+router.register(
+    "flagged-student",
+    FlaggedStudentVS,
+    basename="flagged-student")
+router.register(
+    "confirmed-cheater",
+    ConfirmedCheaterVS,
+    basename="confirmed-cheater")
 router.register("student", StudentVS, basename="student")
 
 urlpatterns = [

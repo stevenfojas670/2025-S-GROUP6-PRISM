@@ -9,8 +9,10 @@ from courses.models import Professor, Semester, Class, ProfessorClassSection
 
 
 def create_user(
-    email="test@example.com", password="pass123", first_name="Test", last_name="User"
-):
+        email="test@example.com",
+        password="pass123",
+        first_name="Test",
+        last_name="User"):
     """Create and return a new user.
 
     Args:
@@ -86,7 +88,8 @@ class ProfessorAPITests(APITestCase):
         url = reverse("professor-list") + "?search=John"
         res = self.client.get(url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertTrue(any("John" in item["user"]["first_name"] for item in res.data))
+        self.assertTrue(
+            any("John" in item["user"]["first_name"] for item in res.data))
 
 
 class SemesterAPITests(APITestCase):
@@ -149,7 +152,8 @@ class ProfessorClassSectionAPITests(APITestCase):
 
     def setUp(self):
         """Set up the test environment."""
-        self.prof1 = create_professor("alice@example.com", "Alice", "Wonderland")
+        self.prof1 = create_professor(
+            "alice@example.com", "Alice", "Wonderland")
         self.prof2 = create_professor("bob@example.com", "Bob", "Builder")
         self.semester = Semester.objects.create(name="Fall 2023")
         self.class_obj = Class.objects.create(name="Physics 101")

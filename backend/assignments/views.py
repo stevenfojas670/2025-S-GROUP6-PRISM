@@ -21,7 +21,10 @@ class StudentVS(viewsets.ModelViewSet):
 
     queryset = models.Student.objects.all()
     serializer_class = serializers.StudentSerializer
-    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
+    filter_backends = [
+        filters.DjangoFilterBackend,
+        OrderingFilter,
+        SearchFilter]
     filterset_fields = {"id": ["exact"], "first_name": ["exact", "icontains"]}
     ordering_fields = ["id", "first_name"]
     ordering = ["first_name"]
@@ -37,7 +40,10 @@ class FlaggedStudentVS(viewsets.ModelViewSet):
 
     queryset = models.FlaggedStudent.objects.all()
     serializer_class = serializers.FlaggedStudentSerializer
-    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
+    filter_backends = [
+        filters.DjangoFilterBackend,
+        OrderingFilter,
+        SearchFilter]
     filterset_fields = {
         "professor__id": ["exact"],
         "times_over_threshold": ["exact", "gte", "lte"],
@@ -55,7 +61,10 @@ class AssignmentVS(viewsets.ModelViewSet):
 
     queryset = models.Assignment.objects.all()
     serializer_class = serializers.AssignmentSerializer
-    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
+    filter_backends = [
+        filters.DjangoFilterBackend,
+        OrderingFilter,
+        SearchFilter]
     filterset_fields = {
         "professor__id": ["exact"],
         "class_instance__name": ["exact", "icontains"],
@@ -85,7 +94,10 @@ class SubmissionVS(viewsets.ModelViewSet):
 
     queryset = models.Submission.objects.all()
     serializer_class = serializers.SubmissionSerializer
-    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
+    filter_backends = [
+        filters.DjangoFilterBackend,
+        OrderingFilter,
+        SearchFilter]
     filterset_fields = {
         "student__id": ["exact"],
         "professor__id": ["exact"],
@@ -113,7 +125,10 @@ class FlaggedSubmissionVS(viewsets.ModelViewSet):
 
     queryset = models.FlaggedSubmission.objects.all()
     serializer_class = serializers.FlaggedSubmissionSerializer
-    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
+    filter_backends = [
+        filters.DjangoFilterBackend,
+        OrderingFilter,
+        SearchFilter]
     filterset_fields = {
         "submission__professor__id": ["exact"],
         "file_name": ["exact", "icontains"],
@@ -137,7 +152,10 @@ class ConfirmedCheaterVS(viewsets.ModelViewSet):
 
     queryset = models.ConfirmedCheater.objects.all()
     serializer_class = serializers.ConfirmedCheaterSerializer
-    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
+    filter_backends = [
+        filters.DjangoFilterBackend,
+        OrderingFilter,
+        SearchFilter]
     filterset_fields = {
         "professor__id": ["exact"],
         "confirmed_date": ["exact", "gte", "lte"],
@@ -160,7 +178,10 @@ class PlagiarismReportViewSet(viewsets.ModelViewSet):
 
     serializer_class = FlaggedSubmissionSerializer
     permission_classes = [IsAuthenticated]
-    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
+    filter_backends = [
+        filters.DjangoFilterBackend,
+        OrderingFilter,
+        SearchFilter]
     filterset_fields = [
         "submission__assignment__class_instance_id",
         "submission__assignment__class_instance__semester",
