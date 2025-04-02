@@ -2,6 +2,7 @@
 
 from rest_framework import filters, viewsets
 from django_filters.rest_framework import DjangoFilterBackend
+from prism_backend.mixins import CachedViewMixin
 
 from .models import (
     Assignments,
@@ -24,7 +25,7 @@ from .serializers import (
 )
 
 
-class AssignmentsViewSet(viewsets.ModelViewSet):
+class AssignmentsViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling Assignments."""
 
     queryset = Assignments.objects.all()
@@ -41,7 +42,7 @@ class AssignmentsViewSet(viewsets.ModelViewSet):
     search_fields = ["title", "pdf_filepath", "moss_report_directory_path"]
 
 
-class SubmissionsViewSet(viewsets.ModelViewSet):
+class SubmissionsViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling Submissions."""
 
     queryset = Submissions.objects.all()
@@ -58,7 +59,7 @@ class SubmissionsViewSet(viewsets.ModelViewSet):
     search_fields = ["file_path"]
 
 
-class BaseFilesViewSet(viewsets.ModelViewSet):
+class BaseFilesViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling BaseFiles."""
 
     queryset = BaseFiles.objects.all()
@@ -75,7 +76,7 @@ class BaseFilesViewSet(viewsets.ModelViewSet):
     search_fields = ["file_name", "file_path"]
 
 
-class BulkSubmissionsViewSet(viewsets.ModelViewSet):
+class BulkSubmissionsViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling BulkSubmissions."""
 
     queryset = BulkSubmissions.objects.all()
@@ -92,7 +93,7 @@ class BulkSubmissionsViewSet(viewsets.ModelViewSet):
     search_fields = ["directory_path"]
 
 
-class ConstraintsViewSet(viewsets.ModelViewSet):
+class ConstraintsViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling Constraints."""
 
     queryset = Constraints.objects.all()
@@ -109,7 +110,7 @@ class ConstraintsViewSet(viewsets.ModelViewSet):
     search_fields = ["identifier"]
 
 
-class PolicyViolationsViewSet(viewsets.ModelViewSet):
+class PolicyViolationsViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling PolicyViolations."""
 
     queryset = PolicyViolations.objects.all()
@@ -127,7 +128,7 @@ class PolicyViolationsViewSet(viewsets.ModelViewSet):
     search_fields = []
 
 
-class RequiredSubmissionFilesViewSet(viewsets.ModelViewSet):
+class RequiredSubmissionFilesViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling RequiredSubmissionFiles."""
 
     queryset = RequiredSubmissionFiles.objects.all()

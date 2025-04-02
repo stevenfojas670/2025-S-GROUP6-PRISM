@@ -2,6 +2,7 @@
 
 from rest_framework import filters, viewsets
 from django_filters.rest_framework import DjangoFilterBackend
+from prism_backend.mixins import CachedViewMixin
 
 from .models import (
     CourseCatalog,
@@ -30,7 +31,7 @@ from .serializers import (
 from .pagination import StandardResultsSetPagination
 
 
-class CourseCatalogViewSet(viewsets.ModelViewSet):
+class CourseCatalogViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling CourseCatalog entries."""
 
     queryset = CourseCatalog.objects.all()
@@ -47,7 +48,7 @@ class CourseCatalogViewSet(viewsets.ModelViewSet):
     search_fields = ["name", "course_title"]
 
 
-class CourseInstancesViewSet(viewsets.ModelViewSet):
+class CourseInstancesViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling CourseInstances entries."""
 
     queryset = CourseInstances.objects.all()
@@ -64,7 +65,7 @@ class CourseInstancesViewSet(viewsets.ModelViewSet):
     search_fields = ["course_catalog__course_title"]
 
 
-class CoursesSemesterViewSet(viewsets.ModelViewSet):
+class CoursesSemesterViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling CoursesSemester entries."""
 
     queryset = CoursesSemester.objects.all()
@@ -81,7 +82,7 @@ class CoursesSemesterViewSet(viewsets.ModelViewSet):
     search_fields = ["name", "term", "session"]
 
 
-class CourseAssignmentCollaborationViewSet(viewsets.ModelViewSet):
+class CourseAssignmentCollaborationViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling CourseAssignmentCollaboration entries."""
 
     queryset = CourseAssignmentCollaboration.objects.all()
@@ -98,7 +99,7 @@ class CourseAssignmentCollaborationViewSet(viewsets.ModelViewSet):
     search_fields = []
 
 
-class StudentsViewSet(viewsets.ModelViewSet):
+class StudentsViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling Students entries."""
 
     queryset = Students.objects.all()
@@ -115,7 +116,7 @@ class StudentsViewSet(viewsets.ModelViewSet):
     search_fields = ["first_name", "last_name", "ace_id"]
 
 
-class StudentEnrollmentsViewSet(viewsets.ModelViewSet):
+class StudentEnrollmentsViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling StudentEnrollments entries."""
 
     queryset = StudentEnrollments.objects.all()
@@ -132,7 +133,7 @@ class StudentEnrollmentsViewSet(viewsets.ModelViewSet):
     search_fields = []
 
 
-class ProfessorsViewSet(viewsets.ModelViewSet):
+class ProfessorsViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling Professors entries."""
 
     queryset = Professors.objects.all()
@@ -149,7 +150,7 @@ class ProfessorsViewSet(viewsets.ModelViewSet):
     search_fields = ["user__username"]
 
 
-class ProfessorEnrollmentsViewSet(viewsets.ModelViewSet):
+class ProfessorEnrollmentsViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling ProfessorEnrollments entries."""
 
     queryset = ProfessorEnrollments.objects.all()
@@ -166,7 +167,7 @@ class ProfessorEnrollmentsViewSet(viewsets.ModelViewSet):
     search_fields = []
 
 
-class TeachingAssistantsViewSet(viewsets.ModelViewSet):
+class TeachingAssistantsViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling TeachingAssistants entries."""
 
     queryset = TeachingAssistants.objects.all()
@@ -183,7 +184,7 @@ class TeachingAssistantsViewSet(viewsets.ModelViewSet):
     search_fields = ["user__username"]
 
 
-class TeachingAssistantEnrollmentViewSet(viewsets.ModelViewSet):
+class TeachingAssistantEnrollmentViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling TeachingAssistantEnrollment entries."""
 
     queryset = TeachingAssistantEnrollment.objects.all()

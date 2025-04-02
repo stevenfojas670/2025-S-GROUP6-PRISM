@@ -2,6 +2,7 @@
 
 from rest_framework import filters, viewsets
 from django_filters.rest_framework import DjangoFilterBackend
+from prism_backend.mixins import CachedViewMixin
 
 from .models import (
     CheatingGroups,
@@ -26,7 +27,7 @@ from .serializers import (
 from .pagination import StandardResultsSetPagination
 
 
-class CheatingGroupsViewSet(viewsets.ModelViewSet):
+class CheatingGroupsViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling CheatingGroups entries."""
 
     queryset = CheatingGroups.objects.all()
@@ -43,7 +44,7 @@ class CheatingGroupsViewSet(viewsets.ModelViewSet):
     search_fields = ["analysis_report_path", "assignment__title"]
 
 
-class CheatingGroupMembersViewSet(viewsets.ModelViewSet):
+class CheatingGroupMembersViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling CheatingGroupMembers entries."""
 
     queryset = CheatingGroupMembers.objects.all()
@@ -60,7 +61,7 @@ class CheatingGroupMembersViewSet(viewsets.ModelViewSet):
     search_fields = []
 
 
-class ConfirmedCheatersViewSet(viewsets.ModelViewSet):
+class ConfirmedCheatersViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling ConfirmedCheaters entries."""
 
     queryset = ConfirmedCheaters.objects.all()
@@ -77,7 +78,7 @@ class ConfirmedCheatersViewSet(viewsets.ModelViewSet):
     search_fields = ["assignment__title", "student__first_name", "student__last_name"]
 
 
-class FlaggedStudentsViewSet(viewsets.ModelViewSet):
+class FlaggedStudentsViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling FlaggedStudents entries."""
 
     queryset = FlaggedStudents.objects.all()
@@ -98,7 +99,7 @@ class FlaggedStudentsViewSet(viewsets.ModelViewSet):
     ]
 
 
-class SubmissionSimiliarityPairsViewSet(viewsets.ModelViewSet):
+class SubmissionSimiliarityPairsViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling SubmissionSimiliarityPairs entries."""
 
     queryset = SubmissionSimiliarityPairs.objects.all()
@@ -115,7 +116,7 @@ class SubmissionSimiliarityPairsViewSet(viewsets.ModelViewSet):
     search_fields = ["file_name"]
 
 
-class LongitudinalCheatingGroupsViewSet(viewsets.ModelViewSet):
+class LongitudinalCheatingGroupsViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling LongitudinalCheatingGroups entries."""
 
     queryset = LongitudinalCheatingGroups.objects.all()
@@ -132,7 +133,7 @@ class LongitudinalCheatingGroupsViewSet(viewsets.ModelViewSet):
     search_fields = []
 
 
-class LongitudinalCheatingGroupMembersViewSet(viewsets.ModelViewSet):
+class LongitudinalCheatingGroupMembersViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling LongitudinalCheatingGroupMembers entries."""
 
     queryset = LongitudinalCheatingGroupMembers.objects.all()
@@ -149,7 +150,7 @@ class LongitudinalCheatingGroupMembersViewSet(viewsets.ModelViewSet):
     search_fields = []
 
 
-class LongitudinalCheatingGroupInstancesViewSet(viewsets.ModelViewSet):
+class LongitudinalCheatingGroupInstancesViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling LongitudinalCheatingGroupInstances entries."""
 
     queryset = LongitudinalCheatingGroupInstances.objects.all()
