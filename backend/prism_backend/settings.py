@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "users",
     "courses",
     "assignments",
+    "cheating",
     "drf_spectacular",
     "django_filters",
     "data_ingestion",

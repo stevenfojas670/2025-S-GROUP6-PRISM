@@ -1,359 +1,405 @@
-"""Test the Assignments API endpoints."""
+"""Tests for Assignment views with filtering, ordering, search, and pagination.
+
+This module tests the API endpoints for assignments and related models.
+"""
+
+import datetime
 
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-from django.contrib.auth import get_user_model
-from datetime import date
 
 from assignments.models import (
-    Student,
-    Assignment,
-    Submission,
-    FlaggedSubmission,
-    FlaggedStudent,
-    ConfirmedCheater,
+    Assignments,
+    Submissions,
+    BaseFiles,
+    BulkSubmissions,
+    Constraints,
+    PolicyViolations,
+    RequiredSubmissionFiles,
 )
-from courses.models import Professor, Class as CourseClass
+from courses.models import (
+    CoursesSemester,
+    CourseCatalog,
+    CourseInstances,
+    Professors,
+    TeachingAssistants,
+    Students,
+)
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
-# Helper functions to create required objects.
-def create_user(
-    email="test@example.com",
-    password="pass123",
-    first_name="Test",
-    last_name="User",
-):
-    """Create and return a new user with the specified details.
+class BaseViewTest(APITestCase):
+    """Base test case for assignment view tests."""
 
-    Args:
-        email (str): The email address of the user. Defaults to "test@example.com".
-        password (str): The password for the user. Defaults to "pass123".
-        first_name (str): The first name of the user. Defaults to "Test".
-        last_name (str): The last name of the user. Defaults to "User".
-
-    Returns:
-        User: The created user instance.
-    """
-    return get_user_model().objects.create_user(
-        email=email,
-        password=password,
-        first_name=first_name,
-        last_name=last_name,
-    )
-
-
-def create_professor(email="prof@example.com", first_name="Prof", last_name="One"):
-    """Create and return a Professor instance with an associated User.
-
-    Args:
-        email (str): The email address for the professor's user account.
-        first_name (str): The first name of the professor.
-        last_name (str): The last name of the professor.
-
-    Returns:
-        Professor: A newly created Professor instance.
-    """
-    user = create_user(
-        email=email,
-        password="pass123",
-        first_name=first_name,
-        last_name=last_name,
-    )
-    return Professor.objects.create(user=user)
-
-
-def create_course_class(name="Test Class"):
-    """Create and return a CourseClass instance.
-
-    Args:
-        name (str): The name of the CourseClass to create.
-
-    Returns:
-        CourseClass: The created CourseClass instance.
-    """
-    return CourseClass.objects.create(name=name)
-
-
-class StudentAPITests(APITestCase):
-    """Test the Student API endpoints."""
-
-    def setUp(self):
-        """Set up test data for Student API tests."""
-        self.student1 = Student.objects.create(
-            email="student1@example.com",
-            codeGrade_id=1001,
-            username="stud1",
-            first_name="Alice",
-            last_name="Anderson",
+    @classmethod
+    def setUpTestData(cls):
+        """Set up test data for view tests."""
+        cls.semester = CoursesSemester.objects.create(
+            name="Fall Semester", year=2025, term="Fall", session="Regular"
         )
-        self.student2 = Student.objects.create(
-            email="student2@example.com",
-            codeGrade_id=1002,
-            username="stud2",
-            first_name="Bob",
-            last_name="Brown",
+        cls.catalog = CourseCatalog.objects.create(
+            name="CS101",
+            subject="CS",
+            catalog_number=101,
+            course_title="Intro to CS",
+            course_level="Undergraduate",
         )
-
-    def test_list_students(self):
-        """Test listing all students via the API."""
-        url = reverse("student-list")
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 2)
-
-    def test_search_students(self):
-        """Test searching for students by first name."""
-        url = reverse("student-list") + "?search=Alice"
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 1)
-        self.assertEqual(res.data[0]["first_name"], "Alice")
-
-
-class FlaggedStudentAPITests(APITestCase):
-    """Test the FlaggedStudent API endpoints."""
-
-    def setUp(self):
-        """Set up test data for FlaggedStudent API tests."""
-        self.prof = create_professor(
-            email="prof1@example.com", first_name="Jane", last_name="Doe"
+        cls.professor_user = User.objects.create_user(
+            username="prof1",
+            password="pass123",
+            email="professor@example.com",
         )
-        self.student = Student.objects.create(
-            email="student3@example.com",
-            codeGrade_id=1003,
-            username="stud3",
-            first_name="Charlie",
-            last_name="Chaplin",
+        cls.ta_user = User.objects.create_user(
+            username="ta1",
+            password="pass123",
+            email="ta1@example.com",
         )
-        self.flagged_student = FlaggedStudent.objects.create(
-            student=self.student, professor=self.prof, times_over_threshold=5
+        cls.professor = Professors.objects.create(user=cls.professor_user)
+        cls.teaching_assistant = TeachingAssistants.objects.create(user=cls.ta_user)
+        cls.course_instance = CourseInstances.objects.create(
+            semester=cls.semester,
+            course_catalog=cls.catalog,
+            section_number=1,
+            professor=cls.professor,
+            teaching_assistant=cls.teaching_assistant,
+            canvas_course_id=123456,
         )
-
-    def test_list_flagged_students(self):
-        """Test listing flagged students."""
-        url = reverse("flagged-student-list")
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 1)
-
-    def test_filter_flagged_students(self):
-        """Test filtering flagged students by professor ID."""
-        url = reverse("flagged-student-list") + f"?professor__id={self.prof.id}"
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 1)
-        self.assertEqual(res.data[0]["times_over_threshold"], 5)
-
-
-class AssignmentAPITests(APITestCase):
-    """Test the Assignment API endpoints."""
-
-    def setUp(self):
-        """Set up test data for Assignment API tests."""
-        self.prof = create_professor(
-            email="prof2@example.com", first_name="John", last_name="Doe"
+        cls.student = Students.objects.create(
+            email="student@example.com",
+            nshe_id=12345678,
+            codegrade_id=87654321,
+            ace_id="ACE123",
+            first_name="John",
+            last_name="Doe",
         )
-        self.course_class = create_course_class(name="Math 101")
-        self.assignment1 = Assignment.objects.create(
-            class_instance=self.course_class,
-            professor=self.prof,
+        cls.assignment = Assignments.objects.create(
+            course_instance=cls.course_instance,
             assignment_number=1,
-            title="Algebra Assignment",
-            due_date=date(2023, 5, 1),
+            title="Test Assignment",
+            lock_date=datetime.date.today(),
+            pdf_filepath="path/to/pdf",
+            has_base_code=True,
+            moss_report_directory_path="path/to/moss",
+            bulk_ai_directory_path="path/to/bulk",
+            language="Python",
+            has_policy=True,
         )
-        self.assignment2 = Assignment.objects.create(
-            class_instance=self.course_class,
-            professor=self.prof,
-            assignment_number=2,
-            title="Geometry Assignment",
-            due_date=date(2023, 5, 15),
-        )
-
-    def test_list_assignments(self):
-        """Test listing assignments via the API."""
-        url = reverse("assignments-list")
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 2)
-
-    def test_filter_assignments_by_title(self):
-        """Test filtering assignments by title."""
-        url = reverse("assignments-list") + "?title=Algebra Assignment"
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 1)
-        self.assertEqual(res.data[0]["title"], "Algebra Assignment")
-
-    def test_search_assignments(self):
-        """Test searching assignments by keyword."""
-        url = reverse("assignments-list") + "?search=Geometry"
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 1)
-        self.assertEqual(res.data[0]["assignment_number"], 2)
-
-
-class SubmissionAPITests(APITestCase):
-    """Test the Submission API endpoints."""
-
-    def setUp(self):
-        """Set up test data for Submission API tests."""
-        self.prof = create_professor(
-            email="prof3@example.com", first_name="Alice", last_name="Smith"
-        )
-        self.course_class = create_course_class(name="History 101")
-        self.assignment = Assignment.objects.create(
-            class_instance=self.course_class,
-            professor=self.prof,
-            assignment_number=1,
-            title="World History Assignment",
-            due_date=date(2023, 6, 1),
-        )
-        self.student = Student.objects.create(
-            email="student4@example.com",
-            codeGrade_id=1004,
-            username="stud4",
-            first_name="David",
-            last_name="Dunn",
-        )
-        self.submission1 = Submission.objects.create(
-            student=self.student,
-            assignment=self.assignment,
-            grade=88,
+        cls.submission = Submissions.objects.create(
+            grade=95.0,
+            created_at=datetime.date.today(),
             flagged=False,
-            professor=self.prof,
+            assignment=cls.assignment,
+            student=cls.student,
+            course_instance=cls.course_instance,
+            file_path="path/to/submission",
         )
-        self.submission2 = Submission.objects.create(
-            student=self.student,
-            assignment=self.assignment,
-            grade=92,
-            flagged=True,
-            professor=self.prof,
+        cls.base_file = BaseFiles.objects.create(
+            assignment=cls.assignment,
+            file_name="starter.py",
+            file_path="path/to/starter.py",
+        )
+        cls.bulk_submission = BulkSubmissions.objects.create(
+            course_instance=cls.course_instance,
+            assignment=cls.assignment,
+            directory_path="path/to/directory",
+        )
+        cls.constraint = Constraints.objects.create(
+            assignment=cls.assignment,
+            identifier="forbidden_keyword",
+            is_library=False,
+            is_keyword=True,
+            is_permitted=False,
+        )
+        cls.policy_violation = PolicyViolations.objects.create(
+            constraint=cls.constraint,
+            submission=cls.submission,
+            line_number=42,
+        )
+        cls.req_sub_file = RequiredSubmissionFiles.objects.create(
+            assignment=cls.assignment,
+            file_name="main.py",
+            similarity_threshold=0.75,
         )
 
-    def test_list_submissions(self):
-        """Test listing all submissions."""
+
+class AssignmentsViewSetTest(BaseViewTest):
+    """Tests for the AssignmentsViewSet endpoints."""
+
+    def test_assignments_list(self):
+        """Test retrieving the list of assignments."""
+        url = reverse("assignments-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("results", response.data)
+        self.assertGreaterEqual(len(response.data["results"]), 1)
+
+    def test_assignments_filter(self):
+        """Test filtering assignments by assignment_number."""
+        url = reverse("assignments-list")
+        response = self.client.get(url, {"assignment_number": 1})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for item in response.data["results"]:
+            self.assertEqual(item["assignment_number"], 1)
+
+    def test_assignments_ordering(self):
+        """Test ordering assignments by assignment_number."""
+        url = reverse("assignments-list")
+        response = self.client.get(url, {"ordering": "assignment_number"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data["results"]
+        numbers = [item["assignment_number"] for item in results]
+        self.assertEqual(numbers, sorted(numbers))
+
+    def test_assignments_search(self):
+        """Test searching assignments by title."""
+        url = reverse("assignments-list")
+        response = self.client.get(url, {"search": "Test Assignment"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for item in response.data["results"]:
+            self.assertIn("Test Assignment", item["title"])
+
+    def test_assignments_pagination(self):
+        """Test pagination on the assignments endpoint."""
+        for i in range(15):
+            Assignments.objects.create(
+                course_instance=self.course_instance,
+                assignment_number=100 + i,
+                title=f"Assignment {100 + i}",
+                lock_date=datetime.date.today(),
+                pdf_filepath=f"path/to/pdf{i}",
+                has_base_code=True,
+                moss_report_directory_path=f"path/to/moss{i}",
+                bulk_ai_directory_path=f"path/to/bulk{i}",
+                language="Python",
+                has_policy=True,
+            )
+        url = reverse("assignments-list")
+        response = self.client.get(url, {"page_size": 10})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["results"]), 10)
+        self.assertIn("next", response.data)
+        self.assertIn("previous", response.data)
+
+
+class SubmissionsViewSetTest(BaseViewTest):
+    """Tests for the SubmissionsViewSet endpoints."""
+
+    def test_submissions_list(self):
+        """Test retrieving the list of submissions."""
         url = reverse("submissions-list")
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 2)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("results", response.data)
+        self.assertGreaterEqual(len(response.data["results"]), 1)
 
-    def test_filter_submissions_by_flagged(self):
+    def test_submissions_filter(self):
         """Test filtering submissions by flagged status."""
-        url = reverse("submissions-list") + "?flagged=True"
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 1)
-        self.assertTrue(res.data[0]["flagged"])
+        url = reverse("submissions-list")
+        response = self.client.get(url, {"flagged": False})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for item in response.data["results"]:
+            self.assertFalse(item["flagged"])
 
-    def test_search_submissions(self):
-        """Test searching submissions by assignment title."""
-        url = reverse("submissions-list") + "?search=World History"
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res.data[0]["assignment"]["title"], "World History Assignment")
+    def test_submissions_ordering(self):
+        """Test ordering submissions by grade."""
+        url = reverse("submissions-list")
+        response = self.client.get(url, {"ordering": "grade"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data["results"]
+        grades = [item["grade"] for item in results]
+        self.assertEqual(grades, sorted(grades))
 
-
-class FlaggedSubmissionAPITests(APITestCase):
-    """Test the FlaggedSubmission API endpoints."""
-
-    def setUp(self):
-        """Set up test data for FlaggedSubmission API tests."""
-        self.prof = create_professor(
-            email="prof4@example.com", first_name="Emma", last_name="Stone"
-        )
-        self.course_class = create_course_class(name="Physics 101")
-        self.assignment = Assignment.objects.create(
-            class_instance=self.course_class,
-            professor=self.prof,
-            assignment_number=1,
-            title="Quantum Mechanics",
-            due_date=date(2023, 7, 1),
-        )
-        self.student = Student.objects.create(
-            email="student5@example.com",
-            codeGrade_id=1005,
-            username="stud5",
-            first_name="Frank",
-            last_name="Furter",
-        )
-        self.submission = Submission.objects.create(
-            student=self.student,
-            assignment=self.assignment,
-            grade=95,
-            flagged=True,
-            professor=self.prof,
-        )
-        self.flagged_submission = FlaggedSubmission.objects.create(
-            submission=self.submission,
-            file_name="report.pdf",
-            percentage=85,
-        )
-        self.flagged_submission.similarity_with.add(self.student)
-
-    def test_list_flagged_submissions(self):
-        """Test listing flagged submissions."""
-        url = reverse("flagged-submission-list")
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 1)
-
-    def test_filter_flagged_submissions_by_percentage(self):
-        """Test filtering flagged submissions by percentage."""
-        url = reverse("flagged-submission-list") + "?percentage=85"
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 1)
-        self.assertEqual(res.data[0]["percentage"], 85)
-
-    def test_search_flagged_submissions(self):
-        """Test searching flagged submissions by file name."""
-        url = reverse("flagged-submission-list") + "?search=report"
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res.data[0]["file_name"], "report.pdf")
+    def test_submissions_search(self):
+        """Test searching submissions by file_path."""
+        url = reverse("submissions-list")
+        response = self.client.get(url, {"search": "submission"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for item in response.data["results"]:
+            self.assertIn("submission", item["file_path"])
 
 
-class ConfirmedCheaterAPITests(APITestCase):
-    """Test the ConfirmedCheater API endpoints."""
+class BaseFilesViewSetTest(BaseViewTest):
+    """Tests for the BaseFilesViewSet endpoints."""
 
-    def setUp(self):
-        """Set up test data for ConfirmedCheater API tests."""
-        self.prof = create_professor(
-            email="prof5@example.com", first_name="Olivia", last_name="Newton"
-        )
-        self.student = Student.objects.create(
-            email="student6@example.com",
-            codeGrade_id=1006,
-            username="stud6",
-            first_name="George",
-            last_name="Clooney",
-        )
-        self.confirmed_cheater = ConfirmedCheater.objects.create(
-            student=self.student,
-            professor=self.prof,
-            threshold_used=45,
-        )
+    def test_basefiles_list(self):
+        """Test retrieving the list of base files."""
+        url = reverse("basefiles-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("results", response.data)
+        self.assertGreaterEqual(len(response.data["results"]), 1)
 
-    def test_list_confirmed_cheaters(self):
-        """Test listing confirmed cheaters."""
-        url = reverse("confirmed-cheater-list")
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 1)
+    def test_basefiles_filter(self):
+        """Test filtering base files by file_name."""
+        url = reverse("basefiles-list")
+        response = self.client.get(url, {"file_name": "starter.py"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for item in response.data["results"]:
+            self.assertEqual(item["file_name"], "starter.py")
 
-    def test_filter_confirmed_cheaters_by_threshold(self):
-        """Test filtering confirmed cheaters by threshold."""
-        url = reverse("confirmed-cheater-list") + "?threshold_used=45"
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 1)
-        self.assertEqual(res.data[0]["threshold_used"], 45)
+    def test_basefiles_ordering(self):
+        """Test ordering base files by file_name."""
+        url = reverse("basefiles-list")
+        response = self.client.get(url, {"ordering": "file_name"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data["results"]
+        names = [item["file_name"] for item in results]
+        self.assertEqual(names, sorted(names))
 
-    def test_search_confirmed_cheaters(self):
-        """Test searching confirmed cheaters by professor first name."""
-        url = reverse("confirmed-cheater-list") + "?search=Olivia"
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertIn("Olivia", res.data[0]["professor"]["user"]["first_name"])
+    def test_basefiles_search(self):
+        """Test searching base files by file_path."""
+        url = reverse("basefiles-list")
+        response = self.client.get(url, {"search": "starter"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for item in response.data["results"]:
+            self.assertIn("starter", item["file_path"])
+
+
+class BulkSubmissionsViewSetTest(BaseViewTest):
+    """Tests for the BulkSubmissionsViewSet endpoints."""
+
+    def test_bulk_submissions_list(self):
+        """Test retrieving the list of bulk submissions."""
+        url = reverse("bulksubmissions-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("results", response.data)
+        self.assertGreaterEqual(len(response.data["results"]), 1)
+
+    def test_bulk_submissions_filter(self):
+        """Test filtering bulk submissions by directory_path."""
+        url = reverse("bulksubmissions-list")
+        response = self.client.get(url, {"directory_path": "path/to/directory"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for item in response.data["results"]:
+            self.assertEqual(item["directory_path"], "path/to/directory")
+
+    def test_bulk_submissions_ordering(self):
+        """Test ordering bulk submissions by directory_path."""
+        url = reverse("bulksubmissions-list")
+        response = self.client.get(url, {"ordering": "directory_path"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data["results"]
+        paths = [item["directory_path"] for item in results]
+        self.assertEqual(paths, sorted(paths))
+
+    def test_bulk_submissions_search(self):
+        """Test searching bulk submissions by directory_path."""
+        url = reverse("bulksubmissions-list")
+        response = self.client.get(url, {"search": "directory"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for item in response.data["results"]:
+            self.assertIn("directory", item["directory_path"])
+
+
+class ConstraintsViewSetTest(BaseViewTest):
+    """Tests for the ConstraintsViewSet endpoints."""
+
+    def test_constraints_list(self):
+        """Test retrieving the list of constraints."""
+        url = reverse("constraints-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("results", response.data)
+        self.assertGreaterEqual(len(response.data["results"]), 1)
+
+    def test_constraints_filter(self):
+        """Test filtering constraints by identifier."""
+        url = reverse("constraints-list")
+        response = self.client.get(url, {"identifier": "forbidden_keyword"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for item in response.data["results"]:
+            self.assertEqual(item["identifier"], "forbidden_keyword")
+
+    def test_constraints_ordering(self):
+        """Test ordering constraints by identifier."""
+        url = reverse("constraints-list")
+        response = self.client.get(url, {"ordering": "identifier"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data["results"]
+        identifiers = [item["identifier"] for item in results]
+        self.assertEqual(identifiers, sorted(identifiers))
+
+    def test_constraints_search(self):
+        """Test searching constraints by identifier."""
+        url = reverse("constraints-list")
+        response = self.client.get(url, {"search": "forbidden"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for item in response.data["results"]:
+            self.assertIn("forbidden", item["identifier"])
+
+
+class PolicyViolationsViewSetTest(BaseViewTest):
+    """Tests for the PolicyViolationsViewSet endpoints."""
+
+    def test_policy_violations_list(self):
+        """Test retrieving the list of policy violations."""
+        url = reverse("policyviolations-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("results", response.data)
+        self.assertGreaterEqual(len(response.data["results"]), 1)
+
+    def test_policy_violations_filter(self):
+        """Test filtering policy violations by line_number."""
+        url = reverse("policyviolations-list")
+        response = self.client.get(url, {"line_number": 42})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for item in response.data["results"]:
+            self.assertEqual(item["line_number"], 42)
+
+    def test_policy_violations_ordering(self):
+        """Test ordering policy violations by line_number."""
+        url = reverse("policyviolations-list")
+        response = self.client.get(url, {"ordering": "line_number"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data["results"]
+        lines = [item["line_number"] for item in results]
+        self.assertEqual(lines, sorted(lines))
+
+    def test_policy_violations_search(self):
+        """Test that search does not filter policy violations."""
+        url = reverse("policyviolations-list")
+        response = self.client.get(url, {"search": "anything"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(len(response.data["results"]), 1)
+
+
+class RequiredSubmissionFilesViewSetTest(BaseViewTest):
+    """Tests for the RequiredSubmissionFilesViewSet endpoints."""
+
+    def test_required_submission_files_list(self):
+        """Test retrieving the list of required submission files."""
+        url = reverse("requiredsubmissionfiles-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("results", response.data)
+        self.assertGreaterEqual(len(response.data["results"]), 1)
+
+    def test_required_submission_files_filter(self):
+        """Test filtering required submission files by file_name."""
+        url = reverse("requiredsubmissionfiles-list")
+        response = self.client.get(url, {"file_name": "main.py"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for item in response.data["results"]:
+            self.assertEqual(item["file_name"], "main.py")
+
+    def test_required_submission_files_ordering(self):
+        """Test ordering required submission files by file_name."""
+        url = reverse("requiredsubmissionfiles-list")
+        response = self.client.get(url, {"ordering": "file_name"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data["results"]
+        names = [item["file_name"] for item in results]
+        self.assertEqual(names, sorted(names))
+
+    def test_required_submission_files_search(self):
+        """Test searching required submission files by file_name."""
+        url = reverse("requiredsubmissionfiles-list")
+        response = self.client.get(url, {"search": "main"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for item in response.data["results"]:
+            self.assertIn("main", item["file_name"])

@@ -1,25 +1,51 @@
-"""URL Configuration for the courses app."""
+"""Courses app URLs.
 
+This module registers API endpoints for the core Courses app models.
+"""
+
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-# from rest_framework_nested.routers import NestedDefaultRouter
-from courses.views import (
-    ProfessorVS,
-    ProfessorClassSectionVS,
-    SemesterVS,
-    ClassVS,
-    EnrollmentVS,
+from .views import (
+    CourseCatalogViewSet,
+    CourseInstancesViewSet,
+    CoursesSemesterViewSet,
+    CourseAssignmentCollaborationViewSet,
+    StudentsViewSet,
+    StudentEnrollmentsViewSet,
+    ProfessorsViewSet,
+    ProfessorEnrollmentsViewSet,
+    TeachingAssistantsViewSet,
+    TeachingAssistantEnrollmentViewSet,
 )
-from django.urls import path, include
 
 router = DefaultRouter()
-router.register("classes", ClassVS, basename="class")
-router.register("professors", ProfessorVS, basename="professor")
-router.register("semesters", SemesterVS, basename="semester")
+router.register(r"coursecatalog", CourseCatalogViewSet, basename="coursecatalog")
+router.register(r"courseinstances", CourseInstancesViewSet, basename="courseinstances")
+router.register(r"coursessemester", CoursesSemesterViewSet, basename="coursessemester")
 router.register(
-    "sectionclassprof", ProfessorClassSectionVS, basename="sectionclassprof"
+    r"courseassignmentcollaboration",
+    CourseAssignmentCollaborationViewSet,
+    basename="courseassignmentcollaboration",
 )
-router.register("enrollments", EnrollmentVS, basename="enrollment")
+router.register(r"students", StudentsViewSet, basename="students")
+router.register(
+    r"studentenrollments", StudentEnrollmentsViewSet, basename="studentenrollments"
+)
+router.register(r"professors", ProfessorsViewSet, basename="professors")
+router.register(
+    r"professorenrollments",
+    ProfessorEnrollmentsViewSet,
+    basename="professorenrollments",
+)
+router.register(
+    r"teachingassistants", TeachingAssistantsViewSet, basename="teachingassistants"
+)
+router.register(
+    r"teachingassistantenrollment",
+    TeachingAssistantEnrollmentViewSet,
+    basename="teachingassistantenrollment",
+)
 
 urlpatterns = [
     path("", include(router.urls)),
