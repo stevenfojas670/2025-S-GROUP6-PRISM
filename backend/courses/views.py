@@ -43,6 +43,7 @@ class CourseCatalogViewSet(viewsets.ModelViewSet):
     ]
     filterset_fields = ["subject", "catalog_number", "course_title"]
     ordering_fields = ["catalog_number", "course_title"]
+    ordering = ["catalog_number"]
     search_fields = ["name", "course_title"]
 
 
@@ -59,6 +60,7 @@ class CourseInstancesViewSet(viewsets.ModelViewSet):
     ]
     filterset_fields = ["section_number", "canvas_course_id"]
     ordering_fields = ["section_number"]
+    ordering = ["section_number"]
     search_fields = ["course_catalog__course_title"]
 
 
@@ -75,6 +77,7 @@ class CoursesSemesterViewSet(viewsets.ModelViewSet):
     ]
     filterset_fields = ["year", "term"]
     ordering_fields = ["year"]
+    ordering = ["year"]
     search_fields = ["name", "term", "session"]
 
 
@@ -91,6 +94,7 @@ class CourseAssignmentCollaborationViewSet(viewsets.ModelViewSet):
     ]
     filterset_fields = ["assignment", "course_instance"]
     ordering_fields = ["assignment", "course_instance"]
+    ordering = ["assignment"]
     search_fields = []
 
 
@@ -107,6 +111,7 @@ class StudentsViewSet(viewsets.ModelViewSet):
     ]
     filterset_fields = ["email", "nshe_id"]
     ordering_fields = ["first_name", "last_name"]
+    ordering = ["first_name"]
     search_fields = ["first_name", "last_name", "ace_id"]
 
 
@@ -123,6 +128,7 @@ class StudentEnrollmentsViewSet(viewsets.ModelViewSet):
     ]
     filterset_fields = ["student", "course_instance"]
     ordering_fields = ["student"]
+    ordering = ["student"]
     search_fields = []
 
 
@@ -139,6 +145,7 @@ class ProfessorsViewSet(viewsets.ModelViewSet):
     ]
     filterset_fields = ["user"]
     ordering_fields = ["user"]
+    ordering = ["user"]
     search_fields = ["user__username"]
 
 
@@ -155,6 +162,7 @@ class ProfessorEnrollmentsViewSet(viewsets.ModelViewSet):
     ]
     filterset_fields = ["professor", "course_instance"]
     ordering_fields = ["professor"]
+    ordering = ["professor"]
     search_fields = []
 
 
@@ -171,6 +179,7 @@ class TeachingAssistantsViewSet(viewsets.ModelViewSet):
     ]
     filterset_fields = ["user"]
     ordering_fields = ["user"]
+    ordering = ["user"]
     search_fields = ["user__username"]
 
 
@@ -187,4 +196,5 @@ class TeachingAssistantEnrollmentViewSet(viewsets.ModelViewSet):
     ]
     filterset_fields = ["teaching_assistant", "course_instance"]
     ordering_fields = ["teaching_assistant"]
+    ordering = ["teaching_assistant"]
     search_fields = []

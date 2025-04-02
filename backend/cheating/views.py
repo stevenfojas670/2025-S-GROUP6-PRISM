@@ -39,6 +39,7 @@ class CheatingGroupsViewSet(viewsets.ModelViewSet):
     ]
     filterset_fields = ["assignment", "cohesion_score"]
     ordering_fields = ["cohesion_score"]
+    ordering = ["cohesion_score"]
     search_fields = ["analysis_report_path", "assignment__title"]
 
 
@@ -55,6 +56,7 @@ class CheatingGroupMembersViewSet(viewsets.ModelViewSet):
     ]
     filterset_fields = ["cheating_group", "student"]
     ordering_fields = ["cluster_distance"]
+    ordering = ["cluster_distance"]
     search_fields = []
 
 
@@ -71,6 +73,7 @@ class ConfirmedCheatersViewSet(viewsets.ModelViewSet):
     ]
     filterset_fields = ["confirmed_date", "assignment", "student"]
     ordering_fields = ["confirmed_date", "threshold_used"]
+    ordering = ["confirmed_date"]
     search_fields = ["assignment__title", "student__first_name", "student__last_name"]
 
 
@@ -87,6 +90,7 @@ class FlaggedStudentsViewSet(viewsets.ModelViewSet):
     ]
     filterset_fields = ["professor", "student", "generative_ai"]
     ordering_fields = ["generative_ai"]
+    ordering = ["generative_ai"]
     search_fields = [
         "professor__user__username",
         "student__first_name",
@@ -107,6 +111,7 @@ class SubmissionSimiliarityPairsViewSet(viewsets.ModelViewSet):
     ]
     filterset_fields = ["assignment", "file_name", "match_id"]
     ordering_fields = ["percentage"]
+    oredering = ["percentage"]
     search_fields = ["file_name"]
 
 
@@ -123,6 +128,7 @@ class LongitudinalCheatingGroupsViewSet(viewsets.ModelViewSet):
     ]
     filterset_fields = ["score"]
     ordering_fields = ["score"]
+    ordering = ["score"]
     search_fields = []
 
 
@@ -139,6 +145,7 @@ class LongitudinalCheatingGroupMembersViewSet(viewsets.ModelViewSet):
     ]
     filterset_fields = ["longitudinal_cheating_group", "student", "is_core_member"]
     ordering_fields = ["appearance_count"]
+    ordering = ["appearance_count"]
     search_fields = []
 
 
@@ -154,5 +161,6 @@ class LongitudinalCheatingGroupInstancesViewSet(viewsets.ModelViewSet):
         filters.SearchFilter,
     ]
     filterset_fields = ["cheating_group", "longitudinal_cheating_group"]
-    ordering_fields = []
+    ordering_fields = ["appearance_count"]
+    ordering = ["appearance_count"]
     search_fields = []

@@ -37,6 +37,7 @@ class AssignmentsViewSet(viewsets.ModelViewSet):
     ]
     filterset_fields = ["assignment_number", "language", "has_base_code", "has_policy"]
     ordering_fields = ["assignment_number", "lock_date"]
+    ordering = ["assignment_number"]
     search_fields = ["title", "pdf_filepath", "moss_report_directory_path"]
 
 
@@ -53,6 +54,7 @@ class SubmissionsViewSet(viewsets.ModelViewSet):
     ]
     filterset_fields = ["grade", "flagged", "course_instance"]
     ordering_fields = ["grade", "created_at"]
+    ordering = ["created_at"]
     search_fields = ["file_path"]
 
 
@@ -69,6 +71,7 @@ class BaseFilesViewSet(viewsets.ModelViewSet):
     ]
     filterset_fields = ["file_name"]
     ordering_fields = ["file_name"]
+    ordering = ["file_name"]
     search_fields = ["file_name", "file_path"]
 
 
@@ -85,6 +88,7 @@ class BulkSubmissionsViewSet(viewsets.ModelViewSet):
     ]
     filterset_fields = ["directory_path", "course_instance"]
     ordering_fields = ["directory_path"]
+    ordering = ["directory_path"]
     search_fields = ["directory_path"]
 
 
@@ -101,6 +105,7 @@ class ConstraintsViewSet(viewsets.ModelViewSet):
     ]
     filterset_fields = ["identifier", "is_library", "is_keyword", "is_permitted"]
     ordering_fields = ["identifier"]
+    ordering = ["identifier"]
     search_fields = ["identifier"]
 
 
@@ -117,6 +122,7 @@ class PolicyViolationsViewSet(viewsets.ModelViewSet):
     ]
     filterset_fields = ["line_number"]
     ordering_fields = ["line_number"]
+    ordering = ["line_number"]
     # mainly numerical values so no need here
     search_fields = []
 
@@ -134,4 +140,5 @@ class RequiredSubmissionFilesViewSet(viewsets.ModelViewSet):
     ]
     filterset_fields = ["file_name"]
     ordering_fields = ["file_name"]
+    ordering = ["file_name"]
     search_fields = ["file_name"]
