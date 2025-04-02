@@ -17,7 +17,6 @@ class CourseCatalog(models.Model):
     Includes subject, catalog number, course title, and level.
     """
 
-    course_catalog_id = models.BigAutoField(primary_key=True)
     name = models.CharField(
         unique=True,
         max_length=50,
@@ -49,7 +48,6 @@ class CourseInstances(models.Model):
     Canvas course ID.
     """
 
-    course_instance_id = models.BigAutoField(primary_key=True)
     semester = models.ForeignKey(
         "CoursesSemester",
         models.DO_NOTHING,
@@ -97,7 +95,6 @@ class CoursesSemester(models.Model):
     Includes the academic year, term (e.g., Fall), and session type.
     """
 
-    semester_id = models.BigAutoField(primary_key=True)
     name = models.TextField()
     year = models.SmallIntegerField()
     term = models.TextField()
@@ -152,7 +149,6 @@ class Students(models.Model):
     CodeGrade ID, ACE ID, and full name.
     """
 
-    student_id = models.BigAutoField(primary_key=True)
     email = models.TextField(unique=True)
     nshe_id = models.BigIntegerField(unique=True)
     codegrade_id = models.BigIntegerField(
@@ -209,7 +205,6 @@ class Professors(models.Model):
     Each professor is uniquely associated with a user account.
     """
 
-    professor_id = models.BigAutoField(primary_key=True)
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         models.DO_NOTHING,
@@ -218,7 +213,7 @@ class Professors(models.Model):
 
     def __str__(self):
         """Return a string representation of the professor."""
-        return f"Professor ID {self.professor_id} - {self.user}"
+        return f"Professor ID {self.id} - {self.user}"
 
 
 class ProfessorEnrollments(models.Model):
@@ -258,7 +253,6 @@ class TeachingAssistants(models.Model):
     Each teaching assistant is associated with one user account.
     """
 
-    teaching_assistant_id = models.BigAutoField(primary_key=True)
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         models.DO_NOTHING,
@@ -267,7 +261,7 @@ class TeachingAssistants(models.Model):
 
     def __str__(self):
         """Return a string representation of the teaching assistant."""
-        return f"TeachingAssistant ID {self.teaching_assistant_id} - {self.user}"
+        return f"TeachingAssistant ID {self.id} - {self.user}"
 
 
 class TeachingAssistantEnrollment(models.Model):

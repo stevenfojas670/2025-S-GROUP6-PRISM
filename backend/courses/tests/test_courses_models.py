@@ -152,9 +152,7 @@ class CoursesModelsStrTest(BaseCoursesTest):
 
     def test_professors_str(self):
         """Test the __str__ method of Professors."""
-        expected = (
-            f"Professor ID {self.professor.professor_id} - " f"{self.professor.user}"
-        )
+        expected = f"Professor ID {self.professor.id} - " f"{self.professor.user}"
         self.assertEqual(str(self.professor), expected)
 
     def test_professor_enrollments_str(self):
@@ -164,9 +162,7 @@ class CoursesModelsStrTest(BaseCoursesTest):
 
     def test_teaching_assistants_str(self):
         """Test the __str__ method of TeachingAssistants."""
-        expected = (
-            f"TeachingAssistant ID {self.ta.teaching_assistant_id} - " f"{self.ta.user}"
-        )
+        expected = f"TeachingAssistant ID {self.ta.id} - " f"{self.ta.user}"
         self.assertEqual(str(self.ta), expected)
 
     def test_teaching_assistant_enrollment_str(self):

@@ -111,7 +111,7 @@ class SubmissionSimiliarityPairsViewSet(viewsets.ModelViewSet):
     ]
     filterset_fields = ["assignment", "file_name", "match_id"]
     ordering_fields = ["percentage"]
-    oredering = ["percentage"]
+    ordering = ["percentage"]
     search_fields = ["file_name"]
 
 

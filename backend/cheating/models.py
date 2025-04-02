@@ -11,7 +11,6 @@ class CheatingGroups(models.Model):
     Stores the cohesion score and analysis report path.
     """
 
-    cheating_group_id = models.BigAutoField(primary_key=True)
     assignment = models.ForeignKey(
         Assignments,
         models.DO_NOTHING,
@@ -70,7 +69,6 @@ class ConfirmedCheaters(models.Model):
     threshold value used for confirmation.
     """
 
-    confirmed_cheating_instance = models.BigAutoField(primary_key=True)
     confirmed_date = models.DateField()
     threshold_used = models.IntegerField()
     assignment = models.ForeignKey(
@@ -143,7 +141,6 @@ class SubmissionSimiliarityPairs(models.Model):
     and a unique match ID.
     """
 
-    similiarity_pair_id = models.BigAutoField(primary_key=True)
     assignment = models.ForeignKey(
         Assignments,
         models.DO_NOTHING,
@@ -186,7 +183,6 @@ class LongitudinalCheatingGroups(models.Model):
     This model captures a longitudinal score across multiple assignments.
     """
 
-    longitudinal_cheating_group_id = models.BigAutoField(primary_key=True)
     score = models.FloatField()
 
     def __str__(self):
@@ -195,10 +191,7 @@ class LongitudinalCheatingGroups(models.Model):
 
         Displays the group ID and its score.
         """
-        return (
-            f"Longitudinal Group {self.longitudinal_cheating_group_id} "
-            f"(Score: {self.score:.2f})"
-        )
+        return f"Longitudinal Group {self.id} " f"(Score: {self.score:.2f})"
 
 
 class LongitudinalCheatingGroupMembers(models.Model):
@@ -229,7 +222,7 @@ class LongitudinalCheatingGroupMembers(models.Model):
         role = "Core" if self.is_core_member else "Peripheral"
         return (
             f"{self.student} in Group "
-            f"{self.longitudinal_cheating_group.id} ({role}, "
+            f"{self.id} ({role}, "
             f"{self.appearance_count} appearances)"
         )
 
@@ -257,7 +250,4 @@ class LongitudinalCheatingGroupInstances(models.Model):
 
         Displays the short-term and longitudinal group IDs.
         """
-        return (
-            f"CheatingGroup {self.cheating_group.id} → "
-            f"LongitudinalGroup {self.longitudinal_cheating_group.id}"
-        )
+        return f"CheatingGroup {self.id} → " f"LongitudinalGroup {self.id}"

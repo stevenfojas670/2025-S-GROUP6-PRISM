@@ -15,7 +15,6 @@ class Assignments(models.Model):
     directory paths, and whether base code or a policy applies.
     """
 
-    assignment_id = models.BigAutoField(primary_key=True)
     course_instance = models.ForeignKey(
         "courses.CourseInstances",
         models.DO_NOTHING,
@@ -59,7 +58,6 @@ class Submissions(models.Model):
     was flagged.
     """
 
-    submission_id = models.BigAutoField(primary_key=True)
     grade = models.DecimalField(max_digits=5, decimal_places=2)
     created_at = models.DateField(blank=True, null=True)
     flagged = models.BooleanField()
@@ -172,7 +170,6 @@ class Constraints(models.Model):
     in student submissions.
     """
 
-    constraint_id = models.BigAutoField(primary_key=True)
     assignment = models.ForeignKey(
         "Assignments",
         models.DO_NOTHING,
@@ -208,7 +205,6 @@ class PolicyViolations(models.Model):
     violated a keyword or library constraint.
     """
 
-    policy_violation_id = models.BigAutoField(primary_key=True)
     constraint = models.ForeignKey(
         Constraints,
         models.DO_NOTHING,
