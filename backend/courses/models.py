@@ -50,20 +50,20 @@ class CourseInstances(models.Model):
 
     semester = models.ForeignKey(
         "CoursesSemester",
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     course_catalog = models.ForeignKey(
         CourseCatalog,
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     section_number = models.IntegerField()
     professor = models.ForeignKey(
         "Professors",
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     teaching_assistant = models.ForeignKey(
         "TeachingAssistants",
-        models.DO_NOTHING,
+        models.CASCADE,
         blank=True,
         null=True,
     )
@@ -124,11 +124,11 @@ class CourseAssignmentCollaboration(models.Model):
 
     assignment = models.ForeignKey(
         Assignments,
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     course_instance = models.ForeignKey(
         "CourseInstances",
-        models.DO_NOTHING,
+        models.CASCADE,
     )
 
     class Meta:
@@ -177,11 +177,11 @@ class StudentEnrollments(models.Model):
 
     student = models.ForeignKey(
         "Students",
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     course_instance = models.ForeignKey(
         CourseInstances,
-        models.DO_NOTHING,
+        models.CASCADE,
     )
 
     class Meta:
@@ -207,7 +207,7 @@ class Professors(models.Model):
 
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
-        models.DO_NOTHING,
+        models.CASCADE,
         help_text="User associated with the professor.",
     )
 
@@ -225,11 +225,11 @@ class ProfessorEnrollments(models.Model):
 
     professor = models.ForeignKey(
         "Professors",
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     course_instance = models.ForeignKey(
         CourseInstances,
-        models.DO_NOTHING,
+        models.CASCADE,
     )
 
     class Meta:
@@ -255,7 +255,7 @@ class TeachingAssistants(models.Model):
 
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
-        models.DO_NOTHING,
+        models.CASCADE,
         help_text="User associated with the teaching assistant.",
     )
 
@@ -273,11 +273,11 @@ class TeachingAssistantEnrollment(models.Model):
 
     teaching_assistant = models.ForeignKey(
         "TeachingAssistants",
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     course_instance = models.ForeignKey(
         CourseInstances,
-        models.DO_NOTHING,
+        models.CASCADE,
     )
 
     class Meta:

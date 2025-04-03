@@ -13,7 +13,7 @@ class CheatingGroups(models.Model):
 
     assignment = models.ForeignKey(
         Assignments,
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     cohesion_score = models.FloatField()
     analysis_report_path = models.TextField(unique=True)
@@ -41,11 +41,11 @@ class CheatingGroupMembers(models.Model):
 
     cheating_group = models.ForeignKey(
         "CheatingGroups",
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     student = models.ForeignKey(
         "courses.Students",
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     cluster_distance = models.FloatField()
 
@@ -73,11 +73,11 @@ class ConfirmedCheaters(models.Model):
     threshold_used = models.IntegerField()
     assignment = models.ForeignKey(
         Assignments,
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     student = models.ForeignKey(
         "courses.Students",
-        models.DO_NOTHING,
+        models.CASCADE,
     )
 
     class Meta:
@@ -106,15 +106,15 @@ class FlaggedStudents(models.Model):
 
     professor = models.ForeignKey(
         "courses.Professors",
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     student = models.ForeignKey(
         "courses.Students",
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     similarity = models.ForeignKey(
         "SubmissionSimiliarityPairs",
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     generative_ai = models.BooleanField()
 
@@ -143,17 +143,17 @@ class SubmissionSimiliarityPairs(models.Model):
 
     assignment = models.ForeignKey(
         Assignments,
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     file_name = models.CharField(max_length=50)
     submission_id_1 = models.ForeignKey(
         Submissions,
-        models.DO_NOTHING,
+        models.CASCADE,
         db_column="submission_id_1",
     )
     submission_id_2 = models.ForeignKey(
         Submissions,
-        models.DO_NOTHING,
+        models.CASCADE,
         db_column="submission_id_2",
         related_name=("submissionsimiliaritypairs_submission_id_2_set"),
     )
@@ -204,11 +204,11 @@ class LongitudinalCheatingGroupMembers(models.Model):
 
     longitudinal_cheating_group = models.ForeignKey(
         "LongitudinalCheatingGroups",
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     student = models.ForeignKey(
         "courses.Students",
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     is_core_member = models.BooleanField()
     appearance_count = models.IntegerField()
@@ -237,11 +237,11 @@ class LongitudinalCheatingGroupInstances(models.Model):
 
     cheating_group = models.ForeignKey(
         CheatingGroups,
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     longitudinal_cheating_group = models.ForeignKey(
         "LongitudinalCheatingGroups",
-        models.DO_NOTHING,
+        models.CASCADE,
     )
 
     def __str__(self):

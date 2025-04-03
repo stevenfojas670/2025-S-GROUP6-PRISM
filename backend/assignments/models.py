@@ -17,7 +17,7 @@ class Assignments(models.Model):
 
     course_instance = models.ForeignKey(
         "courses.CourseInstances",
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     assignment_number = models.SmallIntegerField()
     title = models.TextField()
@@ -63,15 +63,15 @@ class Submissions(models.Model):
     flagged = models.BooleanField()
     assignment = models.ForeignKey(
         "Assignments",
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     student = models.ForeignKey(
         "courses.Students",
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     course_instance = models.ForeignKey(
         "courses.CourseInstances",
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     file_path = models.TextField(
         unique=True,
@@ -103,7 +103,7 @@ class BaseFiles(models.Model):
 
     assignment = models.ForeignKey(
         "Assignments",
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     file_name = models.TextField()
     file_path = models.TextField(unique=True)
@@ -136,11 +136,11 @@ class BulkSubmissions(models.Model):
 
     course_instance = models.ForeignKey(
         "courses.CourseInstances",
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     assignment = models.ForeignKey(
         "Assignments",
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     directory_path = models.TextField(unique=True)
 
@@ -172,7 +172,7 @@ class Constraints(models.Model):
 
     assignment = models.ForeignKey(
         "Assignments",
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     identifier = models.TextField()
     is_library = models.BooleanField()
@@ -207,11 +207,11 @@ class PolicyViolations(models.Model):
 
     constraint = models.ForeignKey(
         Constraints,
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     submission = models.ForeignKey(
         "Submissions",
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     line_number = models.BigIntegerField(blank=True, null=True)
 
@@ -246,7 +246,7 @@ class RequiredSubmissionFiles(models.Model):
 
     assignment = models.ForeignKey(
         Assignments,
-        models.DO_NOTHING,
+        models.CASCADE,
     )
     file_name = models.TextField()
     similarity_threshold = models.DecimalField(
