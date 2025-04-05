@@ -1,188 +1,367 @@
-"""Tests for the Courses API endpoints."""
+"""Test the Courses API endpoints.
+
+This file tests the viewsets for the Courses app for filtering,
+ordering, search, and pagination functionality.
+"""
+
+import datetime
 
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
+
+from courses.models import (
+    CourseCatalog,
+    CourseInstances,
+    CoursesSemester,
+    CourseAssignmentCollaboration,
+    Students,
+    StudentEnrollments,
+    Professors,
+    ProfessorEnrollments,
+    TeachingAssistants,
+    TeachingAssistantEnrollment,
+)
+from assignments.models import Assignments
 from django.contrib.auth import get_user_model
 
-from courses.models import Professor, Semester, Class, ProfessorClassSection
+User = get_user_model()
 
 
-def create_user(
-    email="test@example.com", password="pass123", first_name="Test", last_name="User"
-):
-    """Create and return a new user.
+class BaseCoursesAPITest(APITestCase):
+    """Base test case for Courses API tests.
 
-    Args:
-        email (str): The email address of the user.
-        password (str): The password for the user.
-        first_name (str): The first name of the user.
-        last_name (str): The last name of the user.
-
-    Returns:
-        User: The created user instance.
+    Sets up common objects required for API endpoint tests.
     """
-    return get_user_model().objects.create_user(
-        email=email,
-        password=password,
-        first_name=first_name,
-        last_name=last_name,
-    )
 
-
-def create_professor(email, first_name, last_name):
-    """Create and return a Professor instance.
-
-    Args:
-        email (str): The email address of the professor.
-        first_name (str): The first name of the professor.
-        last_name (str): The last name of the professor.
-
-    Returns:
-        Professor: The created Professor instance.
-    """
-    user = create_user(
-        email=email,
-        password="pass123",
-        first_name=first_name,
-        last_name=last_name,
-    )
-    return Professor.objects.create(user=user)
-
-
-class ProfessorAPITests(APITestCase):
-    """Test suite for the Professor API endpoints."""
-
-    def setUp(self):
-        """Set up the test environment."""
-        self.prof1 = create_professor("john@example.com", "John", "Doe")
-        self.prof2 = create_professor("jane@example.com", "Jane", "Smith")
-
-    def test_list_professors(self):
-        """Test retrieving a list of professors."""
-        url = reverse("professor-list")
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 2)
-
-    def test_filter_professors_by_first_name(self):
-        """Test filtering professors by first name."""
-        url = reverse("professor-list") + "?user__first_name=Jane"
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 1)
-        self.assertEqual(res.data[0]["user"]["first_name"], "Jane")
-
-    def test_ordering_professors(self):
-        """Test ordering professors by first name descending."""
-        url = reverse("professor-list") + "?ordering=-user__first_name"
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        first_names = [item["user"]["first_name"] for item in res.data]
-        self.assertEqual(first_names, sorted(first_names, reverse=True))
-
-    def test_search_professors(self):
-        """Test searching professors by first name."""
-        url = reverse("professor-list") + "?search=John"
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertTrue(any("John" in item["user"]["first_name"] for item in res.data))
-
-
-class SemesterAPITests(APITestCase):
-    """Test suite for the Semester API endpoints."""
-
-    def setUp(self):
-        """Set up the test environment."""
-        self.sem1 = Semester.objects.create(name="Fall 2023")
-        self.sem2 = Semester.objects.create(name="Spring 2023")
-
-    def test_list_semesters(self):
-        """Test retrieving a list of semesters."""
-        url = reverse("semester-list")
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 2)
-
-    def test_filter_semesters_by_name(self):
-        """Test filtering semesters by name."""
-        url = reverse("semester-list") + "?name=Fall 2023"
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 1)
-        self.assertEqual(res.data[0]["name"], "Fall 2023")
-
-    def test_search_semesters(self):
-        """Test searching semesters by name."""
-        url = reverse("semester-list") + "?search=Spring"
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res.data[0]["name"], "Spring 2023")
-
-
-class ClassAPITests(APITestCase):
-    """Test suite for the Class API endpoints."""
-
-    def setUp(self):
-        """Set up the test environment."""
-        self.class1 = Class.objects.create(name="Math 101")
-        self.class2 = Class.objects.create(name="History 101")
-
-    def test_list_classes(self):
-        """Test retrieving a list of classes."""
-        url = reverse("class-list")
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 2)
-
-    def test_search_classes(self):
-        """Test searching classes by name."""
-        url = reverse("class-list") + "?search=Math"
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 1)
-        self.assertEqual(res.data[0]["name"], "Math 101")
-
-
-class ProfessorClassSectionAPITests(APITestCase):
-    """Test suite for the ProfessorClassSection API."""
-
-    def setUp(self):
-        """Set up the test environment."""
-        self.prof1 = create_professor("alice@example.com", "Alice", "Wonderland")
-        self.prof2 = create_professor("bob@example.com", "Bob", "Builder")
-        self.semester = Semester.objects.create(name="Fall 2023")
-        self.class_obj = Class.objects.create(name="Physics 101")
-        self.section1 = ProfessorClassSection.objects.create(
-            professor=self.prof1,
-            class_instance=self.class_obj,
-            semester=self.semester,
+    @classmethod
+    def setUpTestData(cls):
+        """Set up test data for the Courses API tests."""
+        cls.semester = CoursesSemester.objects.create(
+            name="Fall Semester",
+            year=2025,
+            term="Fall",
+            session="Regular",
+        )
+        cls.catalog = CourseCatalog.objects.create(
+            name="CS101",
+            subject="CS",
+            catalog_number=101,
+            course_title="Intro to CS",
+            course_level="Undergraduate",
+        )
+        cls.professor_user = User.objects.create_user(
+            username="prof1",
+            password="pass123",
+            email="professor@example.com",
+        )
+        # Provide email for TA as well.
+        cls.ta_user = User.objects.create_user(
+            username="ta1",
+            password="pass123",
+            email="ta1@example.com",
+        )
+        cls.professor = Professors.objects.create(user=cls.professor_user)
+        cls.ta = TeachingAssistants.objects.create(user=cls.ta_user)
+        cls.course_instance = CourseInstances.objects.create(
+            semester=cls.semester,
+            course_catalog=cls.catalog,
             section_number=1,
+            professor=cls.professor,
+            teaching_assistant=cls.ta,
+            canvas_course_id=123456,
         )
-        self.section2 = ProfessorClassSection.objects.create(
-            professor=self.prof2,
-            class_instance=self.class_obj,
-            semester=self.semester,
-            section_number=2,
+        cls.student = Students.objects.create(
+            email="student@example.com",
+            nshe_id=12345678,
+            codegrade_id=87654321,
+            ace_id="ACE123",
+            first_name="John",
+            last_name="Doe",
+        )
+        cls.assignment = Assignments.objects.create(
+            course_instance=cls.course_instance,
+            assignment_number=1,
+            title="Test Assignment",
+            lock_date=datetime.date.today(),
+            pdf_filepath="path/to/pdf",
+            has_base_code=True,
+            moss_report_directory_path="path/to/moss",
+            bulk_ai_directory_path="path/to/bulk",
+            language="Python",
+            has_policy=True,
+        )
+        cls.assignment_collaboration = CourseAssignmentCollaboration.objects.create(
+            assignment=cls.assignment,
+            course_instance=cls.course_instance,
+        )
+        cls.student_enrollment = StudentEnrollments.objects.create(
+            student=cls.student,
+            course_instance=cls.course_instance,
+        )
+        cls.professor_enrollment = ProfessorEnrollments.objects.create(
+            professor=cls.professor,
+            course_instance=cls.course_instance,
+        )
+        cls.ta_enrollment = TeachingAssistantEnrollment.objects.create(
+            teaching_assistant=cls.ta,
+            course_instance=cls.course_instance,
         )
 
-    def test_list_professor_class_sections(self):
-        """Test retrieving a list of professor class sections."""
-        url = reverse("sectionclassprof-list")
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 2)
 
-    def test_filter_by_semester_name(self):
-        """Test filtering professor class sections by semester name."""
-        url = reverse("sectionclassprof-list") + "?semester__name=Fall 2023"
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 2)
+class CourseCatalogAPITest(BaseCoursesAPITest):
+    """Test API endpoints for CourseCatalogViewSet."""
 
-    def test_search_professor_class_sections(self):
-        """Test searching professor class sections by class name."""
-        url = reverse("sectionclassprof-list") + "?search=Physics"
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 2)
+    def test_coursecatalog_list(self):
+        """Test retrieving a list of course catalog entries."""
+        url = reverse("coursecatalog-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("results", response.data)
+        self.assertGreaterEqual(len(response.data["results"]), 1)
+
+    def test_coursecatalog_filter(self):
+        """Test filtering course catalog entries by subject."""
+        url = reverse("coursecatalog-list")
+        response = self.client.get(url, {"subject": self.catalog.subject})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for item in response.data["results"]:
+            self.assertEqual(item["subject"], self.catalog.subject)
+
+    def test_coursecatalog_ordering(self):
+        """Test ordering course catalog entries by catalog_number."""
+        url = reverse("coursecatalog-list")
+        response = self.client.get(url, {"ordering": "catalog_number"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        numbers = [item["catalog_number"] for item in response.data["results"]]
+        self.assertEqual(numbers, sorted(numbers))
+
+    def test_coursecatalog_search(self):
+        """Test searching course catalog entries by course_title."""
+        url = reverse("coursecatalog-list")
+        response = self.client.get(url, {"search": "Intro"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for item in response.data["results"]:
+            self.assertIn("Intro", item["course_title"])
+
+
+class CourseInstancesAPITest(BaseCoursesAPITest):
+    """Test API endpoints for CourseInstancesViewSet."""
+
+    def test_courseinstances_list(self):
+        """Test retrieving a list of course instances."""
+        url = reverse("courseinstances-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("results", response.data)
+
+    def test_courseinstances_filter(self):
+        """Test filtering course instances by section_number."""
+        url = reverse("courseinstances-list")
+        response = self.client.get(
+            url, {"section_number": self.course_instance.section_number}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for item in response.data["results"]:
+            self.assertEqual(
+                item["section_number"], self.course_instance.section_number
+            )
+
+    def test_courseinstances_ordering(self):
+        """Test ordering course instances by section_number."""
+        url = reverse("courseinstances-list")
+        response = self.client.get(url, {"ordering": "section_number"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        sections = [item["section_number"] for item in response.data["results"]]
+        self.assertEqual(sections, sorted(sections))
+
+    def test_courseinstances_search(self):
+        """Test searching course instances by course_catalog__course_title."""
+        url = reverse("courseinstances-list")
+        response = self.client.get(url, {"search": "Intro"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Since the serializer returns the primary key for course_catalog,
+        # we check that at least one result has the expected course_catalog ID.
+        found = any(
+            item.get("course_catalog") == self.catalog.pk
+            for item in response.data["results"]
+        )
+        self.assertTrue(found)
+
+
+class CoursesSemesterAPITest(BaseCoursesAPITest):
+    """Test API endpoints for CoursesSemesterViewSet."""
+
+    def test_coursessemester_list(self):
+        """Test retrieving a list of courses semester entries."""
+        url = reverse("coursessemester-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("results", response.data)
+
+    def test_coursessemester_filter(self):
+        """Test filtering courses semester entries by year."""
+        url = reverse("coursessemester-list")
+        response = self.client.get(url, {"year": self.semester.year})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for item in response.data["results"]:
+            self.assertEqual(item["year"], self.semester.year)
+
+    def test_coursessemester_ordering(self):
+        """Test ordering courses semester entries by year."""
+        url = reverse("coursessemester-list")
+        response = self.client.get(url, {"ordering": "year"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        years = [item["year"] for item in response.data["results"]]
+        self.assertEqual(years, sorted(years))
+
+    def test_coursessemester_search(self):
+        """Test searching courses semester entries by term."""
+        url = reverse("coursessemester-list")
+        response = self.client.get(url, {"search": self.semester.term})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for item in response.data["results"]:
+            self.assertIn(self.semester.term, item["term"])
+
+
+class CourseAssignmentCollaborationAPITest(BaseCoursesAPITest):
+    """Test API endpoints for CourseAssignmentCollaborationViewSet."""
+
+    def test_courseassignmentcollaboration_list(self):
+        """Test retrieving a list of course assignment collaborations."""
+        url = reverse("courseassignmentcollaboration-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("results", response.data)
+
+
+class StudentsAPITest(BaseCoursesAPITest):
+    """Test API endpoints for StudentsViewSet."""
+
+    def test_students_list(self):
+        """Test retrieving a list of students."""
+        url = reverse("students-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("results", response.data)
+
+    def test_students_filter(self):
+        """Test filtering students by email."""
+        url = reverse("students-list")
+        response = self.client.get(url, {"email": self.student.email})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for item in response.data["results"]:
+            self.assertEqual(item["email"], self.student.email)
+
+    def test_students_ordering(self):
+        """Test ordering students by first_name."""
+        url = reverse("students-list")
+        response = self.client.get(url, {"ordering": "first_name"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        names = [item["first_name"] for item in response.data["results"]]
+        self.assertEqual(names, sorted(names))
+
+    def test_students_search(self):
+        """Test searching students by last_name."""
+        url = reverse("students-list")
+        response = self.client.get(url, {"search": self.student.last_name})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for item in response.data["results"]:
+            self.assertIn(self.student.last_name, item["last_name"])
+
+
+class StudentEnrollmentsAPITest(BaseCoursesAPITest):
+    """Test API endpoints for StudentEnrollmentsViewSet."""
+
+    def test_studentenrollments_list(self):
+        """Test retrieving a list of student enrollments."""
+        url = reverse("studentenrollments-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("results", response.data)
+
+
+class ProfessorsAPITest(BaseCoursesAPITest):
+    """Test API endpoints for ProfessorsViewSet."""
+
+    def test_professors_list(self):
+        """Test retrieving a list of professors."""
+        url = reverse("professors-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("results", response.data)
+
+    def test_professors_filter(self):
+        """Test filtering professors by user ID."""
+        url = reverse("professors-list")
+        response = self.client.get(url, {"user": self.professor.user.id})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for item in response.data["results"]:
+            self.assertEqual(item["user"], self.professor.user.id)
+
+    def test_professors_search(self):
+        """Test searching professors by username."""
+        url = reverse("professors-list")
+        response = self.client.get(url, {"search": self.professor.user.username})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Since the default serializer only returns the user ID (e.g., "user": 1),
+        # we verify that at least one result has the same user ID as our professor.
+        found = any(
+            item.get("user") == self.professor.user.id
+            for item in response.data["results"]
+        )
+        self.assertTrue(found)
+
+
+class ProfessorEnrollmentsAPITest(BaseCoursesAPITest):
+    """Test API endpoints for ProfessorEnrollmentsViewSet."""
+
+    def test_professorenrollments_list(self):
+        """Test retrieving a list of professor enrollments."""
+        url = reverse("professorenrollments-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("results", response.data)
+
+
+class TeachingAssistantsAPITest(BaseCoursesAPITest):
+    """Test API endpoints for TeachingAssistantsViewSet."""
+
+    def test_teachingassistants_list(self):
+        """Test retrieving a list of teaching assistants."""
+        url = reverse("teachingassistants-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("results", response.data)
+
+    def test_teachingassistants_filter(self):
+        """Test filtering teaching assistants by user ID."""
+        url = reverse("teachingassistants-list")
+        response = self.client.get(url, {"user": self.ta.user.id})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for item in response.data["results"]:
+            self.assertEqual(item["user"], self.ta.user.id)
+
+    def test_teachingassistants_search(self):
+        """Test searching teaching assistants by username."""
+        url = reverse("teachingassistants-list")
+        response = self.client.get(url, {"search": self.ta.user.username})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Since the serializer returns the user ID (e.g., "user": 1) rather than
+        # a nested "user__username" field, check that one of the results has the
+        # expected user ID.
+        found = any(
+            item.get("user") == self.ta.user.id for item in response.data["results"]
+        )
+        self.assertTrue(found)
+
+
+class TeachingAssistantEnrollmentAPITest(BaseCoursesAPITest):
+    """Test API endpoints for TeachingAssistantEnrollmentViewSet."""
+
+    def test_teachingassistantenrollment_list(self):
+        """Test retrieving a list of teaching assistant enrollments."""
+        url = reverse("teachingassistantenrollment-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("results", response.data)

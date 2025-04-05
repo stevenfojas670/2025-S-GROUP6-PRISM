@@ -88,9 +88,9 @@ class PublicUserApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
 
         user = get_user_model().objects.get(email=payload["email"])
-        from courses.models import Professor
+        from courses.models import Professors
 
-        professor_exists = Professor.objects.filter(user=user).exists()
+        professor_exists = Professors.objects.filter(user=user).exists()
         self.assertTrue(professor_exists)
 
     def test_list_users(self):

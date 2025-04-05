@@ -1,95 +1,201 @@
-"""Courses Views with Enhanced Filtering, Ordering, and Search Capabilities."""
+"""Views for the Courses app with enhanced filtering, ordering, search, and pagination."""
 
-from rest_framework import viewsets
-from rest_framework.filters import OrderingFilter, SearchFilter
-from django_filters import rest_framework as filters
-from courses import serializers
-from courses import models
+from rest_framework import filters, viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from prism_backend.mixins import CachedViewMixin
 
-
-class ProfessorVS(viewsets.ModelViewSet):
-    """Professor Model ViewSet."""
-
-    queryset = models.Professor.objects.all()
-    serializer_class = serializers.ProfessorSerializer
-    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
-    filterset_fields = {"id": ["exact"], "user__first_name": ["exact", "icontains"]}
-    ordering_fields = ["user__first_name"]
-    ordering = ["user__first_name"]
-    search_fields = ["user__first_name"]
-
-
-class SemesterVS(viewsets.ModelViewSet):
-    """Semester Model ViewSet."""
-
-    queryset = models.Semester.objects.all()
-    serializer_class = serializers.SemesterSerializer
-    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
-    filterset_fields = {"id": ["exact"], "name": ["exact", "icontains"]}
-    ordering_fields = [
-        "name",
-    ]
-    ordering = ["name"]
-    search_fields = ["name"]
+from .models import (
+    CourseCatalog,
+    CourseInstances,
+    CoursesSemester,
+    CourseAssignmentCollaboration,
+    Students,
+    StudentEnrollments,
+    Professors,
+    ProfessorEnrollments,
+    TeachingAssistants,
+    TeachingAssistantEnrollment,
+)
+from .serializers import (
+    CourseCatalogSerializer,
+    CourseInstancesSerializer,
+    CoursesSemesterSerializer,
+    CourseAssignmentCollaborationSerializer,
+    StudentsSerializer,
+    StudentEnrollmentsSerializer,
+    ProfessorsSerializer,
+    ProfessorEnrollmentsSerializer,
+    TeachingAssistantsSerializer,
+    TeachingAssistantEnrollmentSerializer,
+)
+from .pagination import StandardResultsSetPagination
 
 
-class ClassVS(viewsets.ModelViewSet):
-    """Class Model ViewSet."""
+class CourseCatalogViewSet(viewsets.ModelViewSet, CachedViewMixin):
+    """ViewSet for handling CourseCatalog entries."""
 
-    queryset = models.Class.objects.all()
-    serializer_class = serializers.ClassSerializer
-    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
-    filterset_fields = {"id": ["exact"], "name": ["exact", "icontains"]}
-    ordering_fields = [
-        "name",
-    ]
-    ordering = ["name"]
-    search_fields = ["name"]
-
-
-class ProfessorClassSectionVS(viewsets.ModelViewSet):
-    """ProfessorClassSection Model ViewSet."""
-
-    queryset = models.ProfessorClassSection.objects.all()
-    serializer_class = serializers.ProfessorClassSectionSerializer
+    queryset = CourseCatalog.objects.all()
+    serializer_class = CourseCatalogSerializer
+    pagination_class = StandardResultsSetPagination
     filter_backends = [
-        filters.DjangoFilterBackend,
-        OrderingFilter,
-        SearchFilter,
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+        filters.SearchFilter,
     ]
-    filterset_fields = {
-        "professor__id": ["exact"],
-        "class_instance__name": ["exact", "icontains"],
-        "semester__name": ["exact", "icontains"],
-    }
-    ordering_fields = [
-        "professor__user__first_name",
-        "class_instance__name",
-        "semester__name",
+    filterset_fields = ["subject", "catalog_number", "course_title"]
+    ordering_fields = ["catalog_number", "course_title"]
+    ordering = ["catalog_number"]
+    search_fields = ["name", "course_title"]
+
+
+class CourseInstancesViewSet(viewsets.ModelViewSet, CachedViewMixin):
+    """ViewSet for handling CourseInstances entries."""
+
+    queryset = CourseInstances.objects.all()
+    serializer_class = CourseInstancesSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+        filters.SearchFilter,
     ]
-    ordering = ["semester__name", "class_instance__name"]
-    # Allow searching by the names of the class instance and semester.
-    search_fields = ["class_instance__name", "semester__name"]
+    filterset_fields = ["section_number", "canvas_course_id"]
+    ordering_fields = ["section_number"]
+    ordering = ["section_number"]
+    search_fields = ["course_catalog__course_title"]
 
 
-class EnrollmentVS(viewsets.ModelViewSet):
-    """Enrollment Model ViewSet."""
+class CoursesSemesterViewSet(viewsets.ModelViewSet, CachedViewMixin):
+    """ViewSet for handling CoursesSemester entries."""
 
-    queryset = models.Enrollment.objects.all()
-    serializer_class = serializers.EnrollmentSerializer
-    # permission_classes = [IsAuthenticated]
-    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
-
-    # Allow filtering by student, class, and semester. Similar idea to other VS
-    filterset_fields = {
-        "student__id": ["exact"],
-        "class_instance__id": ["exact"],
-        "semester__id": ["exact"],
-    }
-    ordering_fields = ["enrolled_date", "semester__name"]
-    ordering = ["enrolled_date"]
-    search_fields = [
-        "student__user__first_name",
-        "class_instance__name",
-        "semester__name",
+    queryset = CoursesSemester.objects.all()
+    serializer_class = CoursesSemesterSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+        filters.SearchFilter,
     ]
+    filterset_fields = ["year", "term"]
+    ordering_fields = ["year"]
+    ordering = ["year"]
+    search_fields = ["name", "term", "session"]
+
+
+class CourseAssignmentCollaborationViewSet(viewsets.ModelViewSet, CachedViewMixin):
+    """ViewSet for handling CourseAssignmentCollaboration entries."""
+
+    queryset = CourseAssignmentCollaboration.objects.all()
+    serializer_class = CourseAssignmentCollaborationSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+        filters.SearchFilter,
+    ]
+    filterset_fields = ["assignment", "course_instance"]
+    ordering_fields = ["assignment", "course_instance"]
+    ordering = ["assignment"]
+    search_fields = []
+
+
+class StudentsViewSet(viewsets.ModelViewSet, CachedViewMixin):
+    """ViewSet for handling Students entries."""
+
+    queryset = Students.objects.all()
+    serializer_class = StudentsSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+        filters.SearchFilter,
+    ]
+    filterset_fields = ["email", "nshe_id"]
+    ordering_fields = ["first_name", "last_name"]
+    ordering = ["first_name"]
+    search_fields = ["first_name", "last_name", "ace_id"]
+
+
+class StudentEnrollmentsViewSet(viewsets.ModelViewSet, CachedViewMixin):
+    """ViewSet for handling StudentEnrollments entries."""
+
+    queryset = StudentEnrollments.objects.all()
+    serializer_class = StudentEnrollmentsSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+        filters.SearchFilter,
+    ]
+    filterset_fields = ["student", "course_instance"]
+    ordering_fields = ["student"]
+    ordering = ["student"]
+    search_fields = []
+
+
+class ProfessorsViewSet(viewsets.ModelViewSet, CachedViewMixin):
+    """ViewSet for handling Professors entries."""
+
+    queryset = Professors.objects.all()
+    serializer_class = ProfessorsSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+        filters.SearchFilter,
+    ]
+    filterset_fields = ["user"]
+    ordering_fields = ["user"]
+    ordering = ["user"]
+    search_fields = ["user__username"]
+
+
+class ProfessorEnrollmentsViewSet(viewsets.ModelViewSet, CachedViewMixin):
+    """ViewSet for handling ProfessorEnrollments entries."""
+
+    queryset = ProfessorEnrollments.objects.all()
+    serializer_class = ProfessorEnrollmentsSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+        filters.SearchFilter,
+    ]
+    filterset_fields = ["professor", "course_instance"]
+    ordering_fields = ["professor"]
+    ordering = ["professor"]
+    search_fields = []
+
+
+class TeachingAssistantsViewSet(viewsets.ModelViewSet, CachedViewMixin):
+    """ViewSet for handling TeachingAssistants entries."""
+
+    queryset = TeachingAssistants.objects.all()
+    serializer_class = TeachingAssistantsSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+        filters.SearchFilter,
+    ]
+    filterset_fields = ["user"]
+    ordering_fields = ["user"]
+    ordering = ["user"]
+    search_fields = ["user__username"]
+
+
+class TeachingAssistantEnrollmentViewSet(viewsets.ModelViewSet, CachedViewMixin):
+    """ViewSet for handling TeachingAssistantEnrollment entries."""
+
+    queryset = TeachingAssistantEnrollment.objects.all()
+    serializer_class = TeachingAssistantEnrollmentSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+        filters.SearchFilter,
+    ]
+    filterset_fields = ["teaching_assistant", "course_instance"]
+    ordering_fields = ["teaching_assistant"]
+    ordering = ["teaching_assistant"]
+    search_fields = []

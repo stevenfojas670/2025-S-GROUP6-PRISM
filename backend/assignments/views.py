@@ -1,191 +1,145 @@
 """Assignment views with enhanced filtering, ordering, and search capabilities."""
 
-from assignments import serializers
-from assignments import models
-from rest_framework import viewsets
-from django_filters import rest_framework as filters
-from rest_framework.filters import OrderingFilter, SearchFilter
+from rest_framework import filters, viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from prism_backend.mixins import CachedViewMixin
 
-from rest_framework.permissions import IsAuthenticated
-from assignments.models import FlaggedSubmission
-from assignments.serializers import FlaggedSubmissionSerializer
-from users.permissions import is_admin
-
-
-class StudentVS(viewsets.ModelViewSet):
-    """
-    Provide CRUD operations for the Student model.
-
-    Supports filtering, ordering, and searching functionality.
-    """
-
-    queryset = models.Student.objects.all()
-    serializer_class = serializers.StudentSerializer
-    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
-    filterset_fields = {"id": ["exact"], "first_name": ["exact", "icontains"]}
-    ordering_fields = ["id", "first_name"]
-    ordering = ["first_name"]
-    search_fields = ["first_name"]
+from .models import (
+    Assignments,
+    Submissions,
+    BaseFiles,
+    BulkSubmissions,
+    Constraints,
+    PolicyViolations,
+    RequiredSubmissionFiles,
+)
+from .pagination import StandardResultsSetPagination
+from .serializers import (
+    AssignmentsSerializer,
+    SubmissionsSerializer,
+    BaseFilesSerializer,
+    BulkSubmissionsSerializer,
+    ConstraintsSerializer,
+    PolicyViolationsSerializer,
+    RequiredSubmissionFilesSerializer,
+)
 
 
-class FlaggedStudentVS(viewsets.ModelViewSet):
-    """
-    Provide CRUD operations for FlaggedStudent objects.
+class AssignmentsViewSet(viewsets.ModelViewSet, CachedViewMixin):
+    """ViewSet for handling Assignments."""
 
-    Supports filtering, ordering, and search.
-    """
-
-    queryset = models.FlaggedStudent.objects.all()
-    serializer_class = serializers.FlaggedStudentSerializer
-    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
-    filterset_fields = {
-        "professor__id": ["exact"],
-        "times_over_threshold": ["exact", "gte", "lte"],
-    }
-    ordering_fields = ["professor__user__first_name", "times_over_threshold"]
-    ordering = ["times_over_threshold"]
-
-
-class AssignmentVS(viewsets.ModelViewSet):
-    """
-    Provide CRUD operations for Assignment objects.
-
-    Supports filtering, ordering, and search capabilities.
-    """
-
-    queryset = models.Assignment.objects.all()
-    serializer_class = serializers.AssignmentSerializer
-    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
-    filterset_fields = {
-        "professor__id": ["exact"],
-        "class_instance__name": ["exact", "icontains"],
-        "title": ["exact", "icontains"],
-        "assignment_number": ["exact"],
-    }
-    ordering_fields = [
-        "professor__user__first_name",
-        "class_instance__name",
-        "title",
-        "assignment_number",
+    queryset = Assignments.objects.all()
+    serializer_class = AssignmentsSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+        filters.SearchFilter,
     ]
+    filterset_fields = ["assignment_number", "language", "has_base_code", "has_policy"]
+    ordering_fields = ["assignment_number", "lock_date"]
     ordering = ["assignment_number"]
-    search_fields = [
-        "title",
-        "class_instance__name",
-        "professor__user__first_name",
+    search_fields = ["title", "pdf_filepath", "moss_report_directory_path"]
+
+
+class SubmissionsViewSet(viewsets.ModelViewSet, CachedViewMixin):
+    """ViewSet for handling Submissions."""
+
+    queryset = Submissions.objects.all()
+    serializer_class = SubmissionsSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+        filters.SearchFilter,
     ]
+    filterset_fields = ["grade", "flagged", "course_instance"]
+    ordering_fields = ["grade", "created_at"]
+    ordering = ["created_at"]
+    search_fields = ["file_path"]
 
 
-class SubmissionVS(viewsets.ModelViewSet):
-    """
-    Provide CRUD operations for Submission objects.
+class BaseFilesViewSet(viewsets.ModelViewSet, CachedViewMixin):
+    """ViewSet for handling BaseFiles."""
 
-    Supports filtering, ordering, and search functionality.
-    """
-
-    queryset = models.Submission.objects.all()
-    serializer_class = serializers.SubmissionSerializer
-    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
-    filterset_fields = {
-        "student__id": ["exact"],
-        "professor__id": ["exact"],
-        "flagged": ["exact"],
-        "assignment__class_instance__name": ["exact", "icontains"],
-        "assignment__title": ["exact", "icontains"],
-    }
-    ordering_fields = [
-        "student__first_name",
-        "professor__user__first_name",
-        "flagged",
-        "assignment__class_instance__name",
-        "assignment__title",
+    queryset = BaseFiles.objects.all()
+    serializer_class = BaseFilesSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+        filters.SearchFilter,
     ]
-    ordering = ["assignment__title"]
-    search_fields = ["assignment__title", "assignment__class_instance__name"]
+    filterset_fields = ["file_name"]
+    ordering_fields = ["file_name"]
+    ordering = ["file_name"]
+    search_fields = ["file_name", "file_path"]
 
 
-class FlaggedSubmissionVS(viewsets.ModelViewSet):
-    """
-    Provide CRUD operations for FlaggedSubmission objects.
+class BulkSubmissionsViewSet(viewsets.ModelViewSet, CachedViewMixin):
+    """ViewSet for handling BulkSubmissions."""
 
-    Supports filtering, ordering, and searching functionality.
-    """
-
-    queryset = models.FlaggedSubmission.objects.all()
-    serializer_class = serializers.FlaggedSubmissionSerializer
-    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
-    filterset_fields = {
-        "submission__professor__id": ["exact"],
-        "file_name": ["exact", "icontains"],
-        "percentage": ["exact", "gte", "lte"],
-    }
-    ordering_fields = [
-        "submission__professor__user__first_name",
-        "file_name",
-        "percentage",
+    queryset = BulkSubmissions.objects.all()
+    serializer_class = BulkSubmissionsSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+        filters.SearchFilter,
     ]
-    ordering = ["-percentage"]
-    search_fields = ["file_name", "submission__professor__user__first_name"]
+    filterset_fields = ["directory_path", "course_instance"]
+    ordering_fields = ["directory_path"]
+    ordering = ["directory_path"]
+    search_fields = ["directory_path"]
 
 
-class ConfirmedCheaterVS(viewsets.ModelViewSet):
-    """
-    Provide CRUD operations for ConfirmedCheater objects.
+class ConstraintsViewSet(viewsets.ModelViewSet, CachedViewMixin):
+    """ViewSet for handling Constraints."""
 
-    Supports filtering, ordering, and searching.
-    """
-
-    queryset = models.ConfirmedCheater.objects.all()
-    serializer_class = serializers.ConfirmedCheaterSerializer
-    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
-    filterset_fields = {
-        "professor__id": ["exact"],
-        "confirmed_date": ["exact", "gte", "lte"],
-        "threshold_used": ["exact", "gte", "lte"],
-    }
-    ordering_fields = [
-        "professor__user__first_name",
-        "confirmed_date",
-        "threshold_used",
+    queryset = Constraints.objects.all()
+    serializer_class = ConstraintsSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+        filters.SearchFilter,
     ]
-    ordering = ["confirmed_date"]
+    filterset_fields = ["identifier", "is_library", "is_keyword", "is_permitted"]
+    ordering_fields = ["identifier"]
+    ordering = ["identifier"]
+    search_fields = ["identifier"]
 
 
-class PlagiarismReportViewSet(viewsets.ModelViewSet):
-    """
-    Provide flagged submission reports based on user access level.
+class PolicyViolationsViewSet(viewsets.ModelViewSet, CachedViewMixin):
+    """ViewSet for handling PolicyViolations."""
 
-    Admins see all, professors see their own.
-    """
-
-    serializer_class = FlaggedSubmissionSerializer
-    permission_classes = [IsAuthenticated]
-    filter_backends = [filters.DjangoFilterBackend, OrderingFilter, SearchFilter]
-    filterset_fields = [
-        "submission__assignment__class_instance_id",
-        "submission__assignment__class_instance__semester",
-        "submission__assignment__class_instance__profclassect__semester_id",
+    queryset = PolicyViolations.objects.all()
+    serializer_class = PolicyViolationsSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+        filters.SearchFilter,
     ]
-    ordering_fields = [
-        "submission__created_at",
-        "submission__professor__user__first_name",
-        "file_name",
-        "percentage",
+    filterset_fields = ["line_number"]
+    ordering_fields = ["line_number"]
+    ordering = ["line_number"]
+    # mainly numerical values so no need here
+    search_fields = []
+
+
+class RequiredSubmissionFilesViewSet(viewsets.ModelViewSet, CachedViewMixin):
+    """ViewSet for handling RequiredSubmissionFiles."""
+
+    queryset = RequiredSubmissionFiles.objects.all()
+    serializer_class = RequiredSubmissionFilesSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+        filters.SearchFilter,
     ]
-    search_fields = ["file_name", "submission__professor__user__first_name"]
-
-    def get_queryset(self):
-        """
-        Return the queryset of flagged submissions based on user's role.
-
-        Admins see all, professors see only their own.
-        """
-        user = self.request.user
-
-        if is_admin(user):
-            return FlaggedSubmission.objects.all()
-        else:
-            professor = user.user_professor
-            return FlaggedSubmission.objects.filter(
-                submission__professor=professor
-            ).distinct()
+    filterset_fields = ["file_name"]
+    ordering_fields = ["file_name"]
+    ordering = ["file_name"]
+    search_fields = ["file_name"]

@@ -38,4 +38,5 @@ urlpatterns = [
     path("api/logout", LogoutView.as_view()),
     path("api/google/verify", views.GoogleAuthView.as_view()),
     path("api/token/refresh", get_refresh_view().as_view()),
+    path("api/cheating/", include("cheating.urls")),
 ]

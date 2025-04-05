@@ -1,306 +1,302 @@
-"""Tests for the Assignments models."""
+"""Tests for assignments models, verifying both string representations and unique constraints.
 
-from django.test import TestCase
-from django.db.utils import IntegrityError
-from django.core.exceptions import ValidationError
+This module tests the __str__ methods and unique constraints for the
+assignments models.
+"""
+
+import datetime
+
+from django.apps import apps
 from django.contrib.auth import get_user_model
-from django.db import transaction
-from datetime import date
+from django.db import IntegrityError
+from django.test import TestCase
 
-from assignments import models as assign_models
-from courses import models as course_models
+from assignments.models import (
+    Assignments,
+    Submissions,
+    BaseFiles,
+    BulkSubmissions,
+    Constraints,
+    PolicyViolations,
+    RequiredSubmissionFiles,
+)
+
+User = get_user_model()
+
+# Retrieve required models from the courses app.
+CoursesSemester = apps.get_model("courses", "CoursesSemester")
+CourseCatalog = apps.get_model("courses", "CourseCatalog")
+Professors = apps.get_model("courses", "Professors")
+TeachingAssistants = apps.get_model("courses", "TeachingAssistants")
+CourseInstances = apps.get_model("courses", "CourseInstances")
+Students = apps.get_model("courses", "Students")
 
 
-def create_user(
-    email="test@example.com",
-    password="testpass",
-    first_name="Test",
-    last_name="User",
-):
-    """Create and return a user with the specified attributes.
+class BaseAssignmentsTest(TestCase):
+    """Base test case for assignments models.
 
-    Args:
-        email (str): User's email. Defaults to "test@example.com".
-        password (str): User's password. Defaults to "testpass".
-        first_name (str): First name. Defaults to "Test".
-        last_name (str): Last name. Defaults to "User".
-
-    Returns:
-        User: The created user instance.
+    Creates common objects used in tests for string representations and
+    unique constraints.
     """
-    return get_user_model().objects.create_user(
-        email=email,
-        password=password,
-        first_name=first_name,
-        last_name=last_name,
-    )
 
-
-def create_professor(**params):
-    """Create and return a Professor instance.
-
-    Accepts custom parameters for user creation.
-
-    Args:
-        **params: Custom attributes for the user object.
-
-    Returns:
-        Professor: The created Professor instance.
-    """
-    defaults = {
-        "email": "prof@example.com",
-        "password": "testpass",
-        "first_name": "Prof",
-        "last_name": "One",
-    }
-    defaults.update(params)
-    user = create_user(**defaults)
-    return course_models.Professor.objects.create(user=user)
-
-
-def create_class(name="Test Class"):
-    """Create and return a Class instance.
-
-    Args:
-        name (str): Name of the class. Defaults to "Test Class".
-
-    Returns:
-        Class: The created Class instance.
-    """
-    return course_models.Class.objects.create(name=name)
-
-
-class StudentModelTests(TestCase):
-    """Tests for the Student model."""
-
-    def test_student_str(self):
-        """Test the string representation of a Student instance."""
-        student = assign_models.Student.objects.create(
+    def setUp(self):
+        """Create common objects for all assignments model tests."""
+        self.semester = CoursesSemester.objects.create(
+            name="Fall Semester",
+            year=2025,
+            term="Fall",
+            session="Regular",
+        )
+        self.catalog = CourseCatalog.objects.create(
+            name="CS101",
+            subject="CS",
+            catalog_number=101,
+            course_title="Introduction to Computer Science",
+            course_level="Undergraduate",
+        )
+        self.professor_user = User.objects.create_user(
+            username="prof1",
+            password="pass123",
+            email="professor@example.com",
+        )
+        self.ta_user = User.objects.create_user(
+            username="ta1",
+            password="pass123",
+            email="ta1@example.com",
+        )
+        self.professor = Professors.objects.create(user=self.professor_user)
+        self.teaching_assistant = TeachingAssistants.objects.create(user=self.ta_user)
+        self.course_instance = CourseInstances.objects.create(
+            semester=self.semester,
+            course_catalog=self.catalog,
+            section_number=1,
+            professor=self.professor,
+            teaching_assistant=self.teaching_assistant,
+            canvas_course_id=123456,
+        )
+        self.student = Students.objects.create(
             email="student@example.com",
-            codeGrade_id=1001,
-            username="studentuser",
+            nshe_id=12345678,
+            codegrade_id=87654321,
+            ace_id="ACE123",
             first_name="John",
             last_name="Doe",
         )
-        expected = "John Doe (student@example.com)"
-        self.assertEqual(str(student), expected)
-
-    def test_student_unique_email_and_codeGrade(self):
-        """Test that duplicate emails and codeGrade_id raise IntegrityError."""
-        assign_models.Student.objects.create(
-            email="unique@example.com",
-            codeGrade_id=2001,
-            username="uniqueuser",
-            first_name="Unique",
-            last_name="Student",
-        )
-        with self.assertRaises(IntegrityError):
-            with transaction.atomic():
-                assign_models.Student.objects.create(
-                    email="unique@example.com",
-                    codeGrade_id=2002,
-                    username="anotheruser",
-                    first_name="Another",
-                    last_name="Student",
-                )
-        with self.assertRaises(IntegrityError):
-            with transaction.atomic():
-                assign_models.Student.objects.create(
-                    email="another@example.com",
-                    codeGrade_id=2001,
-                    username="anotheruser",
-                    first_name="Another",
-                    last_name="Student",
-                )
+        self.assignment_data = {
+            "course_instance": self.course_instance,
+            "assignment_number": 1,
+            "title": "Test Assignment",
+            "lock_date": datetime.date.today(),
+            "pdf_filepath": "path/to/pdf",
+            "has_base_code": True,
+            "moss_report_directory_path": "path/to/moss",
+            "bulk_ai_directory_path": "path/to/bulk",
+            "language": "Python",
+            "has_policy": True,
+        }
+        self.assignment = Assignments.objects.create(**self.assignment_data)
 
 
-class AssignmentModelTests(TestCase):
-    """Tests for the Assignment model."""
-
-    def setUp(self):
-        """Set up required test data."""
-        self.professor = create_professor()
-        self.test_class = create_class(name="Biology 101")
-        self.due_date = date(2023, 1, 1)
+class AssignmentsModelsStrTest(BaseAssignmentsTest):
+    """Tests for string representations of assignments-related models."""
 
     def test_assignment_str(self):
-        """Test the string representation of an Assignment instance."""
-        assignment = assign_models.Assignment.objects.create(
-            class_instance=self.test_class,
-            professor=self.professor,
-            assignment_number=1,
-            title="Test Assignment",
-            due_date=self.due_date,
-        )
-        expected = "Assignment 1: Test Assignment"
-        self.assertEqual(str(assignment), expected)
-
-    def test_assignment_unique_together(self):
-        """Test that duplicate assignment number for the same class is invalid."""
-        assign_models.Assignment.objects.create(
-            class_instance=self.test_class,
-            professor=self.professor,
-            assignment_number=1,
-            title="First Assignment",
-            due_date=self.due_date,
-        )
-        with self.assertRaises(IntegrityError):
-            with transaction.atomic():
-                assign_models.Assignment.objects.create(
-                    class_instance=self.test_class,
-                    professor=self.professor,
-                    assignment_number=1,
-                    title="Duplicate Assignment Number",
-                    due_date=self.due_date,
-                )
-
-
-class SubmissionModelTests(TestCase):
-    """Tests for the Submission model."""
-
-    def setUp(self):
-        """Set up required test data."""
-        self.professor = create_professor()
-        self.test_class = create_class(name="Chemistry 101")
-        self.due_date = date(2023, 2, 1)
-        self.assignment = assign_models.Assignment.objects.create(
-            class_instance=self.test_class,
-            professor=self.professor,
-            assignment_number=1,
-            title="Chemistry Assignment",
-            due_date=self.due_date,
-        )
-        self.student = assign_models.Student.objects.create(
-            email="student2@example.com",
-            codeGrade_id=3001,
-            username="student2",
-            first_name="Alice",
-            last_name="Wonder",
-        )
+        """Check the string output of an Assignment instance."""
+        expected = f"{self.course_instance} - Assignment 1: Test Assignment"
+        self.assertEqual(str(self.assignment), expected)
 
     def test_submission_str(self):
-        """Test the string representation of a Submission instance."""
-        submission = assign_models.Submission.objects.create(
-            student=self.student,
-            assignment=self.assignment,
-            grade=85,
+        """Check the string output of a Submission instance."""
+        submission = Submissions.objects.create(
+            grade=95.0,
+            created_at=datetime.date.today(),
             flagged=False,
-            professor=self.professor,
+            assignment=self.assignment,
+            student=self.student,
+            course_instance=self.course_instance,
+            file_path="path/to/submission",
         )
-        expected = f"Submission by {self.student} for {self.assignment}"
+        expected = f"{self.student} - {self.assignment} (Grade: 95.0)"
         self.assertEqual(str(submission), expected)
 
-    def test_submission_grade_validators(self):
-        """Test that invalid grade values raise a ValidationError."""
-        submission = assign_models.Submission(
-            student=self.student,
+    def test_basefiles_str(self):
+        """Check the string output of a BaseFiles instance."""
+        base_file = BaseFiles.objects.create(
             assignment=self.assignment,
-            grade=150,
-            flagged=False,
-            professor=self.professor,
+            file_name="starter.py",
+            file_path="path/to/starter.py",
         )
-        with self.assertRaises(ValidationError):
-            submission.full_clean()
+        expected = f"{self.assignment} - starter.py"
+        self.assertEqual(str(base_file), expected)
 
-
-class FlaggedSubmissionModelTests(TestCase):
-    """Tests for the FlaggedSubmission model."""
-
-    def setUp(self):
-        """Set up required test data."""
-        self.professor = create_professor()
-        self.test_class = create_class(name="Physics 101")
-        self.due_date = date(2023, 3, 1)
-        self.assignment = assign_models.Assignment.objects.create(
-            class_instance=self.test_class,
-            professor=self.professor,
-            assignment_number=1,
-            title="Physics Assignment",
-            due_date=self.due_date,
-        )
-        self.student = assign_models.Student.objects.create(
-            email="student3@example.com",
-            codeGrade_id=4001,
-            username="student3",
-            first_name="Bob",
-            last_name="Builder",
-        )
-        self.submission = assign_models.Submission.objects.create(
-            student=self.student,
+    def test_bulk_submissions_str(self):
+        """Check the string output of a BulkSubmissions instance."""
+        bulk_submission = BulkSubmissions.objects.create(
+            course_instance=self.course_instance,
             assignment=self.assignment,
-            grade=90,
-            flagged=True,
-            professor=self.professor,
+            directory_path="path/to/directory",
         )
+        expected = f"{self.course_instance} - {self.assignment}"
+        self.assertEqual(str(bulk_submission), expected)
 
-    def test_flagged_submission_str(self):
-        """Test the string representation of a FlaggedSubmission instance."""
-        flagged = assign_models.FlaggedSubmission.objects.create(
-            submission=self.submission,
-            file_name="plagiarism_report.pdf",
-            percentage=80,
+    def test_constraints_str(self):
+        """Check the string output of a Constraints instance."""
+        constraint = Constraints.objects.create(
+            assignment=self.assignment,
+            identifier="forbidden_keyword",
+            is_library=False,
+            is_keyword=True,
+            is_permitted=False,
         )
-        flagged.similarity_with.add(self.student)
-        expected = "Flagged Submission: plagiarism_report.pdf (80%)"
-        self.assertEqual(str(flagged), expected)
-
-    def test_flagged_submission_percentage_validators(self):
-        """Test that invalid percentage values raise a ValidationError."""
-        flagged = assign_models.FlaggedSubmission(
-            submission=self.submission,
-            file_name="low_similarity.pdf",
-            percentage=10,
-        )
-        with self.assertRaises(ValidationError):
-            flagged.full_clean()
-
-
-class FlaggedStudentModelTests(TestCase):
-    """Tests for the FlaggedStudent model."""
-
-    def setUp(self):
-        """Set up required test data."""
-        self.professor = create_professor()
-        self.student = assign_models.Student.objects.create(
-            email="student4@example.com",
-            codeGrade_id=5001,
-            username="student4",
-            first_name="Carol",
-            last_name="Danvers",
-        )
-
-    def test_flagged_student_str(self):
-        """Test the string representation of a FlaggedStudent instance."""
-        flagged_student = assign_models.FlaggedStudent.objects.create(
-            student=self.student,
-            professor=self.professor,
-            times_over_threshold=3,
-        )
-        expected = f"Flagged Student: {self.student} flagged 3 times"
-        self.assertEqual(str(flagged_student), expected)
-
-
-class ConfirmedCheaterModelTests(TestCase):
-    """Tests for the ConfirmedCheater model."""
-
-    def setUp(self):
-        """Set up required test data."""
-        self.professor = create_professor()
-        self.student = assign_models.Student.objects.create(
-            email="student5@example.com",
-            codeGrade_id=6001,
-            username="student5",
-            first_name="Dave",
-            last_name="Grohl",
-        )
-
-    def test_confirmed_cheater_str(self):
-        """Test the string representation of a ConfirmedCheater instance."""
-        confirmed = assign_models.ConfirmedCheater.objects.create(
-            student=self.student, professor=self.professor, threshold_used=50
-        )
+        expected_status = "Banned"
+        expected_type = "Keyword"
         expected = (
-            f"Confirmed Cheater: {self.student} "
-            f"on {confirmed.confirmed_date} (Threshold: 50%)"
+            f"{expected_status} {expected_type}: forbidden_keyword "
+            f"({self.assignment})"
         )
-        self.assertEqual(str(confirmed), expected)
+        self.assertEqual(str(constraint), expected)
+
+    def test_policy_violations_str(self):
+        """Check the string output of a PolicyViolations instance."""
+        constraint = Constraints.objects.create(
+            assignment=self.assignment,
+            identifier="forbidden_keyword",
+            is_library=False,
+            is_keyword=True,
+            is_permitted=False,
+        )
+        submission = Submissions.objects.create(
+            grade=88.0,
+            created_at=datetime.date.today(),
+            flagged=True,
+            assignment=self.assignment,
+            student=self.student,
+            course_instance=self.course_instance,
+            file_path="path/to/flagged_submission",
+        )
+        policy_violation = PolicyViolations.objects.create(
+            constraint=constraint,
+            submission=submission,
+            line_number=42,
+        )
+        expected = f"Violation in {submission} - {constraint} (Line 42)"
+        self.assertEqual(str(policy_violation), expected)
+
+    def test_required_submission_files_str(self):
+        """Check the string output of a RequiredSubmissionFiles instance."""
+        required_file = RequiredSubmissionFiles.objects.create(
+            assignment=self.assignment,
+            file_name="main.py",
+            similarity_threshold=0.75,
+        )
+        expected = f"{self.assignment} - Required File: main.py"
+        self.assertEqual(str(required_file), expected)
+
+
+class AssignmentsModelsUniqueTest(BaseAssignmentsTest):
+    """Tests for enforcing unique constraints on assignments-related models."""
+
+    def test_unique_assignment_together(self):
+        """Ensure an assignment cannot share the same course_instance and assignment_number."""
+        with self.assertRaises(IntegrityError):
+            Assignments.objects.create(**self.assignment_data)
+
+    def test_unique_pdf_filepath(self):
+        """Ensure that pdf_filepath is unique across Assignments."""
+        new_data = self.assignment_data.copy()
+        new_data["assignment_number"] = 2
+        with self.assertRaises(IntegrityError):
+            Assignments.objects.create(**new_data)
+
+    def test_unique_moss_report_directory_path(self):
+        """Ensure that moss_report_directory_path is unique across Assignments."""
+        new_data = self.assignment_data.copy()
+        new_data["assignment_number"] = 2
+        new_data["pdf_filepath"] = "path/to/unique_pdf"
+        with self.assertRaises(IntegrityError):
+            Assignments.objects.create(**new_data)
+
+    def test_unique_bulk_ai_directory_path(self):
+        """Ensure that bulk_ai_directory_path is unique across Assignments."""
+        new_data = self.assignment_data.copy()
+        new_data["assignment_number"] = 2
+        new_data["pdf_filepath"] = "path/to/unique_pdf2"
+        new_data["moss_report_directory_path"] = "path/to/unique_moss"
+        with self.assertRaises(IntegrityError):
+            Assignments.objects.create(**new_data)
+
+    def test_submission_unique_together(self):
+        """Ensure Submissions cannot share the same assignment and student."""
+        submission_data = {
+            "grade": 90.0,
+            "created_at": datetime.date.today(),
+            "flagged": False,
+            "assignment": self.assignment,
+            "student": self.student,
+            "course_instance": self.course_instance,
+            "file_path": "path/to/submission1",
+        }
+        Submissions.objects.create(**submission_data)
+        with self.assertRaises(IntegrityError):
+            Submissions.objects.create(**submission_data)
+
+    def test_basefiles_unique_together(self):
+        """Ensure BaseFiles cannot share the same assignment and file_name."""
+        basefile_data = {
+            "assignment": self.assignment,
+            "file_name": "starter.py",
+            "file_path": "path/to/starter.py",
+        }
+        BaseFiles.objects.create(**basefile_data)
+        with self.assertRaises(IntegrityError):
+            BaseFiles.objects.create(**basefile_data)
+
+    def test_bulk_submissions_unique_together(self):
+        """Ensure BulkSubmissions cannot share the same course_instance and assignment."""
+        bulk_data = {
+            "course_instance": self.course_instance,
+            "assignment": self.assignment,
+            "directory_path": "path/to/directory",
+        }
+        BulkSubmissions.objects.create(**bulk_data)
+        with self.assertRaises(IntegrityError):
+            BulkSubmissions.objects.create(**bulk_data)
+
+    def test_policy_violations_unique_together(self):
+        """Ensure PolicyViolations cannot share the same submission, constraint, and line_number."""
+        constraint = Constraints.objects.create(
+            assignment=self.assignment,
+            identifier="forbidden_keyword",
+            is_library=False,
+            is_keyword=True,
+            is_permitted=False,
+        )
+        submission_data = {
+            "grade": 85.0,
+            "created_at": datetime.date.today(),
+            "flagged": True,
+            "assignment": self.assignment,
+            "student": self.student,
+            "course_instance": self.course_instance,
+            "file_path": "path/to/submission2",
+        }
+        submission = Submissions.objects.create(**submission_data)
+        policy_data = {
+            "constraint": constraint,
+            "submission": submission,
+            "line_number": 10,
+        }
+        PolicyViolations.objects.create(**policy_data)
+        with self.assertRaises(IntegrityError):
+            PolicyViolations.objects.create(**policy_data)
+
+    def test_required_submission_files_unique_together(self):
+        """Ensure RequiredSubmissionFiles cannot share the same assignment and file_name."""
+        req_file_data = {
+            "assignment": self.assignment,
+            "file_name": "main.py",
+            "similarity_threshold": 0.75,
+        }
+        RequiredSubmissionFiles.objects.create(**req_file_data)
+        with self.assertRaises(IntegrityError):
+            RequiredSubmissionFiles.objects.create(**req_file_data)

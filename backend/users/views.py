@@ -1,16 +1,18 @@
-"""Views for the User APIs."""
+"""Views for the User APIs.
 
-# Views define how we handle requests.
-# rest_framework handles a lot of the logic we need to create objects in our database for us.
-# It does that by providing a bunch of base classes that we can configure for our views
-# that will handle the request in a default standardized way. It also gives us the
-# ability to override some of that behavior so we can modify it if needed.
+Views define how we handle requests. The Django REST Framework handles much
+of the logic needed to create, read, update, and delete objects in the
+database. It provides a set of base classes we can configure for our views
+to handle requests in a standardized way. We can override this behavior
+whenever needed.
+"""
 
-from users import models, serializers
-from courses.models import Professor
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.request import Request
+
+from users import models, serializers
+from courses.models import Professors as Professor
 
 
 class UserVS(viewsets.ModelViewSet):
@@ -23,12 +25,12 @@ class UserVS(viewsets.ModelViewSet):
         """Return a list of users with optional filtering.
 
         Supports filtering by:
-        - email (case-insensitive, partial match)
-        - first_name (case-insensitive, partial match)
-        - last_name (case-insensitive, partial match)
+          - email (case-insensitive, partial match)
+          - first_name (case-insensitive, partial match)
+          - last_name (case-insensitive, partial match)
 
-        Also supports ordering results using query param `ordering`.
-        Defaults to ordering by `first_name`.
+        Also supports ordering results using the `ordering` query param,
+        defaulting to `first_name`.
 
         Returns:
             Response: List of serialized user data with 200 OK.
@@ -60,7 +62,7 @@ class UserVS(viewsets.ModelViewSet):
             pk (int): The primary key of the user.
 
         Returns:
-            Response: Serialized user data or 404 if not found.
+            Response: Serialized user data with 200 OK, or 404 if not found.
         """
         try:
             instance = models.User.objects.get(pk=pk)
@@ -80,7 +82,7 @@ class UserVS(viewsets.ModelViewSet):
             pk (int): The primary key of the user.
 
         Returns:
-            Response: Updated user data or 404 if not found.
+            Response: Updated user data with 200 OK, or 404 if not found.
         """
         try:
             instance = self.get_object()
@@ -104,14 +106,14 @@ class UserVS(viewsets.ModelViewSet):
             pk (int): The primary key of the user.
 
         Returns:
-            Response: Updated user data or errors with appropriate status.
+            Response: Updated user data with 200 OK, or errors with 400,
+            or 404 if not found.
         """
         try:
             instance = self.get_object()
             serializer = self.serializer_class(
                 instance, data=request.data, partial=True
             )
-
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
@@ -130,10 +132,10 @@ class UserVS(viewsets.ModelViewSet):
         """Create a user and automatically assign them as a Professor.
 
         Args:
-            serializer (Serializer): The serializer with validated user data.
+            serializer (UserSerializer): The serializer with validated user data.
 
-        Side Effects:
-            - Creates a new Professor linked to the user.
+        Side effects:
+            Creates a new Professors record linked to the user.
         """
         user = serializer.save()
         Professor.objects.create(user=user)
