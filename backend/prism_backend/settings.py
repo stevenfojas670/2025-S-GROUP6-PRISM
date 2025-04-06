@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 from decouple import config
+from datetime import timedelta
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,7 +29,10 @@ DEBUG = config("DEBUG", default=False, cast=bool)
 
 # ALLOWED_HOSTS = ['10.238.2.238', 'localhost', '.10.', '.131.']
 ALLOWED_HOSTS = ["*"]
-CSRF_TRUSTED_ORIGINS = ["https://gpu.cs.unlv.edu"]
+CSRF_TRUSTED_ORIGINS = ["https://gpu.cs.unlv.edu", "http://localhost:3000"]
+CORS_ALLOWED_ORIGINS = ["http://localhost:3000"]
+CORS_ALLOW_ALL_ORIGINS = False  # For development only, Restrict in production.
+CORS_ALLOW_CREDENTIALS = True
 
 # Application definition
 
@@ -39,7 +44,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "corsheaders",
-    "django_filters",
     "django.contrib.sites",
     "django.contrib.humanize",
     "allauth",
@@ -82,8 +86,8 @@ SOCIALACCOUNT_PROVIDERS = {
         # (``socialaccount`` app) containing the required client
         # credentials, or list them here:
         "APP": {
-            "client_id": os.getenv("GOOGLE_CLIENT_ID"),
-            "secret": os.getenv("GOOGLE_CLIENT_SECRET"),
+            "client_id": config("GOOGLE_CLIENT_ID"),
+            "secret": config("GOOGLE_CLIENT_SECRET"),
             "key": "",
         }
     }
@@ -111,13 +115,14 @@ REST_FRAMEWORK = {
     ],
     "NUM_PROXIES": 0,  # In prod, change this to 1, since we are using NGINX. This will allow us to view the client IP
     # Use these as global throttlers
-    "DEFAULT_THROTTLE_CLASSES": [
-        "rest_framework.throttling.ScopedRateThrottle",
-    ],
-    "DEFAULT_THROTTLE_RATES": {
-        "auth": "1000/min",
-        "dj_rest_auth": "1000/min",
-    },  # In prod, reduce this number or change as you see fit
+    # "DEFAULT_THROTTLE_CLASSES": [
+    #     "rest_framework.throttling.ScopedRateThrottle",
+    # ],
+    # "DEFAULT_THROTTLE_RATES": {
+    #     "auth": "1000/min",
+    #     "dj_rest_auth": "1000/min",
+    # },  # In prod, reduce this number or change as you see fit
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 SIMPLE_JWT = {
@@ -150,7 +155,6 @@ REST_AUTH = {
 }
 
 ROOT_URLCONF = "prism_backend.urls"
-CORS_ALLOW_ALL_ORIGINS = True  # For development only, Restrict in production.
 
 TEMPLATES = [
     {
@@ -240,12 +244,6 @@ CHANNEL_LAYERS = {
 
 # asssinging our custom user model to be the defaulkt user model
 AUTH_USER_MODEL = "users.User"
-
-# setting up the automatic documentation, this is the schema we will use
-# openapi
-REST_FRAMEWORK = {
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-}
 
 CACHES = {
     "default": {
