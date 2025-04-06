@@ -1,123 +1,118 @@
-"""
-Assignment Models Serializers.
-"""
+"""Serializers for the Assignments app."""
+
 from rest_framework import serializers
-from assignments import models
-from courses import models as courses_models
-from courses import serializers as courses_serializer
 
-class StudentSerializer(serializers.ModelSerializer):
-    """Student Models Serializers."""
+from .models import (
+    Assignments,
+    Submissions,
+    BaseFiles,
+    BulkSubmissions,
+    Constraints,
+    PolicyViolations,
+    RequiredSubmissionFiles,
+)
+
+
+class AssignmentsSerializer(serializers.ModelSerializer):
+    """Serializer for the Assignments model."""
+
     class Meta:
-        model = models.Student
+        """Meta options for the AssignmentsSerializer.
+
+        Attributes:
+            model: The model class that this serializer serializes.
+            fields: All model fields are included.
+        """
+
+        model = Assignments
         fields = "__all__"
 
-class FlaggedStudentSerializer(serializers.ModelSerializer):
-    """Flagged Student Models Serializers."""
+
+class SubmissionsSerializer(serializers.ModelSerializer):
+    """Serializer for the Submissions model."""
+
     class Meta:
-        model = models.FlaggedStudent
+        """Meta options for the SubmissionsSerializer.
+
+        Attributes:
+            model: The model class that this serializer serializes.
+            fields: All model fields are included.
+        """
+
+        model = Submissions
         fields = "__all__"
 
-    student = StudentSerializer(read_only=True)
 
-    student_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Student.objects.all(),
-        source='student',
-        write_only=True
-    )
+class BaseFilesSerializer(serializers.ModelSerializer):
+    """Serializer for the BaseFiles model."""
 
-class AssignmentSerializer(serializers.ModelSerializer):
-    """Assignment Models Serializers."""
     class Meta:
-        model = models.Assignment
+        """Meta options for the BaseFilesSerializer.
+
+        Attributes:
+            model: The model class that this serializer serializes.
+            fields: All model fields are included.
+        """
+
+        model = BaseFiles
         fields = "__all__"
 
-    # For read operations: show nested details
-    professor = courses_serializer.ProfessorSerializer(read_only=True)
-    class_instance = courses_serializer.ClassSerializer(read_only=True)
 
-    # For write operations: accept only IDs
-    #since these are nested object its easier to simply declare them like so,
-    #this will allow our client to specify the primary key (id) of the given fields
-    #in their request to create new instances of ProffClassSection in the databse
-    professor_id = serializers.PrimaryKeyRelatedField(
-        queryset=courses_models.Professor.objects.all(),
-        source='professor',
-        write_only=True
-    )
-    class_instance_id = serializers.PrimaryKeyRelatedField(
-        queryset=courses_models.Class.objects.all(),
-        source='class_instance',
-        write_only=True
-    )
+class BulkSubmissionsSerializer(serializers.ModelSerializer):
+    """Serializer for the BulkSubmissions model."""
 
-class SubmissionSerializer(serializers.ModelSerializer):
-    """Submission Models Serializers."""
     class Meta:
-        model = models.Submission
+        """Meta options for the BulkSubmissionsSerializer.
+
+        Attributes:
+            model: The model class that this serializer serializes.
+            fields: All model fields are included.
+        """
+
+        model = BulkSubmissions
         fields = "__all__"
 
-    # For read operations: show nested details
-    professor = courses_serializer.ProfessorSerializer(read_only=True)
-    student = StudentSerializer(read_only=True)
-    assignment = AssignmentSerializer(read_only=True)
 
-    # For write operations: accept only IDs
-    professor_id = serializers.PrimaryKeyRelatedField(
-        queryset=courses_models.Professor.objects.all(),
-        source='professor',
-        write_only=True
-    )
-    assignment_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Assignment.objects.all(),
-        source='assignment',
-        write_only=True
-    )
-    student_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Student.objects.all(),
-        source='student',
-        write_only=True
-    )
+class ConstraintsSerializer(serializers.ModelSerializer):
+    """Serializer for the Constraints model."""
 
-class FlaggedSubmissionSerializer(serializers.ModelSerializer):
-    """Flagged Submission Models Serializers."""
     class Meta:
-        model = models.FlaggedSubmission
+        """Meta options for the ConstraintsSerializer.
+
+        Attributes:
+            model: The model class that this serializer serializes.
+            fields: All model fields are included.
+        """
+
+        model = Constraints
         fields = "__all__"
 
-    # For read operations: show nested details
-    similarity_with = StudentSerializer(read_only=True, many=True)
-    submission = SubmissionSerializer(read_only=True)
 
-    # For write operations: accept only IDs
-    student_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Student.objects.all(),
-        source='student',
-        write_only=True
-    )
-    submission_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Submission.objects.all(),
-        source='submission',
-        write_only=True
-    )
+class PolicyViolationsSerializer(serializers.ModelSerializer):
+    """Serializer for the PolicyViolations model."""
 
-class ConfirmedCheaterSerializer(serializers.ModelSerializer):
-    """Confirmed Cheater Models Serializers."""
     class Meta:
-        model = models.ConfirmedCheater
+        """Meta options for the PolicyViolationsSerializer.
+
+        Attributes:
+            model: The model class that this serializer serializes.
+            fields: All model fields are included.
+        """
+
+        model = PolicyViolations
         fields = "__all__"
 
-    student = StudentSerializer(read_only=True)
-    professor = courses_serializer.ProfessorSerializer(read_only=True)
 
-    student_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Student.objects.all(),
-        source='student',
-        write_only=True
-    )
-    professor_id = serializers.PrimaryKeyRelatedField(
-        queryset=courses_models.Professor.objects.all(),
-        source='professor',
-        write_only=True
-    )
+class RequiredSubmissionFilesSerializer(serializers.ModelSerializer):
+    """Serializer for the RequiredSubmissionFiles model."""
 
+    class Meta:
+        """Meta options for the RequiredSubmissionFilesSerializer.
+
+        Attributes:
+            model: The model class that this serializer serializes.
+            fields: All model fields are included.
+        """
+
+        model = RequiredSubmissionFiles
+        fields = "__all__"

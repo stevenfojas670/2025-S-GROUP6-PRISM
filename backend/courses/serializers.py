@@ -1,68 +1,166 @@
-"""
-Courses Models Serializers.
-"""
+"""Serializers for the Courses app."""
 
 from rest_framework import serializers
-from courses import models
-from users import serializers as user_serializer
+
+from .models import (
+    CourseCatalog,
+    CourseInstances,
+    CoursesSemester,
+    CourseAssignmentCollaboration,
+    Students,
+    StudentEnrollments,
+    Professors,
+    ProfessorEnrollments,
+    TeachingAssistants,
+    TeachingAssistantEnrollment,
+)
 
 
-class ProfessorSerializer(serializers.ModelSerializer):
-    """Professor Model Serializer."""
-
-    user = user_serializer.UserSerializer(read_only=True)
+class CourseCatalogSerializer(serializers.ModelSerializer):
+    """Serializer for the CourseCatalog model."""
 
     class Meta:
-        model = models.Professor
+        """Meta options for CourseCatalogSerializer.
+
+        Attributes:
+            model: The CourseCatalog model.
+            fields: All model fields.
+        """
+
+        model = CourseCatalog
         fields = "__all__"
 
 
-# create() and update() methods are already implemented here by default
-class ClassSerializer(serializers.ModelSerializer):
-    """Class Model Serializer."""
+class CourseInstancesSerializer(serializers.ModelSerializer):
+    """Serializer for the CourseInstances model."""
 
     class Meta:
-        model = models.Class
-        fields = ["name"]
+        """Meta options for CourseInstancesSerializer.
+
+        Attributes:
+            model: The CourseInstances model.
+            fields: All model fields.
+        """
+
+        model = CourseInstances
+        fields = "__all__"
 
 
-class SemesterSerializer(serializers.ModelSerializer):
-    """Semester Model Serializer."""
-
-    class Meta:
-        model = models.Semester
-        fields = ["name"]
-
-
-class ProfessorClassSectionSerializer(serializers.ModelSerializer):
-    """ProfessorClassSection Model Serializer."""
-
-    # For read operations: show nested details
-    semester = SemesterSerializer(read_only=True)
-    class_instance = ClassSerializer(read_only=True)
-
-    # For write operations: accept only IDs
-    # since these are nested object its easier to simply declare them like so,
-    # this will allow our client to specify the primary key (id) of the given fields
-    # in their request to create new instances of ProffClassSection in the databse
-    semester_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Semester.objects.all(), source="semester", write_only=True
-    )
-    class_instance_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Class.objects.all(), source="class_instance", write_only=True
-    )
-    professor_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Professor.objects.all(), source="professor", write_only=True
-    )
+class CoursesSemesterSerializer(serializers.ModelSerializer):
+    """Serializer for the CoursesSemester model."""
 
     class Meta:
-        model = models.ProfessorClassSection
-        fields = [
-            "id",
-            "section_number",
-            "semester",
-            "semester_id",
-            "class_instance",
-            "class_instance_id",
-            "professor_id",
-        ]
+        """Meta options for CoursesSemesterSerializer.
+
+        Attributes:
+            model: The CoursesSemester model.
+            fields: All model fields.
+        """
+
+        model = CoursesSemester
+        fields = "__all__"
+
+
+class CourseAssignmentCollaborationSerializer(serializers.ModelSerializer):
+    """Serializer for the CourseAssignmentCollaboration model."""
+
+    class Meta:
+        """Meta options for CourseAssignmentCollaborationSerializer.
+
+        Attributes:
+            model: The CourseAssignmentCollaboration model.
+            fields: All model fields.
+        """
+
+        model = CourseAssignmentCollaboration
+        fields = "__all__"
+
+
+class StudentsSerializer(serializers.ModelSerializer):
+    """Serializer for the Students model."""
+
+    class Meta:
+        """Meta options for StudentsSerializer.
+
+        Attributes:
+            model: The Students model.
+            fields: All model fields.
+        """
+
+        model = Students
+        fields = "__all__"
+
+
+class StudentEnrollmentsSerializer(serializers.ModelSerializer):
+    """Serializer for the StudentEnrollments model."""
+
+    class Meta:
+        """Meta options for StudentEnrollmentsSerializer.
+
+        Attributes:
+            model: The StudentEnrollments model.
+            fields: All model fields.
+        """
+
+        model = StudentEnrollments
+        fields = "__all__"
+
+
+class ProfessorsSerializer(serializers.ModelSerializer):
+    """Serializer for the Professors model."""
+
+    class Meta:
+        """Meta options for ProfessorsSerializer.
+
+        Attributes:
+            model: The Professors model.
+            fields: All model fields.
+        """
+
+        model = Professors
+        fields = "__all__"
+
+
+class ProfessorEnrollmentsSerializer(serializers.ModelSerializer):
+    """Serializer for the ProfessorEnrollments model."""
+
+    class Meta:
+        """Meta options for ProfessorEnrollmentsSerializer.
+
+        Attributes:
+            model: The ProfessorEnrollments model.
+            fields: All model fields.
+        """
+
+        model = ProfessorEnrollments
+        fields = "__all__"
+
+
+class TeachingAssistantsSerializer(serializers.ModelSerializer):
+    """Serializer for the TeachingAssistants model."""
+
+    class Meta:
+        """Meta options for TeachingAssistantsSerializer.
+
+        Attributes:
+            model: The TeachingAssistants model.
+            fields: All model fields.
+        """
+
+        model = TeachingAssistants
+        fields = "__all__"
+
+
+class TeachingAssistantEnrollmentSerializer(serializers.ModelSerializer):
+    """Serializer for the TeachingAssistantEnrollment model."""
+
+    class Meta:
+        """Meta options for TeachingAssistantEnrollmentSerializer.
+
+        Attributes:
+            model: The TeachingAssistantEnrollment model.
+            fields: All model fields.
+        """
+
+        model = TeachingAssistantEnrollment
+        fields = "__all__"

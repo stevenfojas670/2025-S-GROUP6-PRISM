@@ -1,5 +1,4 @@
-"""
-URL configuration for prism_backend project.
+"""URL configuration for prism_backend project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.1/topics/http/urls/
@@ -39,4 +38,5 @@ urlpatterns = [
     path("api/logout", LogoutView.as_view()),
     path("api/google/verify", views.GoogleAuthView.as_view()),
     path("api/token/refresh", get_refresh_view().as_view()),
+    path("api/cheating/", include("cheating.urls")),
 ]

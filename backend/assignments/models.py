@@ -1,68 +1,272 @@
+"""Assignment-related models for students, professors, and submissions.
+
+This module defines models to manage academic workflows including assignments,
+submissions, flagged results, and confirmed cheating detections.
+"""
+
 from django.db import models
-from django.core.validators import MaxValueValidator, MinValueValidator
 
-class Student(models.Model):
-    """Students Model."""
-    email = models.EmailField(max_length=100, unique=True)
-    codeGrade_id = models.IntegerField(unique=True)  # This is for the code_gradeID field in codegrade
-    username = models.CharField(max_length=50, blank=True, null=True)  # Optional; maybe CodeGrade has this info?
-    first_name = models.CharField(max_length=50)
-    last_name = models.CharField(max_length=50)
 
-    def __str__(self):
-        return f"{self.first_name} {self.last_name} ({self.email})"
+class Assignments(models.Model):
+    """
+    Represents an assignment within a specific course instance.
 
-class Assignment(models.Model):
-    """Assignment Model."""
-    class_instance = models.ForeignKey("courses.Class", on_delete=models.CASCADE)
-    professor = models.ForeignKey("courses.Professor", on_delete=models.CASCADE)  # Link to professor
-    assignment_number = models.IntegerField()
-    title = models.CharField(max_length=100)
-    due_date = models.DateField()
+    Includes metadata such as assignment number, title, language,
+    directory paths, and whether base code or a policy applies.
+    """
+
+    course_instance = models.ForeignKey(
+        "courses.CourseInstances",
+        models.CASCADE,
+    )
+    assignment_number = models.SmallIntegerField()
+    title = models.TextField()
+    lock_date = models.DateField()
+    pdf_filepath = models.TextField(
+        unique=True,
+        blank=True,
+        null=True,
+    )
+    has_base_code = models.BooleanField()
+    moss_report_directory_path = models.TextField(unique=True)
+    bulk_ai_directory_path = models.TextField(unique=True)
+    language = models.TextField()
+    has_policy = models.BooleanField()
 
     class Meta:
-        unique_together = ('class_instance', 'assignment_number')  # Unique per class
+        """Model metadata configuration."""
+
+        unique_together = (("course_instance", "assignment_number"),)
 
     def __str__(self):
-        return f"Assignment {self.assignment_number}: {self.title}"
+        """
+        Return a readable representation of the assignment.
 
-class Submission(models.Model):
-    """Submissions Model."""
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
-    grade = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(100)])
-    created_at = models.DateField(auto_now_add=True)
-    flagged = models.BooleanField(default=False)
-    professor = models.ForeignKey("courses.Professor", on_delete=models.CASCADE)  # Link to professor
+        Includes course instance, assignment number, and title.
+        """
+        return (
+            f"{self.course_instance} - "
+            f"Assignment {self.assignment_number}: {self.title}"
+        )
+
+
+class Submissions(models.Model):
+    """
+    Stores metadata for individual student submissions.
+
+    Includes grade, file path, assignment link, and whether the submission
+    was flagged.
+    """
+
+    grade = models.DecimalField(max_digits=5, decimal_places=2)
+    created_at = models.DateField(blank=True, null=True)
+    flagged = models.BooleanField()
+    assignment = models.ForeignKey(
+        "Assignments",
+        models.CASCADE,
+    )
+    student = models.ForeignKey(
+        "courses.Students",
+        models.CASCADE,
+    )
+    course_instance = models.ForeignKey(
+        "courses.CourseInstances",
+        models.CASCADE,
+    )
+    file_path = models.TextField(
+        unique=True,
+        db_comment=("Relative path from the bulk submission directory."),
+    )
+
+    class Meta:
+        """Model metadata configuration."""
+
+        unique_together = (("assignment", "student"),)
+        db_table_comment = "Stores relevant data for individual student submissions."
 
     def __str__(self):
-        return f"Submission by {self.student} for {self.assignment}"
+        """
+        Return a readable representation of the submission.
 
-class FlaggedSubmission(models.Model):
-    """Flagged Submissions Model."""
-    submission = models.ForeignKey(Submission, on_delete=models.CASCADE)
-    file_name = models.CharField(max_length=50)
-    percentage = models.IntegerField(validators=[MinValueValidator(20), MaxValueValidator(100)])
-    similarity_with = models.ManyToManyField(Student, related_name="similar_submissions")  # Supports multiple similarities
+        Includes student, assignment, and grade.
+        """
+        return f"{self.student} - {self.assignment} (Grade: {self.grade})"
+
+
+class BaseFiles(models.Model):
+    """
+    Represents base files provided to students for assignments.
+
+    These files are used to inform the MOSS similarity report generator to
+    exclude common starter files when comparing submissions.
+    """
+
+    assignment = models.ForeignKey(
+        "Assignments",
+        models.CASCADE,
+    )
+    file_name = models.TextField()
+    file_path = models.TextField(unique=True)
+
+    class Meta:
+        """Model metadata configuration."""
+
+        unique_together = (("assignment", "file_name"),)
+        db_table_comment = (
+            "Lists base files given to students and used to exclude shared "
+            "files in MOSS similarity reports."
+        )
 
     def __str__(self):
-        return f"Flagged Submission: {self.file_name} ({self.percentage}%)"
+        """
+        Return a readable representation of the base file.
 
-class FlaggedStudent(models.Model):
-    """Flagged Students Model."""
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    professor = models.ForeignKey("courses.Professor", on_delete=models.CASCADE)
-    times_over_threshold = models.IntegerField(default=0)
+        Includes the assignment and file name.
+        """
+        return f"{self.assignment} - {self.file_name}"
+
+
+class BulkSubmissions(models.Model):
+    """
+    Stores the bulk submission directory for a course assignment.
+
+    For each course and assignment, this table links to the directory
+    containing all corresponding student submissions.
+    """
+
+    course_instance = models.ForeignKey(
+        "courses.CourseInstances",
+        models.CASCADE,
+    )
+    assignment = models.ForeignKey(
+        "Assignments",
+        models.CASCADE,
+    )
+    directory_path = models.TextField(unique=True)
+
+    class Meta:
+        """Model metadata configuration."""
+
+        unique_together = (("course_instance", "assignment"),)
+        db_table_comment = (
+            "For a given course and assignment, this table stores the "
+            "directory containing all student submissions."
+        )
 
     def __str__(self):
-        return f"Flagged Student: {self.student} flagged {self.times_over_threshold} times"
+        """
+        Return a readable representation of the bulk submission.
 
-class ConfirmedCheater(models.Model):
-    """Confirmed Cheaters Model."""
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    professor = models.ForeignKey("courses.Professor", on_delete=models.CASCADE)
-    confirmed_date = models.DateField(auto_now_add=True)
-    threshold_used = models.IntegerField(default=40)  # Tracks threshold used at confirmation
+        Includes the course instance and assignment.
+        """
+        return f"{self.course_instance} - {self.assignment}"
+
+
+class Constraints(models.Model):
+    """
+    Represents constraints for an assignment.
+
+    These include permitted or banned keywords and libraries used
+    in student submissions.
+    """
+
+    assignment = models.ForeignKey(
+        "Assignments",
+        models.CASCADE,
+    )
+    identifier = models.TextField()
+    is_library = models.BooleanField()
+    is_keyword = models.BooleanField()
+    is_permitted = models.BooleanField()
+
+    class Meta:
+        """Model metadata configuration."""
+
+        db_table_comment = (
+            "Lists the permitted/banned keywords and libraries of " "assignments."
+        )
 
     def __str__(self):
-        return f"Confirmed Cheater: {self.student} on {self.confirmed_date} (Threshold: {self.threshold_used}%)"
+        """
+        Return a readable representation of the constraint.
+
+        Includes status, type, identifier, and associated assignment.
+        """
+        status = "Permitted" if self.is_permitted else "Banned"
+        type_ = "Library" if self.is_library else "Keyword"
+        return f"{status} {type_}: {self.identifier} ({self.assignment})"
+
+
+class PolicyViolations(models.Model):
+    """
+    Represents violations of assignment constraints in student submissions.
+
+    Each entry corresponds to a detected instance where a student's code
+    violated a keyword or library constraint.
+    """
+
+    constraint = models.ForeignKey(
+        Constraints,
+        models.CASCADE,
+    )
+    submission = models.ForeignKey(
+        "Submissions",
+        models.CASCADE,
+    )
+    line_number = models.BigIntegerField(blank=True, null=True)
+
+    class Meta:
+        """Model metadata configuration."""
+
+        unique_together = (("submission", "constraint", "line_number"),)
+        db_table_comment = (
+            "Lists detected instances where a student's submission violates "
+            "the assignment's constraints."
+        )
+
+    def __str__(self):
+        """
+        Return a readable representation of the policy violation.
+
+        Includes submission, constraint, and line number.
+        """
+        return (
+            f"Violation in {self.submission} - {self.constraint} "
+            f"(Line {self.line_number})"
+        )
+
+
+class RequiredSubmissionFiles(models.Model):
+    """
+    Represents a required file for a specific assignment.
+
+    These are the files that students must submit for CodeGrade
+    grading and similarity analysis.
+    """
+
+    assignment = models.ForeignKey(
+        Assignments,
+        models.CASCADE,
+    )
+    file_name = models.TextField()
+    similarity_threshold = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+    )
+
+    class Meta:
+        """Model metadata configuration."""
+
+        unique_together = (("assignment", "file_name"),)
+        db_table_comment = (
+            "List of files that students are required to submit to "
+            "CodeGrade for a given assignment."
+        )
+
+    def __str__(self):
+        """
+        Return a readable representation of the required file entry.
+
+        Includes the assignment title and required file name.
+        """
+        return f"{self.assignment} - Required File: {self.file_name}"
