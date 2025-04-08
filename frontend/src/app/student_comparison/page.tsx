@@ -32,7 +32,14 @@ export default function StudentComparison() {
   const [studentBBool, setStudentBBool] = useState(false);
   const [potentialStudents, setPotentialStudents] = useState<any[]>([]);
   const [renderTable, setRenderTable] = useState(false);
-  const [enableAutocomplete, setEnableAutocomplete] = useState(false);
+  const [enableAutocomplete, setEnableAutocomplete] = useState(true);
+
+  //needs input and correct function
+  const onClassSelect = () => {
+    //input here
+    fetchStudents();
+    setEnableAutocomplete(false);
+  };
 
   const onStudentASelect = (item: number | -1) => {
     if (item == -1) {
@@ -80,7 +87,6 @@ export default function StudentComparison() {
       setPotentialClasses(data);
     }
   }, []);
-  fetchClasses;
 
   const fetchStudents = useCallback(async (classInstanceId: number) => {
     const response = await fetch(
@@ -124,6 +130,9 @@ export default function StudentComparison() {
     //The TextField accepts and returns a string written by the user, The dropdown returns an id correlating to a specific
     // class, and the button will handle submitting the data to the database
     <Stack spacing={1} sx={{ justifyContent: "center", alignItems: "center" }}>
+      {
+        //needs onClassSelect function added
+      }
       <FormControl fullWidth>
         <InputLabel id="demo-simple-select-label">Classes</InputLabel>
         <Select
