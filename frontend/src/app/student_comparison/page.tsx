@@ -192,14 +192,14 @@ export default function StudentComparison() {
         />
       </Stack>
       {
-        //<Button
-        //  variant="outlined"
-        //  onClick={() => {
-        //    handleButtonClick();
-        //  }}
-        //>
-        //</Stack>  Select Students to compare
-        //</Button>
+        <Button
+          variant="outlined"
+          onClick={() => {
+            handleButtonClick();
+          }}
+        >
+          Select Students to compare
+        </Button>
       }
       <Typography variant="h5" gutterBottom>
         {"Overall - " + 0}
