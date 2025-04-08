@@ -14,15 +14,48 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
+import Button from "@mui/material/Button";
 import { easyFetch } from "@/utils/fetchWrapper";
 import { RepeatOneSharp } from "@mui/icons-material";
+import TextField from "@mui/material/TextField";
+import Autocomplete from "@mui/material/Autocomplete";
 
 //todo: Just implement the text fields and button on page
 export default function StudentComparison() {
   //These are variables needed for work and their default values
-  const [selectedClass, setSelectedClass] = useState<any[]>([]);
-  const [assignmentName, setAssignmentName] = useState("");
-  const [student, setStudents] = useState<any[]>([]);
+  const [potentialClasses, setPotentialClasses] = useState<any[]>([]);
+  const [possibleAssignments, setPossibleAssignments] = useState<any[]>([]);
+  const [selectedStudentA, setSelectedStudentA] = useState(-1);
+  const [selectedStudentB, setSelectedStudentB] = useState(-1);
+  const [selectedClass, setSelectedClass] = useState(-1);
+  const [studentABool, setStudentABool] = useState(false);
+  const [studentBBool, setStudentBBool] = useState(false);
+  const [potentialStudents, setPotentialStudents] = useState<any[]>([]);
+  const [renderTable, setRenderTable] = useState(false);
+  const onStudentASelect = (item: number | -1) => {
+    if (item == -1) {
+      setStudentABool(false);
+    } else {
+      setStudentABool(true);
+      setSelectedStudentA(item);
+    }
+  };
+  const onStudentBSelect = (item: number | -1) => {
+    if (item == -1) {
+      setStudentBBool(false);
+    } else {
+      setStudentBBool(true);
+      setSelectedStudentB(item);
+    }
+  };
+  const handleButtonClick = () => {
+    if (studentABool && studentBBool) {
+      fetchAssignments(selectedStudentA, selectedStudentB);
+      setRenderTable(true);
+    } else {
+      setRenderTable(false);
+    }
+  };
   let studentList = [
     { Label: "null", id: -1 },
     { Label: "null2", id: -1 },
@@ -36,21 +69,29 @@ export default function StudentComparison() {
   let overall = 0;
 
   const fetchClasses = useCallback(async () => {
-    const response = await fetch(`http://localhost:8000/api/course/classes`, {
-      method: "get",
-    });
+    //const params = new URLSearchParams({
+    //  professor_id: { pid },
+    //});
+
+    const response = await fetch(
+      `http://localhost:8000/api/course/details${params}`,
+      {
+        method: "get",
+      }
+    );
 
     const data = await response.json();
 
     if (response.ok) {
       console.log("Fetched classes:", data);
-      setSelectedClass(data);
+      setPotentialClasses(data);
     }
   }, []);
+  fetchClasses;
 
-  const fetchStudents = useCallback(async (classInstanceId: string) => {
+  const fetchStudents = useCallback(async (classInstanceId: number) => {
     const response = await fetch(
-      `http://localhost:8000/api/course/enrollments?class_instance${classInstanceId}`,
+      `http://localhost:8000/api/course/details?course_instance=${classInstanceId}`,
       {
         method: "get",
       }
@@ -60,9 +101,31 @@ export default function StudentComparison() {
 
     if (response.status === 200) {
       console.log("GOOD REQUEST");
-      setStudents(data);
+      setPotentialStudents(data.students.results);
     }
   }, []);
+
+  const fetchAssignments = useCallback(
+    async (student_one_id: number, student_two_id: number) => {
+      //const params = new URLSearchParams({
+      //  course_instance: { cid },
+      //});
+      const response = await fetch(
+        `http://localhost:8000/api/assignment/compare?student_one=${student_one_id}&student_two=${student_two_id}`,
+        {
+          method: "get",
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.status === 200) {
+        console.log("GOOD REQUEST");
+        setPossibleAssignments(data);
+      }
+    },
+    []
+  );
 
   return (
     //The TextField accepts and returns a string written by the user, The dropdown returns an id correlating to a specific
@@ -76,7 +139,7 @@ export default function StudentComparison() {
           label="Age"
           onOpen={fetchClasses}
         >
-          {selectedClass?.map((value, index) => (
+          {potentialClasses?.map((value, index) => (
             <MenuItem key={index} value={value}>
               {value["name"]}
             </MenuItem>
@@ -85,46 +148,89 @@ export default function StudentComparison() {
       </FormControl>
       {/* <Dropdown isDisabled={false} items={list} dropdownLabel="Classes" /> */}
       <Stack direction="row">
-        <Dropdown
-          isDisabled={isDisabled}
-          items={studentList}
-          dropdownLabel="Select Student"
+        <Autocomplete
+          disablePortal
+          //input data stuff below
+          options={potentialStudents}
+          getOptionLabel={(option) =>
+            `${option.first_name} ${option.last_name}`
+          }
+          sx={{ width: 300 }}
+          onChange={(a, b) => {
+            if (b != null) {
+              onStudentASelect(b!.id);
+            } else {
+              onStudentASelect(-1);
+            }
+          }}
+          renderInput={(params) => (
+            <TextField {...params} label={"Student A"} color="primary" />
+          )}
         />
-        <Dropdown
-          isDisabled={isDisabled}
-          items={studentList}
-          dropdownLabel="Select a different student"
+
+        <Autocomplete
+          disablePortal
+          //input data stuff below
+          options={potentialStudents}
+          getOptionLabel={(option) =>
+            `${option.first_name} ${option.last_name}`
+          }
+          sx={{ width: 300 }}
+          onChange={(a, b) => {
+            if (b != null) {
+              onStudentBSelect(b!.id);
+            } else {
+              onStudentBSelect(-1);
+            }
+          }}
+          renderInput={(params) => (
+            <TextField {...params} label={"Student B"} color="primary" />
+          )}
         />
       </Stack>
+      {
+        //<Button
+        //  variant="outlined"
+        //  onClick={() => {
+        //    handleButtonClick();
+        //  }}
+        //>
+        //</Stack>  Select Students to compare
+        //</Button>
+      }
       <Typography variant="h5" gutterBottom>
         {"Overall - " + overall}
       </Typography>
-      <TableContainer component={Paper}>
-        <Table
-          sx={{ width: 650, justifyContent: "center" }}
-          aria-label="simple table"
-        >
-          <TableHead>
-            <TableRow>
-              <TableCell>Student Name</TableCell>
-              <TableCell>Relative</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {rows.map((row) => (
-              <TableRow
-                key={row.name}
-                sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-              >
-                <TableCell component="th" scope="row">
-                  {row.name}
-                </TableCell>
-                <TableCell>{row.similarity}</TableCell>
+      {renderTable && (
+        <TableContainer component={Paper}>
+          <Table
+            sx={{ width: 650, justifyContent: "center" }}
+            aria-label="simple table"
+          >
+            <TableHead>
+              <TableRow>
+                <TableCell>Student Name</TableCell>
+                <TableCell>Relative</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {possibleAssignments.map((row) => (
+                <TableRow
+                  key={row.title}
+                  sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                >
+                  <TableCell component="th" scope="row">
+                    {row.title}
+                  </TableCell>
+                  <TableCell>
+                    {row.similarity_pair.results.percentage}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
     </Stack>
   );
 }
