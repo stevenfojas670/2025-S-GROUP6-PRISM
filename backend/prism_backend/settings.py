@@ -32,7 +32,6 @@ CSRF_TRUSTED_ORIGINS = ["https://gpu.cs.unlv.edu"]
 CORS_ALLOW_ALL_ORIGINS = True  # For development only, Restrict in production.
 CORS_ALLOW_CREDENTIALS = True
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -72,7 +71,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    #  "django.middleware.csrf.CsrfViewMiddleware",
+    # "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -204,7 +203,7 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     # Globally requires authentication
     "DEFAULT_PERMISSION_CLASSES": [
-        # "rest_framework.permissions.IsAuthenticated",
+        "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "dj_rest_auth.jwt_auth.JWTCookieAuthentication",
@@ -230,9 +229,9 @@ SIMPLE_JWT = {
 REST_AUTH = {
     "LOGIN_SERIALIZER": "dj_rest_auth.serializers.LoginSerializer",
     "TOKEN_SERIALIZER": "dj_rest_auth.serializers.TokenSerializer",
-    "JWT_SERIALIZER": "prism_backend.serializers.CustomTokenObtainPairSerializer",
+    "JWT_SERIALIZER": "dj_rest_auth.serializers.JWTSerializer",
     "JWT_SERIALIZER_WITH_EXPIRATION": "dj_rest_auth.serializers.JWTSerializerWithExpiration",
-    "JWT_TOKEN_CLAIMS_SERIALIZER": "prism_backend.serializers.CustomTokenObtainPairSerializer",
+    "JWT_TOKEN_CLAIMS_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
     "USER_DETAILS_SERIALIZER": "dj_rest_auth.serializers.UserDetailsSerializer",
     "TOKEN_MODEL": "rest_framework.authtoken.models.Token",
     "TOKEN_CREATOR": "dj_rest_auth.utils.default_create_token",
