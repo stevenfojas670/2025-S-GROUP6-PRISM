@@ -32,6 +32,8 @@ export default function StudentComparison() {
   const [studentBBool, setStudentBBool] = useState(false);
   const [potentialStudents, setPotentialStudents] = useState<any[]>([]);
   const [renderTable, setRenderTable] = useState(false);
+  const [enableAutocomplete, setEnableAutocomplete] = useState(false);
+
   const onStudentASelect = (item: number | -1) => {
     if (item == -1) {
       setStudentABool(false);
@@ -40,6 +42,7 @@ export default function StudentComparison() {
       setSelectedStudentA(item);
     }
   };
+
   const onStudentBSelect = (item: number | -1) => {
     if (item == -1) {
       setStudentBBool(false);
@@ -48,6 +51,7 @@ export default function StudentComparison() {
       setSelectedStudentB(item);
     }
   };
+
   const handleButtonClick = () => {
     if (studentABool && studentBBool) {
       fetchAssignments(selectedStudentA, selectedStudentB);
@@ -56,17 +60,6 @@ export default function StudentComparison() {
       setRenderTable(false);
     }
   };
-  let studentList = [
-    { Label: "null", id: -1 },
-    { Label: "null2", id: -1 },
-  ];
-  let isDisabled = true;
-  let rows = [
-    { name: "Please select", similarity: 0 },
-    { name: "Different students", similarity: 0 },
-    { name: "From same class", similarity: 0 },
-  ];
-  let overall = 0;
 
   const fetchClasses = useCallback(async () => {
     //const params = new URLSearchParams({
@@ -146,10 +139,10 @@ export default function StudentComparison() {
           ))}
         </Select>
       </FormControl>
-      {/* <Dropdown isDisabled={false} items={list} dropdownLabel="Classes" /> */}
       <Stack direction="row">
         <Autocomplete
           disablePortal
+          disabled={!enableAutocomplete}
           //input data stuff below
           options={potentialStudents}
           getOptionLabel={(option) =>
@@ -170,6 +163,7 @@ export default function StudentComparison() {
 
         <Autocomplete
           disablePortal
+          disabled={!enableAutocomplete}
           //input data stuff below
           options={potentialStudents}
           getOptionLabel={(option) =>
@@ -199,7 +193,7 @@ export default function StudentComparison() {
         //</Button>
       }
       <Typography variant="h5" gutterBottom>
-        {"Overall - " + overall}
+        {"Overall - " + 0}
       </Typography>
       {renderTable && (
         <TableContainer component={Paper}>
