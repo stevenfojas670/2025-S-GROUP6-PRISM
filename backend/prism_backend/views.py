@@ -4,9 +4,14 @@ This module contains views for handling Google authentication
 and custom login functionality.
 """
 
-from .serializers import GoogleAuthSerializer
+from .serializers import (
+    GoogleAuthSerializer,
+    LoginSerializer,
+    CustomTokenObtainPairSerializer,
+)
 from dj_rest_auth.jwt_auth import set_jwt_cookies
-from dj_rest_auth.views import LoginView
+from dj_rest_auth.views import LoginView as DJLoginView
+from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.views import APIView
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -55,7 +60,7 @@ class GoogleAuthView(APIView):
         return response
 
 
-class CustomLoginView(LoginView):
+class CustomLoginView(DJLoginView):
     """Custom login view with throttling.
 
     Extends the default LoginView to define a custom throttle scope.
@@ -64,4 +69,18 @@ class CustomLoginView(LoginView):
         throttle_scope (str): Scope used for throttling login attempts.
     """
 
-    throttle_scope = "auth"
+    serializer_class = LoginSerializer
+
+    def get_response(self):
+        # Use the serializer's validated data
+        serializer = self.get_serializer(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        # Get the base response from parent
+        response = super().get_response()
+
+        # Add extra data to the response
+        response.data["user"]["professor_id"] = data.get("professor_id")
+
+        return response
