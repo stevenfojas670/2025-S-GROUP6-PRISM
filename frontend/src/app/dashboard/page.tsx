@@ -10,12 +10,13 @@
 "use client"
 import { Container, Typography, Button } from "@mui/material"
 import { SignOutButton } from "@/components/AuthenticationMethod"
-import { StudentComparison } from "@/student_comparison" // student comparison
-import { Alerts } from "@/app/alerts" // alerts
+//import { StudentComparison } from "@/student_comparison" // student comparison
+//import { Alerts } from "@/app/alerts" // alerts
 import { useCallback, useEffect, useState } from "react"
-import { useRouter } from "next/Navigation"
+import { useRouter } from "next/navigation"
 import type { User } from "@/types/index"
 import { easyFetch } from "@/utils/fetchWrapper"
+import { useAuth } from "@/context/AuthContext"
 
 // basic button layout -> need to acces how many sections a teacher has, their name and the class name -> create that many buttons/div containers to show
 // updated 3/25: added place holder buttons for now to get the styling done for future prs
@@ -38,6 +39,7 @@ import { easyFetch } from "@/utils/fetchWrapper"
 // first porition of dashboard is added from stevens pr #39 - features/authentication
 function Dashboard() {
 	const router = useRouter()
+	const { user } = useAuth()
 
 	const [courses, setCourses] = useState<any[]>([])
 	const [users, setUsers] = useState<User[]>([])
@@ -70,8 +72,8 @@ function Dashboard() {
 	useEffect(() => {
 		const fetchCourses = async () => {
 			try {
-				const response = await fetch(
-					"http://localhost:8000/api/course/sectionclassprof",
+				const response = await easyFetch(
+					"http://localhost:8000/api/course/courseinstances/",
 					{
 						method: "get",
 					}
@@ -80,7 +82,7 @@ function Dashboard() {
 				const data = await response.json()
 
 				if (response.ok) {
-					setCourses(data)
+					setCourses(data["results"])
 				}
 			} catch (error) {
 				console.error(error)
@@ -92,7 +94,7 @@ function Dashboard() {
 
 	const fetchAssignments = useCallback(async () => {
 		try {
-			const response = await fetch(
+			const response = await easyFetch(
 				`http://localhost:8000/api/assignment/assignments?assignment_number=${asNumber}&class_instance__name=${classInstance}`,
 				{
 					method: "get",
@@ -130,8 +132,7 @@ function Dashboard() {
 			{/* Main banner */}
 			<div>
 				<div className="Banner">
-					<button>menu</button>
-					<h1>"Hello, teacher name"</h1>
+					<Typography>{user?.first_name}</Typography>
 				</div>
 
 				{/* 2 buttons -> compare students, alerts */}

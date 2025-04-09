@@ -18,6 +18,8 @@ import {
 } from "@mui/material"
 import { SignInButton } from "@/components/AuthenticationMethod" // Use SignInButton component
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/context/AuthContext"
+import { easyFetch } from "@/utils/fetchWrapper"
 
 const LoginComponent: React.FC = () => {
 	const router = useRouter()
@@ -27,6 +29,8 @@ const LoginComponent: React.FC = () => {
 		type: "success" | "error"
 		text: string
 	} | null>(null)
+	const context = useAuth()
+
 	// Hydrated statee added to handle mismatched rendering
 	const [hydrated, setHydrated] = useState(false)
 
@@ -40,17 +44,16 @@ const LoginComponent: React.FC = () => {
 		event.preventDefault()
 
 		try {
-			const response = await fetch("http://localhost:8000/api/login", {
+			const response = await easyFetch("http://localhost:8000/api/login", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ username, password }),
-				credentials: "include",
 			})
 
 			const data = await response.json()
 
 			if (response.ok) {
-				// console.log("Logged in:", data)
+				context?.login(data["user"])
 				router.push("/dashboard")
 			}
 		} catch (err) {
