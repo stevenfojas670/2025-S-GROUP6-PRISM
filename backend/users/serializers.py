@@ -28,7 +28,7 @@ class UserSerializer(serializers.ModelSerializer):
         # we dont want to include is_admin because that would imply the user
         # will be able to change those values from its request (when they
         # create objects)
-        fields = ["email", "password", "first_name", "last_name"]
+        fields = ["id", "email", "password", "first_name", "last_name"]
 
         # a dictionary (wich is basically a JSON string) that allow us to provide extra metadata to the different fields to tell the django rest framework
         # things like do we want the field to be write only? read only? min-length? etc..
