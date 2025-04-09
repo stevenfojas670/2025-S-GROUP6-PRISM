@@ -75,7 +75,6 @@ const LoginComponent: React.FC = () => {
 
 			// if the response is good, route to dashboard. error out otherwise
 			if (response.ok) {
-				console.log(data["user"])
 				context?.login(data["user"])
 				router.push("/dashboard")
 			} else {
