@@ -53,6 +53,7 @@ const LoginComponent: React.FC = () => {
 			const data = await response.json()
 
 			if (response.ok) {
+				console.log(data["user"])
 				context?.login(data["user"])
 				router.push("/dashboard")
 			}
