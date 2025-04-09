@@ -96,7 +96,9 @@ function Dashboard() {
 			{/* Main banner */}
 			<div>
 				<div className="Banner">
-					<Typography>{user?.first_name}</Typography>
+					<Typography>Welcome {user?.first_name}</Typography>
+					<h1>Professor ID: {user?.professor_id}</h1>
+					<h1>User ID: {user?.pk}</h1>
 				</div>
 
 				{/* 2 buttons -> compare students, alerts */}
