@@ -2,8 +2,11 @@
 import { useCallback, useEffect, useState } from "react"
 import { Container, Typography, Button, Box } from "@mui/material"
 import { easyFetch } from "@/utils/fetchWrapper"
-
-interface AssignmentResposne {
+import Plot from "react-plotly.js"
+/**
+ * This will be used for pagination if necessary
+ */
+interface AssignmentResponse {
 	count: number
 	next: null
 	previous: null
@@ -24,6 +27,8 @@ interface AssignmentItem {
 }
 
 export default function Assignments() {
+	const [assignments, setAssignments] = useState<AssignmentItem[]>([])
+
 	useEffect(() => {
 		const fetchAssignments = async () => {
 			try {
@@ -53,16 +58,15 @@ export default function Assignments() {
 		fetchAssignments()
 	}, [])
 
-	const [assignments, setAssignments] = useState<AssignmentItem[]>([])
-
 	return (
 		<Box>
 			<Typography>Assignments</Typography>
-			<Container>
+			<Box>
 				{assignments.map((assignment) => (
 					<Button key={assignment.id}>{assignment.title}</Button>
 				))}
-			</Container>
+			</Box>
+			<Plot></Plot>
 		</Box>
 	)
 }
