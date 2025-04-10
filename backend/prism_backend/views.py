@@ -70,6 +70,17 @@ class CustomLoginView(DJLoginView):
     serializer_class = LoginSerializer
 
     def get_response(self):
+        """
+        Generate the HTTP response for a successful login.
+
+        This method extends the default behavior of the `get_response` method
+        from the parent `LoginView` to include additional user-specific data,
+        such as the `professor_id`, in the response.
+
+        Returns:
+            Response: An HTTP response object containing the login data, including
+            JWT tokens and user details with the `professor_id` field.
+        """
         # Use the serializer's validated data
         serializer = self.get_serializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
