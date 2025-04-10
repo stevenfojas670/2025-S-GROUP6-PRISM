@@ -50,6 +50,7 @@ class CourseInstancesViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling CourseInstances entries."""
 
     queryset = CourseInstances.objects.all()
+    course_catalog = CourseCatalogSerializer()
     serializer_class = CourseInstancesSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [
@@ -57,7 +58,7 @@ class CourseInstancesViewSet(viewsets.ModelViewSet, CachedViewMixin):
         filters.OrderingFilter,
         filters.SearchFilter,
     ]
-    filterset_fields = ["section_number", "canvas_course_id"]
+    filterset_fields = ["section_number", "canvas_course_id", "professor"]
     ordering_fields = ["section_number"]
     ordering = ["section_number"]
     search_fields = ["course_catalog__course_title"]
