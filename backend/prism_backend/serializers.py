@@ -100,8 +100,7 @@ class LoginSerializer(DJLoginSerializer):
     """Extending the functionality of the LoginSerializer from dj-rest-auth to include the professor id in the response."""
 
     def validate(self, attrs):
-        """This method simply extends the functionality of the dj-rest-auth login serializer
-        by including the professor_id in the login response.
+        """Add professor_id to the JWT payload.
 
         Args:
             attrs (self, attrs): These self is simply for the request and attrs holds the
@@ -111,7 +110,6 @@ class LoginSerializer(DJLoginSerializer):
         Returns:
             _type_: data object that contains the login response.
         """
-
         data = super().validate(attrs)
 
         user = data.get("user")
@@ -128,7 +126,7 @@ class LoginSerializer(DJLoginSerializer):
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """
-    Custom serializer for obtaining JWT tokens with additional user-specific data.
+    Customize the process of obtaining JWT tokens by adding user-specific data.
 
     This serializer extends the functionality of the `TokenObtainPairSerializer` from
     the `rest_framework_simplejwt` package by including the `professor_id` in the JWT payload
@@ -136,7 +134,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     Methods:
         get_token(cls, user):
-            Overrides the default `get_token` method to add the `professor_id` to the token payload.
+            Override the default `get_token` method to add the `professor_id` to the token payload.
 
     Attributes:
         None
@@ -145,8 +143,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         """
-        Extends the functionality of the `get_token` method from `TokenObtainPairSerializer`
-        by adding the `professor_id` to the JWT payload.
+        Add the `professor_id` to the JWT payload if the user is associated with a professor record.
 
         Args:
             user (User): The user instance for whom the token is being generated.
