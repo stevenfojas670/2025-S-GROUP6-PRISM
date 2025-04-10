@@ -59,6 +59,7 @@ export default function Assignments() {
 		fetchAssignments()
 	}, [])
 
+
 	return (
 		<Box>
 			<Typography variant="h4" gutterBottom>

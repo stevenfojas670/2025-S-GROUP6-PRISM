@@ -59,7 +59,7 @@ class CourseInstancesViewSet(viewsets.ModelViewSet, CachedViewMixin):
         filters.OrderingFilter,
         filters.SearchFilter,
     ]
-    filterset_fields = ["section_number", "canvas_course_id", "professor", "semester"]
+    filterset_fields = ["section_number", "canvas_course_id"]
     ordering_fields = ["section_number"]
     ordering = ["section_number"]
     search_fields = ["course_catalog__course_title"]
