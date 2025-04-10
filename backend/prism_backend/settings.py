@@ -13,6 +13,7 @@ from pathlib import Path
 from decouple import config
 from datetime import timedelta
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -28,10 +29,10 @@ DEBUG = config("DEBUG", default=False, cast=bool)
 
 # ALLOWED_HOSTS = ['10.238.2.238', 'localhost', '.10.', '.131.']
 ALLOWED_HOSTS = ["*"]
-CSRF_TRUSTED_ORIGINS = ["https://gpu.cs.unlv.edu"]
-CORS_ALLOW_ALL_ORIGINS = True  # For development only, Restrict in production.
+CSRF_TRUSTED_ORIGINS = ["https://gpu.cs.unlv.edu", "http://localhost:3000"]
+CORS_ALLOWED_ORIGINS = ["http://localhost:3000"]
+CORS_ALLOW_ALL_ORIGINS = False  # For development only, Restrict in production.
 CORS_ALLOW_CREDENTIALS = True
-
 
 # Application definition
 
@@ -75,6 +76,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # 3rd party or local middleware
     "allauth.account.middleware.AccountMiddleware",
 ]
 
@@ -93,6 +95,65 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 SITE_ID = 1
+
+# asssinging our custom user model to be the defaulkt user model
+AUTH_USER_MODEL = "users.User"
+
+# setting up the automatic documentation, this is the schema we will use openapi
+REST_FRAMEWORK = {
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.OrderingFilter",
+        "rest_framework.filters.SearchFilter",
+    ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # Globally requires authentication
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "dj_rest_auth.jwt_auth.JWTCookieAuthentication",
+    ],
+    "NUM_PROXIES": 0,  # In prod, change this to 1, since we are using NGINX. This will allow us to view the client IP
+    # Use these as global throttlers
+    # "DEFAULT_THROTTLE_CLASSES": [
+    #     "rest_framework.throttling.ScopedRateThrottle",
+    # ],
+    # "DEFAULT_THROTTLE_RATES": {
+    #     "auth": "1000/min",
+    #     "dj_rest_auth": "1000/min",
+    # },  # In prod, reduce this number or change as you see fit
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+}
+
+REST_AUTH = {
+    "LOGIN_SERIALIZER": "dj_rest_auth.serializers.LoginSerializer",
+    "TOKEN_SERIALIZER": "dj_rest_auth.serializers.TokenSerializer",
+    "JWT_SERIALIZER": "dj_rest_auth.serializers.JWTSerializer",
+    "JWT_SERIALIZER_WITH_EXPIRATION": "dj_rest_auth.serializers.JWTSerializerWithExpiration",
+    "JWT_TOKEN_CLAIMS_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
+    "USER_DETAILS_SERIALIZER": "dj_rest_auth.serializers.UserDetailsSerializer",
+    "TOKEN_MODEL": "rest_framework.authtoken.models.Token",
+    "TOKEN_CREATOR": "dj_rest_auth.utils.default_create_token",
+    "SESSION_LOGIN": False,
+    "USE_JWT": True,
+    "JWT_AUTH_COOKIE": "prism-access",
+    "JWT_AUTH_REFRESH_COOKIE": "prism-refresh",
+    "JWT_AUTH_REFRESH_COOKIE_PATH": "/",
+    "JWT_AUTH_SECURE": False,  # Set to True for production
+    "JWT_AUTH_HTTPONLY": True,
+    "JWT_AUTH_SAMESITE": "Lax",  # Change to lax if running on the same port
+    "JWT_AUTH_RETURN_EXPIRATION": True,
+    "JWT_AUTH_COOKIE_USE_CSRF": False,  # Set to True for extra protection in Prod
+    "JWT_AUTH_COOKIE_ENFORCE_CSRF_ON_UNAUTHENTICATED": False,
+}
 
 ROOT_URLCONF = "prism_backend.urls"
 
@@ -192,61 +253,6 @@ CHANNEL_LAYERS = {
 
 # asssinging our custom user model to be the defaulkt user model
 AUTH_USER_MODEL = "users.User"
-
-# setting up the automatic documentation, this is the schema we will use openapi
-REST_FRAMEWORK = {
-    "DEFAULT_FILTER_BACKENDS": [
-        "django_filters.rest_framework.DjangoFilterBackend",
-        "rest_framework.filters.OrderingFilter",
-        "rest_framework.filters.SearchFilter",
-    ],
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-    # Globally requires authentication
-    "DEFAULT_PERMISSION_CLASSES": [
-        # "rest_framework.permissions.IsAuthenticated",
-    ],
-    "DEFAULT_AUTHENTICATION_CLASSES": [
-        "dj_rest_auth.jwt_auth.JWTCookieAuthentication",
-    ],
-    # "NUM_PROXIES": 0,  # In prod, change this to 1, since we are using NGINX. This will allow us to view the client IP
-    # Use these as global throttlers
-    # "DEFAULT_THROTTLE_CLASSES": [
-    #     "rest_framework.throttling.ScopedRateThrottle",
-    # ],
-    # "DEFAULT_THROTTLE_RATES": {
-    #     "auth": "1000/min",
-    #     "dj_rest_auth": "1000/min",
-    # },  # In prod, reduce this number or change as you see fit
-}
-
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-    "ROTATE_REFRESH_TOKENS": True,
-    "BLACKLIST_AFTER_ROTATION": True,
-}
-
-REST_AUTH = {
-    "LOGIN_SERIALIZER": "dj_rest_auth.serializers.LoginSerializer",
-    "TOKEN_SERIALIZER": "dj_rest_auth.serializers.TokenSerializer",
-    "JWT_SERIALIZER": "prism_backend.serializers.CustomTokenObtainPairSerializer",
-    "JWT_SERIALIZER_WITH_EXPIRATION": "dj_rest_auth.serializers.JWTSerializerWithExpiration",
-    "JWT_TOKEN_CLAIMS_SERIALIZER": "prism_backend.serializers.CustomTokenObtainPairSerializer",
-    "USER_DETAILS_SERIALIZER": "dj_rest_auth.serializers.UserDetailsSerializer",
-    "TOKEN_MODEL": "rest_framework.authtoken.models.Token",
-    "TOKEN_CREATOR": "dj_rest_auth.utils.default_create_token",
-    "SESSION_LOGIN": False,
-    "USE_JWT": True,
-    "JWT_AUTH_COOKIE": "prism-access",
-    "JWT_AUTH_REFRESH_COOKIE": "prism-refresh",
-    "JWT_AUTH_REFRESH_COOKIE_PATH": "/",
-    "JWT_AUTH_SECURE": False,  # Set to True for production
-    "JWT_AUTH_HTTPONLY": True,
-    "JWT_AUTH_SAMESITE": "Lax",  # Change to lax if running on the same port
-    "JWT_AUTH_RETURN_EXPIRATION": True,
-    "JWT_AUTH_COOKIE_USE_CSRF": False,  # Set to True for extra protection in Prod
-    "JWT_AUTH_COOKIE_ENFORCE_CSRF_ON_UNAUTHENTICATED": False,
-}
 
 CACHES = {
     "default": {

@@ -42,10 +42,36 @@ function Dashboard() {
 	const { user } = useAuth()
 
 	const [courses, setCourses] = useState<any[]>([])
+	const [users, setUsers] = useState<User[]>([])
+	const [user, setUser] = useState<User | null>(null)
 	const [loading, setLoading] = useState<Boolean>(false)
 	const [asNumber, setAsNumber] = useState("")
 	const [classInstance, setClassInstance] = useState("")
 	const [assignments, setAssignments] = useState<any[]>([])
+
+	const fetchUsers = useCallback(async () => {
+		setLoading(true)
+		try {
+			const response = await easyFetch(
+				"http://localhost:8000/api/user/users/",
+				{
+					method: "get",
+				}
+			)
+
+			const data = await response.json()
+
+			if (response.ok) {
+				setUsers(data)
+			} else {
+				console.error("Failed to fetch users.")
+			}
+		} catch (err) {
+			console.error(err)
+		} finally {
+			setLoading(false)
+		}
+	}, [])
 
 	useEffect(() => {
 		const fetchCourses = async () => {
