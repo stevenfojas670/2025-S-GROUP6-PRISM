@@ -59,6 +59,7 @@ export default function Assignments() {
 		fetchAssignments()
 	}, [])
 
+	const [assignments, setAssignments] = useState<AssignmentItem[]>([])
 
 	return (
 		<Box>
