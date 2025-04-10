@@ -1,12 +1,33 @@
 "use client"
 import { useCallback, useEffect, useState } from "react"
-import { Container, Typography } from "@mui/material"
+import { Container, Typography, Button } from "@mui/material"
+import { easyFetch } from "@/utils/fetchWrapper"
+
+interface AssignmentResposne {
+	count: number
+	next: null
+	previous: null
+}
+
+interface AssignmentItem {
+	id: number
+	assignment_number: number
+	title: string
+	lock_date: string | null
+	pdf_filepath: string | null
+	has_base_code: boolean | null
+	moss_report_directory_path: string | null
+	bulk_ai_directory_path: string | null
+	language: string | null
+	has_policy: boolean | null
+	course_instance: number
+}
 
 export default function Assignments() {
 	useEffect(() => {
 		const fetchAssignments = async () => {
 			try {
-				const response = await fetch(
+				const response = await easyFetch(
 					"http://localhost:8000/api/assignment/assignments",
 					{
 						method: "get",
@@ -18,7 +39,7 @@ export default function Assignments() {
 				if (response.ok) {
 					console.log("Good response")
 
-					setAssignments(data)
+					setAssignments(data.results)
 				}
 			} catch (error) {
 				console.error(error)
@@ -28,21 +49,14 @@ export default function Assignments() {
 		fetchAssignments()
 	}, [])
 
-	const [assignments, setAssignments] = useState<any[]>([])
+	const [assignments, setAssignments] = useState<AssignmentItem[]>([])
 
 	return (
 		<Container>
 			<Typography>Assignments</Typography>
 			<Container>
-				{assignments.map((assignment, index) => (
-					<Container key={index} sx={{ mb: 3 }}>
-						<Typography>Assignment ID: {assignment.id}</Typography>
-						<Typography>
-							Assignment Number: {assignment.assignment_number}
-						</Typography>
-						<Typography>Title: {assignment.title}</Typography>
-						<Typography>Due Date: {assignment.due_date}</Typography>
-					</Container>
+				{assignments.map((assignment) => (
+					<Button key={assignment.id}>{assignment.title}</Button>
 				))}
 			</Container>
 		</Container>
