@@ -36,7 +36,13 @@ class AssignmentsViewSet(viewsets.ModelViewSet, CachedViewMixin):
         filters.OrderingFilter,
         filters.SearchFilter,
     ]
-    filterset_fields = ["assignment_number", "language", "has_base_code", "has_policy"]
+    filterset_fields = [
+        "assignment_number",
+        "language",
+        "has_base_code",
+        "has_policy",
+        "course_instance",
+    ]
     ordering_fields = ["assignment_number", "lock_date"]
     ordering = ["assignment_number"]
     search_fields = ["title", "pdf_filepath", "moss_report_directory_path"]
