@@ -39,11 +39,17 @@ class AssignmentsViewSet(viewsets.ModelViewSet, CachedViewMixin):
     filterset_fields = [
         "course_catalog",
         "semester",
+        
         "assignment_number",
+       
         "language",
+       
         "has_base_code",
+       
         "has_policy",
         "due_date",
+    ,
+        "course_instance",
     ]
     ordering_fields = ["assignment_number", "due_date"]
     ordering = ["assignment_number"]

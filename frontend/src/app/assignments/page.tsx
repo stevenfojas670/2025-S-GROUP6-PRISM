@@ -1,6 +1,6 @@
 "use client"
 import { useCallback, useEffect, useState } from "react"
-import { Container, Typography, Button } from "@mui/material"
+import { Container, Typography, Button, Box } from "@mui/material"
 import { easyFetch } from "@/utils/fetchWrapper"
 
 interface AssignmentResposne {
@@ -27,8 +27,12 @@ export default function Assignments() {
 	useEffect(() => {
 		const fetchAssignments = async () => {
 			try {
+				const queryParams = new URLSearchParams({
+					course_instance: String(3),
+				})
+
 				const response = await easyFetch(
-					"http://localhost:8000/api/assignment/assignments",
+					`http://localhost:8000/api/assignment/assignments?${queryParams}`,
 					{
 						method: "get",
 					}
@@ -52,13 +56,13 @@ export default function Assignments() {
 	const [assignments, setAssignments] = useState<AssignmentItem[]>([])
 
 	return (
-		<Container>
+		<Box>
 			<Typography>Assignments</Typography>
 			<Container>
 				{assignments.map((assignment) => (
 					<Button key={assignment.id}>{assignment.title}</Button>
 				))}
 			</Container>
-		</Container>
+		</Box>
 	)
 }
