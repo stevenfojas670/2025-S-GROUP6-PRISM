@@ -7,11 +7,9 @@ and custom login functionality.
 from .serializers import (
     GoogleAuthSerializer,
     LoginSerializer,
-    CustomTokenObtainPairSerializer,
 )
 from dj_rest_auth.jwt_auth import set_jwt_cookies
 from dj_rest_auth.views import LoginView as DJLoginView
-from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.views import APIView
 from rest_framework.request import Request
 from rest_framework.response import Response
