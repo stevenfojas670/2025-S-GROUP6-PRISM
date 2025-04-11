@@ -20,9 +20,5 @@ export function SignInButton() {
 export function SignOutButton() {
 	const router = useRouter()
 
-	return (
-		<Button variant="outlined" onClick={() => router.push("/logout")}>
-			Sign Out
-		</Button>
-	)
+	return <span onClick={() => router.push("/logout")}>Sign Out</span>
 }
