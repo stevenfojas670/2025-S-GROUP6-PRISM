@@ -8,7 +8,7 @@
 // this is from stevens pr #39 - freatures/authentication
 
 "use client"
-import { Container, Typography, Button } from "@mui/material"
+import { Typography, Button, Box } from "@mui/material"
 import { SignOutButton } from "@/components/AuthenticationMethod"
 import { StudentComparison } from "@/student_comparison" // student comparison
 import { Alerts } from "@/app/alerts" // alerts
@@ -16,6 +16,7 @@ import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/Navigation"
 import type { User } from "@/types/index"
 import { easyFetch } from "@/utils/fetchWrapper"
+import { useAuth } from "@/context/AuthContext"
 
 // basic button layout -> need to acces how many sections a teacher has, their name and the class name -> create that many buttons/div containers to show
 // updated 3/25: added place holder buttons for now to get the styling done for future prs
@@ -88,7 +89,7 @@ function Dashboard() {
 	}, [])
 
 	return (
-		<Container>
+		<Box>
 			<SignOutButton />
 
 			{/* Main banner */}
@@ -115,14 +116,7 @@ function Dashboard() {
 					))}
 				</div>
 			</div>
-			<Container>
-				{courses.map((course, index) => (
-					<Container key={index}>
-						<Button onClick={fetchAssignments}>{course.section_number}</Button>
-					</Container>
-				))}
-			</Container>
-		</Container>
+		</Box>
 	)
 }
 

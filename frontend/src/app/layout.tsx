@@ -18,7 +18,9 @@ export default function RootLayout({ children }: Props) {
 				<ThemeProvider theme={theme}>
 					{/* CssBaseline kickstart an elegant, consistent, and simple baseline to build upon. */}
 					<CssBaseline />
-					<Providers>{children}</Providers>
+					<Providers>
+						<AppLayoutWrapper>{children}</AppLayoutWrapper>
+					</Providers>
 				</ThemeProvider>
 			</body>
 		</html>

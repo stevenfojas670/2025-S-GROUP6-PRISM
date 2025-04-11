@@ -59,10 +59,36 @@ class CourseInstancesViewSet(viewsets.ModelViewSet, CachedViewMixin):
         filters.OrderingFilter,
         filters.SearchFilter,
     ]
-    filterset_fields = ["section_number", "canvas_course_id"]
+    filterset_fields = ["section_number", "canvas_course_id", "professor", "semester"]
     ordering_fields = ["section_number"]
     ordering = ["section_number"]
     search_fields = ["course_catalog__course_title"]
+
+    def get_queryset(self):
+        """
+        - Extending the functionality of the get_queryset to retrieve courses by semester id
+        """
+        # Just gets the queryset defined at the top queryset = CourseInstances.objects.all()
+        queryset = super().get_queryset()
+
+        # Storing the HTTP Request sent from the client
+        request = self.request
+
+        # Retrieving the semester_id from the request
+        semester_id = request.query_params.get("semester_id")
+
+        # Need to check if the user is logged in by checking if the professor id is in the jwt token
+        try:
+            professor_id = request.user.professors.id
+        except Professors.DoesNotExist:
+            return queryset.none()  # Not a professor
+
+        # We need to query all courses by professor id
+        # Then we need to determine which courses have the semester id we passed
+        if semester_id:
+            return queryset.filter(
+                professor_id=professor_id, semester_id=semester_id
+            ).distinct()
 
 
 class SemesterViewSet(viewsets.ModelViewSet, CachedViewMixin):
@@ -111,6 +137,23 @@ class SemesterViewSet(viewsets.ModelViewSet, CachedViewMixin):
 
         # Otherwise return all semesters the professor has taught in
         return queryset.filter(courseinstances__professor__id=professor_id).distinct()
+
+
+class CourseAssignmentCollaborationViewSet(viewsets.ModelViewSet, CachedViewMixin):
+    """ViewSet for handling CourseAssignmentCollaboration entries."""
+
+    queryset = CourseAssignmentCollaboration.objects.all()
+    serializer_class = CourseAssignmentCollaborationSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+        filters.SearchFilter,
+    ]
+    filterset_fields = ["assignment", "course_instance"]
+    ordering_fields = ["assignment", "course_instance"]
+    ordering = ["assignment"]
+    search_fields = []
 
 
 class StudentsViewSet(viewsets.ModelViewSet, CachedViewMixin):
