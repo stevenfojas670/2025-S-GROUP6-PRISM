@@ -5,7 +5,6 @@ import CssBaseline from "@mui/material/CssBaseline"
 import theme from "../theme"
 import InitColorSchemeScript from "@mui/material/InitColorSchemeScript"
 import Providers from "@/components/Providers"
-import Layout from "@/components/Layout"
 
 interface Props {
 	children: React.ReactNode
@@ -19,9 +18,7 @@ export default function RootLayout({ children }: Props) {
 				<ThemeProvider theme={theme}>
 					{/* CssBaseline kickstart an elegant, consistent, and simple baseline to build upon. */}
 					<CssBaseline />
-					<Providers>
-						<Layout>{children}</Layout>
-					</Providers>
+					<Providers>{children}</Providers>
 				</ThemeProvider>
 			</body>
 		</html>
