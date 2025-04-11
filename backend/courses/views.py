@@ -3,6 +3,7 @@
 from rest_framework import filters, viewsets
 from django_filters.rest_framework import DjangoFilterBackend
 from prism_backend.mixins import CachedViewMixin
+from rest_framework.request import Request
 
 from .models import (
     CourseCatalog,
@@ -60,10 +61,36 @@ class CourseInstancesViewSet(viewsets.ModelViewSet, CachedViewMixin):
         filters.OrderingFilter,
         filters.SearchFilter,
     ]
-    filterset_fields = ["section_number", "canvas_course_id", "professor"]
+    filterset_fields = ["section_number", "canvas_course_id", "professor", "semester"]
     ordering_fields = ["section_number"]
     ordering = ["section_number"]
     search_fields = ["course_catalog__course_title"]
+
+    def get_queryset(self):
+        """
+        - Extending the functionality of the get_queryset to retrieve courses by semester id
+        """
+        # Just gets the queryset defined at the top queryset = CourseInstances.objects.all()
+        queryset = super().get_queryset()
+
+        # Storing the HTTP Request sent from the client
+        request = self.request
+
+        # Retrieving the semester_id from the request
+        semester_id = request.query_params.get("semester_id")
+
+        # Need to check if the user is logged in by checking if the professor id is in the jwt token
+        try:
+            professor_id = request.user.professors.id
+        except Professors.DoesNotExist:
+            return queryset.none()  # Not a professor
+
+        # We need to query all courses by professor id
+        # Then we need to determine which courses have the semester id we passed
+        if semester_id:
+            return queryset.filter(
+                professor_id=professor_id, semester_id=semester_id
+            ).distinct()
 
 
 class CoursesSemesterViewSet(viewsets.ModelViewSet, CachedViewMixin):
@@ -81,6 +108,37 @@ class CoursesSemesterViewSet(viewsets.ModelViewSet, CachedViewMixin):
     ordering_fields = ["year"]
     ordering = ["year"]
     search_fields = ["name", "term", "session"]
+
+    def get_queryset(self):
+        """
+        Returns semesters taught by a professor.
+
+        - If `semester_id` is provided, return that semester (only if taught by the professor).
+        - If not, return all semesters the professor has taught in.
+        """
+        queryset = super().get_queryset()
+        request = self.request
+        semester_id = request.query_params.get("semester_id")
+
+        # Determine professor ID from query param or authenticated user
+        professor_id = request.query_params.get("professor_id")
+        if not professor_id:
+            try:
+                professor_id = request.user.professors.id
+            except Professors.DoesNotExist:
+                return queryset.none()  # Not a professor
+
+        if not professor_id:
+            return queryset.none()  # No professor context
+
+        # If a specific semester ID is passed, return that one if linked to this professor
+        if semester_id:
+            return queryset.filter(
+                id=semester_id, courseinstances__professor__id=professor_id
+            ).distinct()
+
+        # Otherwise return all semesters the professor has taught in
+        return queryset.filter(courseinstances__professor__id=professor_id).distinct()
 
 
 class CourseAssignmentCollaborationViewSet(viewsets.ModelViewSet, CachedViewMixin):

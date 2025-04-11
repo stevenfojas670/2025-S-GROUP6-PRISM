@@ -8,14 +8,10 @@
 // this is from stevens pr #39 - freatures/authentication
 
 "use client"
-import { Container, Typography, Button } from "@mui/material"
+import { Typography, Button, Box } from "@mui/material"
 import { SignOutButton } from "@/components/AuthenticationMethod"
-//import { StudentComparison } from "@/student_comparison" // student comparison
-//import { Alerts } from "@/app/alerts" // alerts
-import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import type { User } from "@/types/index"
-import { easyFetch } from "@/utils/fetchWrapper"
 import { useAuth } from "@/context/AuthContext"
 
 // basic button layout -> need to acces how many sections a teacher has, their name and the class name -> create that many buttons/div containers to show
@@ -41,56 +37,8 @@ function Dashboard() {
 	const router = useRouter()
 	const { user } = useAuth()
 
-	const [courses, setCourses] = useState<any[]>([])
-	const [loading, setLoading] = useState<Boolean>(false)
-	const [asNumber, setAsNumber] = useState("")
-	const [classInstance, setClassInstance] = useState("")
-	const [assignments, setAssignments] = useState<any[]>([])
-
-	useEffect(() => {
-		const fetchCourses = async () => {
-			try {
-				const response = await easyFetch(
-					"http://localhost:8000/api/course/courseinstances/",
-					{
-						method: "get",
-					}
-				)
-
-				const data = await response.json()
-
-				if (response.ok) {
-					setCourses(data["results"])
-				}
-			} catch (error) {
-				console.error(error)
-			}
-		}
-
-		fetchCourses()
-	}, [])
-
-	const fetchAssignments = useCallback(async () => {
-		try {
-			const response = await easyFetch(
-				`http://localhost:8000/api/assignment/assignments?assignment_number=${asNumber}&class_instance__name=${classInstance}`,
-				{
-					method: "get",
-				}
-			)
-
-			const data = await response.json()
-
-			if (response.ok) {
-				setAssignments(data)
-			}
-		} catch (error) {
-			console.error(error)
-		}
-	}, [])
-
 	return (
-		<Container>
+		<Box>
 			<SignOutButton />
 
 			{/* Main banner */}
@@ -118,14 +66,7 @@ function Dashboard() {
 					))}
 				</div>
 			</div>
-			<Container>
-				{courses.map((course, index) => (
-					<Container key={index}>
-						<Button onClick={fetchAssignments}>{course.section_number}</Button>
-					</Container>
-				))}
-			</Container>
-		</Container>
+		</Box>
 	)
 }
 
