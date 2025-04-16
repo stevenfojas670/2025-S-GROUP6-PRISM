@@ -20,6 +20,11 @@ export default function LeftPanel() {
 
 	const [semOpen, setSemOpen] = useState<boolean>(false)
 	const [semesters, setSemesters] = useState<Semester[]>([])
+	const [semesterId, setSemesterId] = useState<number | null>(null)
+
+	const handleSemesterClick = async (semesterId: number) => {
+		router.push(`/courses?semester=${semesterId}`)
+	}
 
 	useEffect(() => {
 		const fetchSemesters = async () => {
@@ -53,7 +58,9 @@ export default function LeftPanel() {
 					<List component="div" disablePadding>
 						{semesters.map((semester: Semester) => (
 							<React.Fragment key={semester.id}>
-								<ListItemButton>
+								<ListItemButton
+									onClick={() => handleSemesterClick(semester.id)}
+								>
 									<ListItemText>{semester.name}</ListItemText>
 								</ListItemButton>
 								<Divider />
