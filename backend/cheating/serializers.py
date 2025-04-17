@@ -83,6 +83,8 @@ class SubmissionSimilarityPairsSerializer(serializers.ModelSerializer):
 
     submissions = asSerializers.SubmissionsSerializer()
 
+    submissions = asSerializers.SubmissionsSerializer()
+
     class Meta:
         """Meta options for SubmissionSimilarityPairsSerializer.
 
