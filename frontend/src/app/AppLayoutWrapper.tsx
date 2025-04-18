@@ -1,6 +1,6 @@
 "use client"
 
-import { usePathname } from "next/navigation"
+import { useAuth } from "@/context/AuthContext"
 import { Box, AppBar, Toolbar, Typography, Button } from "@mui/material"
 import { SignOutButton } from "@/components/AuthenticationMethod"
 import LeftPanel from "@/components/LeftPanel"
@@ -11,10 +11,9 @@ interface Props {
 }
 
 export default function AppLayoutWrapper({ children }: Props) {
-	const pathname = usePathname()
-	const isAuthPage = pathname === "/login/"
+	const { user } = useAuth()
 
-	if (isAuthPage) return children
+	if (user === null) return children
 
 	return (
 		<Box

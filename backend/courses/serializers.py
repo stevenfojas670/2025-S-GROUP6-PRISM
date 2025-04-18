@@ -80,6 +80,8 @@ class StudentsSerializer(serializers.ModelSerializer):
 class StudentEnrollmentsSerializer(serializers.ModelSerializer):
     """Serializer for the StudentEnrollments model."""
 
+    students = StudentsSerializer()
+
     class Meta:
         """Meta options for StudentEnrollmentsSerializer.
 
