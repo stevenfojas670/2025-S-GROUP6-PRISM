@@ -17,9 +17,12 @@ export default function Courses() {
 	const [courses, setCourses] = useState<Course[]>([])
 
 	useEffect(() => {
-		if (!semesterId) return
+		if (!(semesterId && user?.professor_id)) return
 		const loadCourses = async () => {
-			const data = await GetCourses(Number(semesterId))
+			const data = await GetCourses(
+				Number(semesterId),
+				Number(user?.professor_id)
+			)
 			if ("results" in data) {
 				setCourses(data.results)
 			} else {

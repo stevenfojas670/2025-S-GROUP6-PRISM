@@ -66,32 +66,6 @@ class CourseInstancesViewSet(viewsets.ModelViewSet, CachedViewMixin):
     ordering = ["section_number"]
     search_fields = ["course_catalog__course_title"]
 
-    def get_queryset(self):
-        """
-        - Extending the functionality of the get_queryset to retrieve courses by semester id
-        """
-        # Just gets the queryset defined at the top queryset = CourseInstances.objects.all()
-        queryset = super().get_queryset()
-
-        # Storing the HTTP Request sent from the client
-        request = self.request
-
-        # Retrieving the semester_id from the request
-        semester_id = request.query_params.get("semester_id")
-
-        # Need to check if the user is logged in by checking if the professor id is in the jwt token
-        try:
-            professor_id = request.user.professors.id
-        except Professors.DoesNotExist:
-            return queryset.none()  # Not a professor
-
-        # We need to query all courses by professor id
-        # Then we need to determine which courses have the semester id we passed
-        if semester_id:
-            return queryset.filter(
-                professor_id=professor_id, semester_id=semester_id
-            ).distinct()
-
 
 class CoursesSemesterViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling CoursesSemester entries."""
