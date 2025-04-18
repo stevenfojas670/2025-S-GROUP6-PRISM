@@ -4,6 +4,7 @@ from rest_framework import filters, viewsets
 from django_filters.rest_framework import DjangoFilterBackend
 from prism_backend.mixins import CachedViewMixin
 from rest_framework.request import Request
+from rest_framework.request import Request
 
 from .models import (
     CourseCatalog,
@@ -52,6 +53,7 @@ class CourseInstancesViewSet(viewsets.ModelViewSet, CachedViewMixin):
 
     queryset = CourseInstances.objects.all()
     course_catalog = CourseCatalogSerializer()
+    course_catalog = CourseCatalogSerializer()
     serializer_class = CourseInstancesSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [
@@ -59,6 +61,7 @@ class CourseInstancesViewSet(viewsets.ModelViewSet, CachedViewMixin):
         filters.OrderingFilter,
         filters.SearchFilter,
     ]
+    filterset_fields = ["section_number", "canvas_course_id", "professor", "semester"]
     filterset_fields = ["section_number", "canvas_course_id", "professor", "semester"]
     ordering_fields = ["section_number"]
     ordering = ["section_number"]
@@ -111,6 +114,23 @@ class SemesterViewSet(viewsets.ModelViewSet, CachedViewMixin):
 
         # Otherwise return all semesters the professor has taught in
         return queryset.filter(courseinstances__professor__id=professor_id).distinct()
+
+
+class CourseAssignmentCollaborationViewSet(viewsets.ModelViewSet, CachedViewMixin):
+    """ViewSet for handling CourseAssignmentCollaboration entries."""
+
+    queryset = CourseAssignmentCollaboration.objects.all()
+    serializer_class = CourseAssignmentCollaborationSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+        filters.SearchFilter,
+    ]
+    filterset_fields = ["assignment", "course_instance"]
+    ordering_fields = ["assignment", "course_instance"]
+    ordering = ["assignment"]
+    search_fields = []
 
 
 class StudentsViewSet(viewsets.ModelViewSet, CachedViewMixin):
