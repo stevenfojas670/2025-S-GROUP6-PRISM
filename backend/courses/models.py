@@ -7,7 +7,6 @@ classes, and semesters with constraints to ensure data integrity.
 
 from django.db import models
 from django.conf import settings
-from assignments.models import Assignments
 
 
 class CourseCatalog(models.Model):
@@ -112,33 +111,6 @@ class Semester(models.Model):
         Includes term, year, and session.
         """
         return f"{self.term} {self.year} - {self.session}"
-
-
-class CourseAssignmentCollaboration(models.Model):
-    """
-    Represents the relationship between a course instance and an assignment.
-
-    Used to track collaboration or linkage between courses and shared
-    assignments.
-    """
-
-    assignment = models.ForeignKey(
-        Assignments,
-        models.CASCADE,
-    )
-    course_instance = models.ForeignKey(
-        "CourseInstances",
-        models.CASCADE,
-    )
-
-    class Meta:
-        """Model metadata configuration."""
-
-        unique_together = (("assignment", "course_instance"),)
-
-    def __str__(self):
-        """Return a readable representation of the course-assignment pairing."""
-        return f"{self.course_instance} ↔ {self.assignment}"
 
 
 class Students(models.Model):
@@ -264,7 +236,7 @@ class TeachingAssistants(models.Model):
         return f"TeachingAssistant ID {self.id} - {self.user}"
 
 
-class TeachingAssistantEnrollment(models.Model):
+class TeachingAssistantEnrollments(models.Model):
     """
     Represents a TA's enrollment in a course instance.
 

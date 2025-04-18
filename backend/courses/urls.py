@@ -10,24 +10,18 @@ from .views import (
     CourseCatalogViewSet,
     CourseInstancesViewSet,
     SemesterViewSet,
-    CourseAssignmentCollaborationViewSet,
     StudentsViewSet,
     StudentEnrollmentsViewSet,
     ProfessorsViewSet,
     ProfessorEnrollmentsViewSet,
     TeachingAssistantsViewSet,
-    TeachingAssistantEnrollmentViewSet,
+    TeachingAssistantEnrollmentsViewSet,
 )
 
 router = DefaultRouter()
 router.register(r"coursecatalog", CourseCatalogViewSet, basename="coursecatalog")
 router.register(r"courseinstances", CourseInstancesViewSet, basename="courseinstances")
 router.register(r"semester", SemesterViewSet, basename="semester")
-router.register(
-    r"courseassignmentcollaboration",
-    CourseAssignmentCollaborationViewSet,
-    basename="courseassignmentcollaboration",
-)
 router.register(r"students", StudentsViewSet, basename="students")
 router.register(
     r"studentenrollments", StudentEnrollmentsViewSet, basename="studentenrollments"
@@ -42,9 +36,9 @@ router.register(
     r"teachingassistants", TeachingAssistantsViewSet, basename="teachingassistants"
 )
 router.register(
-    r"teachingassistantenrollment",
-    TeachingAssistantEnrollmentViewSet,
-    basename="teachingassistantenrollment",
+    r"teachingassistantenrollments",
+    TeachingAssistantEnrollmentsViewSet,
+    basename="teachingassistantenrollments",
 )
 
 urlpatterns = [

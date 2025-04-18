@@ -6,13 +6,12 @@ from .models import (
     CourseCatalog,
     CourseInstances,
     Semester,
-    CourseAssignmentCollaboration,
     Students,
     StudentEnrollments,
     Professors,
     ProfessorEnrollments,
     TeachingAssistants,
-    TeachingAssistantEnrollment,
+    TeachingAssistantEnrollments,
 )
 
 
@@ -58,21 +57,6 @@ class SemesterSerializer(serializers.ModelSerializer):
         """
 
         model = Semester
-        fields = "__all__"
-
-
-class CourseAssignmentCollaborationSerializer(serializers.ModelSerializer):
-    """Serializer for the CourseAssignmentCollaboration model."""
-
-    class Meta:
-        """Meta options for CourseAssignmentCollaborationSerializer.
-
-        Attributes:
-            model: The CourseAssignmentCollaboration model.
-            fields: All model fields.
-        """
-
-        model = CourseAssignmentCollaboration
         fields = "__all__"
 
 
@@ -151,16 +135,16 @@ class TeachingAssistantsSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class TeachingAssistantEnrollmentSerializer(serializers.ModelSerializer):
-    """Serializer for the TeachingAssistantEnrollment model."""
+class TeachingAssistantEnrollmentsSerializer(serializers.ModelSerializer):
+    """Serializer for the TeachingAssistantEnrollments model."""
 
     class Meta:
-        """Meta options for TeachingAssistantEnrollmentSerializer.
+        """Meta options for TeachingAssistantEnrollmentsSerializer.
 
         Attributes:
-            model: The TeachingAssistantEnrollment model.
+            model: The TeachingAssistantEnrollments model.
             fields: All model fields.
         """
 
-        model = TeachingAssistantEnrollment
+        model = TeachingAssistantEnrollments
         fields = "__all__"
