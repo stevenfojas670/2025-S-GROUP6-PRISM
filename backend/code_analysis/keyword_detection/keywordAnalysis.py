@@ -77,9 +77,9 @@ class KeywordAnalyzer:
         for f in os.listdir(dirName):
             if(not f.endswith(".csv")):
                 section = f.split("_")[2]
-                self.__jsonFile.write(f'"{section}"' + ': [\n')
+                self.__jsonFile.write(f'"{section}"' + ': {\n')
                 self.__checkStudentFiles(f"{dirName}/{f}")
-                self.__jsonFile.write('}]')
+                self.__jsonFile.write('}')
                 fileCount -= 1
                 if(fileCount > 0):
                     self.__jsonFile.write(',\n')
@@ -96,6 +96,7 @@ class KeywordAnalyzer:
     '''
     def __checkStudentFiles(self,section):
         fileCount = len(os.listdir(section))//2
+        filesAdded = 0
 
         for f in os.listdir(section):
             headers = list()
@@ -110,19 +111,16 @@ class KeywordAnalyzer:
                 ast = program.parse(f"{section}/{f}/main.cpp",args=['-std=c++11','-nostdinc','-nostdlibinc'])
 
                 self.__checkAST(ast.cursor)
-                print(self.__found)
+
                 if(len(self.__found) > 0):
-                    self.__jsonFile.write('{\n\t\t' + f'"{f.split("-")[1].strip("_")}"' + ':\n')
+                    if (filesAdded > 0):
+                        self.__jsonFile.write(',\n')
+                    filesAdded += 1
+
+                    self.__jsonFile.write('\n\t\t' + f'"{f.split("-")[1].strip("_")}"' + ': \n')
 
                     json.dump(self.__found,self.__jsonFile,indent=8)
                     self.__found.clear()
-
-                    fileCount -= 1
-                    if (fileCount > 0):
-                        self.__jsonFile.write(',\n')
-                    else:
-                        self.__jsonFile.write('\n')
-                        break
                 headers.clear()
 
     '''
