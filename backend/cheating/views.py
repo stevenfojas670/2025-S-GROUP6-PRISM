@@ -194,25 +194,25 @@ class LongitudinalCheatingGroupInstancesViewSet(viewsets.ModelViewSet, CachedVie
     ordering = ["appearance_count"]
     search_fields = []
 
-def cleanup_old_student_reports(assignment, keep_report_id):
-    """
-    Delete all StudentReports for the given assignment that are tied
-    to older AssignmentReports (i.e., not the newly created one).
 
+def cleanup_old_student_reports(assignment, keep_report_id):
+    """Delete all StudentReports (old) for the given assignment.
+
+    That are tied to older AssignmentReports (i.e., not the newly created one).
     Args:
         assignment (Assignments): Assignment instance.
         keep_report_id (int): The ID of the AssignmentReport to retain.
     """
     # Get all older reports tied to this assignment (except the new one)
     old_report_ids = (
-        AssignmentReport.objects
-        .filter(assignment=assignment)
+        AssignmentReport.objects.filter(assignment=assignment)
         .exclude(id=keep_report_id)
         .values_list("id", flat=True)
     )
 
     # Delete all StudentReports tied to those old reports
     StudentReport.objects.filter(report_id__in=old_report_ids).delete()
+
 
 def flag_student_pairs(report, professor, cutoff=1.282):
     """
@@ -250,9 +250,7 @@ def flag_student_pairs(report, professor, cutoff=1.282):
 
         pairs = SubmissionSimilarityPairs.objects.filter(
             assignment=report.assignment,
-        ).filter(
-            Q(submission_id_1=submission) | Q(submission_id_2=submission)
-        )
+        ).filter(Q(submission_id_1=submission) | Q(submission_id_2=submission))
 
         # 4) Create one FlaggedStudents row per pair
         for pair in pairs:
@@ -301,7 +299,7 @@ def generate_report(request, assignment_id):
 
     # 3) Compute μ (mean), σ (std), and total pair count N for finite correction
     mu, sigma = compute_population_stats(scores_map)
-    variance = sigma ** 2
+    variance = sigma**2
     total_pairs = sum(len(v) for v in scores_map.values()) // 2
 
     # 4) Perform all DB changes in a transaction for atomicity
@@ -335,22 +333,23 @@ def generate_report(request, assignment_id):
                 population_size=total_pairs,
             )
 
-            student_reports.append(StudentReport(
-                report=report,
-                submission_id=sid,
-                mean_similarity=mean_i,
-                z_score=z_val,
-                ci_lower=lo,
-                ci_upper=hi,
-            ))
+            student_reports.append(
+                StudentReport(
+                    report=report,
+                    submission_id=sid,
+                    mean_similarity=mean_i,
+                    z_score=z_val,
+                    ci_lower=lo,
+                    ci_upper=hi,
+                )
+            )
 
         # 4c) Bulk insert all StudentReports at once
         StudentReport.objects.bulk_create(student_reports)
 
         # 4d) Resolve professor via the course_instance on any Submission
         first_sub = (
-            Submissions.objects
-            .filter(assignment=assignment)
+            Submissions.objects.filter(assignment=assignment)
             .select_related("course_instance__professor")
             .first()
         )
