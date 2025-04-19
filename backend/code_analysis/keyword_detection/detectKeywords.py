@@ -1,6 +1,9 @@
 import sys
 import os
 
+from clang import cindex
+from clang.cindex import CursorKind
+
 class KeywordAnalyzer:
     __assignmentNum = None
     __words = None
@@ -39,10 +42,27 @@ class KeywordAnalyzer:
 
         for f in os.listdir(dirName):
             if(not f.endswith(".csv")):
-                self.__checkStudentFiles(dirName,f)
+                self.__checkStudentFiles(f"{dirName}/{f}")
+                break
 
-    def __checkStudentFiles(self,dirName,currSection):
-        pass
+    def __checkStudentFiles(self,section):
+        for f in os.listdir(section):
+            if(not f.endswith(".json")):
+                program = cindex.Index.create()
+                ast = program.parse(f"{section}/{f}/main.cpp",args=['-std=c++11','-nostdinc','-nostdlibinc'])
+
+                # Start from the root cursor
+                self.__checkAST(ast.cursor)
+                break
+
+    def __checkAST(self, currNode):
+        for w in self.__words:
+            if w == currNode.spelling:
+              #  if currNode.kind != CursorKind.VAR_DECL:
+                print(f"{currNode.spelling} was found at {currNode.location.line}")
+
+        for c in currNode.get_children():
+            self.__checkAST(c)
 
 
 def main(fileName):
