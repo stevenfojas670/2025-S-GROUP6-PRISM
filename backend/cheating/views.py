@@ -194,38 +194,67 @@ class LongitudinalCheatingGroupInstancesViewSet(viewsets.ModelViewSet, CachedVie
     ordering = ["appearance_count"]
     search_fields = []
 
+def cleanup_old_student_reports(assignment, keep_report_id):
+    """
+    Delete all StudentReports for the given assignment that are tied
+    to older AssignmentReports (i.e., not the newly created one).
+
+    Args:
+        assignment (Assignments): Assignment instance.
+        keep_report_id (int): The ID of the AssignmentReport to retain.
+    """
+    # Get all older reports tied to this assignment (except the new one)
+    old_report_ids = (
+        AssignmentReport.objects
+        .filter(assignment=assignment)
+        .exclude(id=keep_report_id)
+        .values_list("id", flat=True)
+    )
+
+    # Delete all StudentReports tied to those old reports
+    StudentReport.objects.filter(report_id__in=old_report_ids).delete()
 
 def flag_student_pairs(report, professor, cutoff=1.282):
     """
     Flag all similarity pairs involving students with z > cutoff.
 
-    For each high‑z student, we gather all SubmissionSimilarityPairs
-    for that student’s submission on this assignment. Then we insert
-    one FlaggedStudents row per pair, with generative_ai=False.
+    Before inserting, deletes any existing FlaggedStudents for this
+    assignment/professor to avoid duplicates from older reports.
 
     Args:
-        report (AssignmentReport): the report containing student z-scores.
-        professor (Professors): the professor who flagged the students.
-        cutoff (float): z-score threshold to flag (default = 1.282 for 90%).
+        report (AssignmentReport): the current report instance.
+        professor (Professors): professor doing the flagging.
+        cutoff (float): z-score cutoff (default = 1.282 for 90%).
 
     Returns:
-        int: number of FlaggedStudents created
+        int: number of new FlaggedStudents created.
     """
     created_rows = []
 
-    # 1) Get all students with z-score > cutoff
+    # 1) Get all flagged students with z > cutoff
     suspects = report.student_reports.filter(z_score__gt=cutoff)
 
+    if not suspects.exists():
+        return 0
+
+    # 2) Delete previous flags by this professor for this assignment
+    FlaggedStudents.objects.filter(
+        professor=professor,
+        similarity__assignment=report.assignment,
+    ).delete()
+
+    # 3) For each flagged student, fetch their submission and similarity pairs
     for sr in suspects:
         submission = sr.submission
         student = submission.student
 
-        # 2) Get all pairwise similarities this student is involved in
         pairs = SubmissionSimilarityPairs.objects.filter(
-            assignment=report.assignment
-        ).filter(Q(submission_id_1=submission) | Q(submission_id_2=submission))
+            assignment=report.assignment,
+        ).filter(
+            Q(submission_id_1=submission) | Q(submission_id_2=submission)
+        )
 
-        # 3) Prepare FlaggedStudents objects (one per similarity pair)
+        # 4) Create one FlaggedStudents row per pair
         for pair in pairs:
             created_rows.append(
                 FlaggedStudents(
@@ -236,10 +265,10 @@ def flag_student_pairs(report, professor, cutoff=1.282):
                 )
             )
 
-    # 4) Avoid duplicates with bulk insert + ignore_conflicts=True
+    # 5) Insert all, skip duplicates just in case
     inserted = FlaggedStudents.objects.bulk_create(
         created_rows,
-        ignore_conflicts=True,  # respects unique_together
+        ignore_conflicts=True,
     )
 
     return len(inserted)
@@ -247,35 +276,37 @@ def flag_student_pairs(report, professor, cutoff=1.282):
 
 def generate_report(request, assignment_id):
     """
-    Compute & persist an AssignmentReport and StudentReports.
+    Compute and persist an AssignmentReport and related StudentReports.
 
-    Then flag pairs based on z-score threshold.
-    Steps:
-      1) Fetch Assignment or 404.
-      2) Gather per-student similarity percentages.
-      3) Compute population μ, σ, variance, and N_pairs.
-      4) In transaction:
-         a) create AssignmentReport
-         b) bulk create StudentReports
-         c) call flag_student_pairs(report, professor, cutoff)
-      5) Return JSON summary.
+    This function:
+      - Computes population stats (μ, σ, variance).
+      - Generates one StudentReport per submission.
+      - Flags similarity pairs for students above a z-score cutoff.
+      - Ensures only the most recent report and its children are kept.
+
+    Args:
+        request (HttpRequest): incoming HTTP request (unused here).
+        assignment_id (int): ID of the assignment to analyze.
+
+    Returns:
+        JsonResponse: report ID, stats, and number of students flagged.
     """
-    # 1) Fetch the assignment or raise 404
+    # 1) Load the Assignment or raise 404 if not found
     assignment = get_object_or_404(Assignments, pk=assignment_id)
 
-    # 2) Build dictionary: submission_id -> list of similarity scores
+    # 2) Collect all pairwise similarity scores per student submission
     scores_map = get_all_scores_by_student(assignment)
     if not scores_map:
-        raise Http404("No similarity data available for this assignment.")
+        raise Http404("No similarity data found for this assignment.")
 
-    # 3) Compute population statistics
+    # 3) Compute μ (mean), σ (std), and total pair count N for finite correction
     mu, sigma = compute_population_stats(scores_map)
-    variance = sigma**2
+    variance = sigma ** 2
     total_pairs = sum(len(v) for v in scores_map.values()) // 2
 
-    # 4) Transaction block for all database writes
+    # 4) Perform all DB changes in a transaction for atomicity
     with transaction.atomic():
-        # 4a) Create one AssignmentReport row
+        # 4a) Create the new AssignmentReport
         report = AssignmentReport.objects.create(
             assignment=assignment,
             mu=mu,
@@ -283,10 +314,11 @@ def generate_report(request, assignment_id):
             variance=variance,
         )
 
-        # 4b) Build all StudentReports in memory
+        # 4b) Build StudentReport rows in memory
         student_reports = []
         for sid, sims in scores_map.items():
             mean_i = sum(sims) / len(sims)
+
             _, z_val = compute_student_z_score(
                 scores=sims,
                 mu=mu,
@@ -294,6 +326,7 @@ def generate_report(request, assignment_id):
                 use_fpc=True,
                 population_size=total_pairs,
             )
+
             lo, hi = compute_student_confidence_interval(
                 scores=sims,
                 sigma=sigma,
@@ -301,42 +334,49 @@ def generate_report(request, assignment_id):
                 use_fpc=True,
                 population_size=total_pairs,
             )
-            student_reports.append(
-                StudentReport(
-                    report=report,
-                    submission_id=sid,
-                    mean_similarity=mean_i,
-                    z_score=z_val,
-                    ci_lower=lo,
-                    ci_upper=hi,
-                )
-            )
 
-        # Insert all reports at once
+            student_reports.append(StudentReport(
+                report=report,
+                submission_id=sid,
+                mean_similarity=mean_i,
+                z_score=z_val,
+                ci_lower=lo,
+                ci_upper=hi,
+            ))
+
+        # 4c) Bulk insert all StudentReports at once
         StudentReport.objects.bulk_create(student_reports)
 
-        # 4c) Grab any submission to find the professor via course_instance
+        # 4d) Resolve professor via the course_instance on any Submission
         first_sub = (
-            Submissions.objects.filter(assignment=assignment)
+            Submissions.objects
+            .filter(assignment=assignment)
             .select_related("course_instance__professor")
             .first()
         )
         if not first_sub:
-            raise Http404("Could not determine professor from submissions.")
+            raise Http404("No submissions found to determine professor.")
         professor = first_sub.course_instance.professor
 
-        # Call helper to flag similar pairs for students with high z-score
+        # 4e) Flag all similarity pairs for high-z students
         flags_created = flag_student_pairs(
             report=report,
             professor=professor,
             cutoff=1.282,
         )
-        # Cleanup: ensure only this report remains
+
+        # 4f) Delete all older AssignmentReports for this assignment
         AssignmentReport.objects.filter(assignment=assignment).exclude(
             id=report.id
         ).delete()
 
-    # 5) Return JSON summary
+        # 4g) Clean up orphaned StudentReports for deleted reports
+        cleanup_old_student_reports(
+            assignment=assignment,
+            keep_report_id=report.id,
+        )
+
+    # 5) Return stats and summary to frontend
     return JsonResponse(
         {
             "report_id": report.id,
