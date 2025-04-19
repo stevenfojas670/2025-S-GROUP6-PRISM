@@ -7,7 +7,8 @@ class KeywordAnalyzer:
 
     def __init__(self, inputFile):
         self.__words = list()
-        self.openAndValidateFile(inputFile)
+        self.__openAndValidateFile(inputFile)
+        self.__runAnalysis()
 
     '''
         This method is responsible for opening the input file
@@ -15,7 +16,7 @@ class KeywordAnalyzer:
         KeywordAnalyzer's words array, and also getting the 
         assignment for which the keyword analysis will be done for
     '''
-    def openAndValidateFile(self,iFile):
+    def __openAndValidateFile(self,iFile):
         # ERROR CHECK #1: Make sure the file exists in the
         #                 keyword_detection package
         if not os.path.exists(iFile):
@@ -29,9 +30,20 @@ class KeywordAnalyzer:
             self.__words.append(w.strip('\n'))
 
         fileNameParts = iFile.split('_')
-        __assignmentNum = fileNameParts[0][2:]
+        self.__assignmentNum = fileNameParts[0][2:]
 
         file.close()
+
+    def __runAnalysis(self):
+        dirName = f"/PRISM/data/assignments/assignment_{self.__assignmentNum}/bulk_submission"
+
+        for f in os.listdir(dirName):
+            if(not f.endswith(".csv")):
+                self.__checkStudentFiles(dirName,f)
+
+    def __checkStudentFiles(self,dirName,currSection):
+        pass
+
 
 def main(fileName):
     analyzer = KeywordAnalyzer(fileName)
