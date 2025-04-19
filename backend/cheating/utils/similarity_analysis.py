@@ -1,12 +1,15 @@
 """
 This module contains functions to analyze similarity scores between student submissions.
+
 It provides functionality to compute population statistics such as mean and standard deviation
-of similarity scores for a given assignment.
-It also includes a function to retrieve all similarity scores for each student in an assignment.
+of similarity scores for a given assignment. It also includes a function to retrieve all
+similarity scores for each student in an assignment.
+
 The main functions are:
 - get_all_scores_by_student(assignment): Fetches all similarity scores for a given assignment
 - compute_population_stats(scores_by_student): Computes the population mean and standard deviation
-of similarity scores."""
+  of similarity scores.
+"""
 
 from models import SubmissionSimilarityPairs
 from collections import defaultdict
@@ -19,6 +22,7 @@ from scipy.stats import norm
 def get_all_scores_by_student(assignment):
     """
     Get all similarity scores for a given assignment.
+
     Return a dict mapping each submission_id (an integer PK)
     to the list of its similarity
     percentages for the given assignment. We only keep one direction per pair—if both
@@ -69,26 +73,24 @@ def compute_population_stats(
     scores_by_student: Dict[int, List[float]],
 ) -> Tuple[float, float]:
     """
-    Compute the population mean (mu) and population standard deviation (sigma)
-    of all similarity percentages, given a dict mapping each student to their list
-    of scores.
+    Compute the population mean (mu) and population standard deviation (sigma).
 
-    We treat the entire flattened list as the full population, so we divide by N,
-    not (N–1), for the variance (no Bessel’s correction).
+    Given a dict mapping each student to their list of scores, we treat the entire
+    flattened list as the full population, so we divide by N (not N–1) for the variance
+    (no Bessel’s correction).
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     scores_by_student : Dict[int, List[float]]
         A mapping from each submission_id to the list of its similarity percentages.
 
-    Returns:
-    --------
-    mu    : float
+    Returns
+    -------
+    mu : float
         The population mean of all scores.
     sigma : float
         The population standard deviation of all scores.
     """
-
     # 1) Flatten all the per-student lists into one master list of scores
     #    We'll iterate over each student's list and extend into 'all_scores'.
     all_scores: List[float] = []  # start with an empty list
@@ -150,31 +152,12 @@ def compute_population_stats(
 # And we get the exact population mean & standard deviation over those 6 values.
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def compute_student_z_score(
     scores: List[float],
     mu: float,
     sigma: float,
     use_fpc: bool = True,
-    population_size: int = None
+    population_size: int = None,
 ) -> Tuple[float, float]:
     """
     Compute the sample mean and z‑score for a single student’s scores.
@@ -225,7 +208,7 @@ def compute_student_confidence_interval(
     sigma: float,
     conf_level: float = 0.95,
     use_fpc: bool = True,
-    population_size: int = None
+    population_size: int = None,
 ) -> Tuple[float, float]:
     """
     Compute a confidence interval for a single student’s mean similarity.
