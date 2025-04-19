@@ -33,7 +33,7 @@ from django.shortcuts import get_object_or_404
 
 from matplotlib import pyplot as plt
 
-from .models import Assignments
+from assignments.models import Assignments
 from .utils.similarity_analysis import (
     compute_population_stats,
     compute_student_confidence_interval,
