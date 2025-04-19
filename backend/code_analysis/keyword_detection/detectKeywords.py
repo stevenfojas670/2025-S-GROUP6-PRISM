@@ -1,5 +1,6 @@
 import sys
 import os
+import json
 
 from clang import cindex
 from clang.cindex import CursorKind
@@ -7,6 +8,7 @@ from clang.cindex import CursorKind
 class KeywordAnalyzer:
     __assignmentNum = None
     __words = None
+    __jsonFileName = None
     __jsonFile = None
 
     def __init__(self, inputFile):
@@ -40,14 +42,16 @@ class KeywordAnalyzer:
         file.close()
 
     def __createJSON(self):
-        self.__jsonFile = open(f"{self.__assignmentNum}_found.json",'w')
+        self.__jsonFileName = f"{self.__assignmentNum}_found.json"
+        self.__jsonFile = open(self.__jsonFileName,'w')
 
     def __runAnalysis(self):
         dirName = f"/PRISM/data/assignments/assignment_{self.__assignmentNum}/bulk_submission"
 
         for f in os.listdir(dirName):
             if(not f.endswith(".csv")):
-                self.__jsonFile.write('{\n\t"errors": [\n')
+                section = f.split("_")[2]
+                self.__jsonFile.write('{\n\t' + f'{section}' + ': [\n')
                 self.__checkStudentFiles(f"{dirName}/{f}")
                 self.__jsonFile.write('\t]\n')
                 self.__jsonFile.write('}\n')
@@ -56,6 +60,8 @@ class KeywordAnalyzer:
     def __checkStudentFiles(self,section):
         for f in os.listdir(section):
             headerList = None
+            self.__jsonFile.write('{\n\t\t' + f'{f.split("-")[1].strip("_")}' + ': [\n')
+
             if(not f.endswith(".json")):
                 program = cindex.Index.create()
                 # Parse program with all headers first
@@ -69,12 +75,15 @@ class KeywordAnalyzer:
                 # Start from the root cursor
                 self.__checkAST(ast.cursor)
                 break
+            self.__jsonFile.write('\t\t]\n')
+            self.__jsonFile.write('}\n')
 
     def __checkAST(self, currNode):
         for w in self.__words:
             if w == currNode.spelling:
               if currNode.kind != CursorKind.VAR_DECL or currNode.kind != CursorKind.DECL_REF_EXPR:
-                print(f"{currNode.spelling} was found at {currNode.location.line}")
+                    found = {'word' : w, 'line' : currNode.location.line}
+                    json.dump(found,self.__jsonFile,indent=8)
 
         for c in currNode.get_children():
             self.__checkAST(c)
