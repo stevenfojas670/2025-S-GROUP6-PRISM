@@ -16,12 +16,14 @@ from clang import cindex
 from clang.cindex import CursorKind
 
 class KeywordAnalyzer:
+    # Fields
     __assignmentNum = None
     __words = None
     __jsonFileName = None
     __jsonFile = None
     __found = None
 
+    # Methods
     def __init__(self, inputFile):
         self.__words = list()
         self.__found = list(dict())
@@ -53,24 +55,48 @@ class KeywordAnalyzer:
 
         file.close()
 
+    '''
+        This method is responsible for opening and creating the JSON
+        output file that will be used by the front end
+    '''
     def __createJSON(self):
         self.__jsonFileName = f"{self.__assignmentNum}_found.json"
         self.__jsonFile = open(self.__jsonFileName,'w')
 
+    '''
+        This is the main method for KeywordAnalyzer. We will do a bulk analysis
+        for every section by looking at student file located in each directory.
+        Once this has been completed, we can then access a JSON file that will 
+        contain all the students who violated the rules for the assignment
+    '''
     def __runAnalysis(self):
         dirName = f"/PRISM/data/assignments/assignment_{self.__assignmentNum}/bulk_submission"
         self.__jsonFile.write('{\n\t')
 
-        for i,f in enumerate(os.listdir(dirName)):
+        fileCount = len(os.listdir(dirName))//2
+        for f in os.listdir(dirName):
             if(not f.endswith(".csv")):
                 section = f.split("_")[2]
                 self.__jsonFile.write(f'"{section}"' + ': [\n')
                 self.__checkStudentFiles(f"{dirName}/{f}")
-                self.__jsonFile.write(']\n')
-
+                self.__jsonFile.write('}]')
+                fileCount -= 1
+                if(fileCount > 0):
+                    self.__jsonFile.write(',\n')
+                else:
+                    self.__jsonFile.write('\n')
+                    break
         self.__jsonFile.write('}\n')
 
+    '''
+        This is a helper method for runAnalysis. The goal is to parse each
+        student's input file and manually verify whether or not they used
+        blacklisted keywords and/or headers. All information will be written
+        into the JSON file.
+    '''
     def __checkStudentFiles(self,section):
+        fileCount = len(os.listdir(section))//2
+
         for f in os.listdir(section):
             headers = list()
 
@@ -78,7 +104,6 @@ class KeywordAnalyzer:
                 self.__checkHeaders(f"{section}/{f}/main.cpp",headers)
                 if (len(headers) > 0):
                     self.__found.append({"headers": headers})
-                    headers.clear()
 
                 program = cindex.Index.create()
 
@@ -91,8 +116,21 @@ class KeywordAnalyzer:
 
                     json.dump(self.__found,self.__jsonFile,indent=8)
                     self.__found.clear()
-                    self.__jsonFile.write(',')
 
+                    fileCount -= 1
+                    if (fileCount > 0):
+                        self.__jsonFile.write(',\n')
+                    else:
+                        self.__jsonFile.write('\n')
+                        break
+                headers.clear()
+
+    '''
+        This method is designed to check all import statements at the start
+        of a student's file and manually verify whether or not a library 
+        specified by the user was found inside a student's file. All we are 
+        going to do is add the library name so it can be saved in the JSON file
+    '''
     def __checkHeaders(self,file,headers):
         with open(file,'r') as iFile:
             for line in iFile:
@@ -104,6 +142,15 @@ class KeywordAnalyzer:
                     if w == lib:
                         headers.append(w)
 
+    '''
+        This method will analyze the AST for a student's input file and
+        check if there any usages of keywords they weren't suppose to use.
+        In this case, we are checking if the words used are not identifiers, 
+        so we manually verify if the current node represents a VARDECL or a 
+        NAMEEXPR first prior to adding the result to our error array. For right 
+        now, we note which word was used followed by the line number it came
+        from.
+    '''
     def __checkAST(self, currNode):
         for w in self.__words:
             if w == currNode.spelling:
