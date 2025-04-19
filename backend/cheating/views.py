@@ -380,8 +380,12 @@ def generate_report(request, assignment_id):
         {
             "report_id": report.id,
             "assignment_id": assignment.id,
-            "students_reported": len(scores_map),
-            "flags_created": flags_created,
+            "students_analyzed": len(scores_map),
+            "students_flagged": FlaggedStudents.objects.filter(
+                professor=professor,
+                similarity__assignment=assignment,
+            ).values("student").distinct().count(),
+            "flagged_similarity_rows": flags_created,
             "population_mu": mu,
             "population_sigma": sigma,
             "population_variance": variance,
