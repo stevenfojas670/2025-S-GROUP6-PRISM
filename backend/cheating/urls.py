@@ -15,7 +15,11 @@ from .views import (
     LongitudinalCheatingGroupsViewSet,
     LongitudinalCheatingGroupMembersViewSet,
     LongitudinalCheatingGroupInstancesViewSet,
+    similarity_plot,
+    distribution_plot,
 )
+
+app_name = "cheating"
 
 router = DefaultRouter()
 router.register(r"cheating-groups", CheatingGroupsViewSet, basename="cheating-groups")
@@ -53,4 +57,14 @@ router.register(
 
 urlpatterns = [
     path("", include(router.urls)),
+    path(
+        "<int:assignment_id>/similarity-plot/",
+        similarity_plot,
+        name="similarity-plot"
+    ),
+    path(
+        "<int:assignment_id>/distribution-plot/",
+        distribution_plot,
+        name="distribution-plot"
+    ),
 ]
