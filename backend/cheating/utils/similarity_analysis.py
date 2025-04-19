@@ -11,7 +11,7 @@ The main functions are:
   of similarity scores.
 """
 
-from models import SubmissionSimilarityPairs
+from cheating.models import SubmissionSimilarityPairs
 from collections import defaultdict
 from django.db import models
 import math
