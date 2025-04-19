@@ -129,29 +129,6 @@ def compute_population_stats(
     return mu, sigma
 
 
-# -------------------------------
-# Example usage with 3 students:
-# -------------------------------
-# Suppose after fetching from the database we have:
-# scores_by_student = {
-#     1: [30, 50],    # student 1’s two comparisons
-#     2: [30, 20],    # student 2’s two comparisons
-#     3: [50, 20],    # student 3’s two comparisons
-# }
-#
-# Then calling:
-#   mu, sigma = compute_population_stats(scores_by_student)
-#
-# Will do:
-#   all_scores = [30, 50, 30, 20, 50, 20]
-#   N = 6
-#   mu = (30+50+30+20+50+20) / 6 = 33.333...
-#   variance = ((30-33.33)^2 + (50-33.33)^2 + ... ) / 6
-#   sigma = sqrt(variance)
-#
-# And we get the exact population mean & standard deviation over those 6 values.
-
-
 def compute_student_z_score(
     scores: List[float],
     mu: float,
@@ -256,3 +233,46 @@ def compute_student_confidence_interval(
     upper = mean_i + z_crit * se
 
     return lower, upper
+
+
+# -------------------------------
+# Example usage with 3 students:
+# -------------------------------
+# Suppose after fetching from the database we have:
+# scores_by_student = {
+#     1: [30, 50],    # student 1’s two comparisons
+#     2: [30, 20],    # student 2’s two comparisons
+#     3: [50, 20],    # student 3’s two comparisons
+# }
+#
+# Then calling:
+#   mu, sigma = compute_population_stats(scores_by_student)
+#
+# Will do:
+#   all_scores = [30, 50, 30, 20, 50, 20]
+#   N = 6
+#   mu = (30 + 50 + 30 + 20 + 50 + 20) / 6 = 33.333...
+#   variance = ((30-33.33)^2 + (50-33.33)^2 + ... ) / 6
+#   sigma = sqrt(variance)
+#
+# Now for student 1:
+#   scores = [30, 50]
+#   n = 2
+#   mean_i = (30 + 50) / 2 = 40
+#   SE = sigma / sqrt(2) * sqrt((6 - 2)/(6 - 1))
+#   z = (mean_i - mu) / SE
+#
+# So calling:
+#   compute_student_z_score(scores_by_student[1], mu, sigma, True, 6)
+#
+# Will return:
+#   mean_i = 40.0
+#   z_i ≈ 0.866  ← how many SEs above the mean
+#
+# And calling:
+#   compute_student_confidence_interval(scores_by_student[1], sigma, 0.95, True, 6)
+#
+# Will return:
+#   lower ≈ 21.65
+#   upper ≈ 58.34
+#   Meaning we are 95% confident this student’s true mean similarity lies in that interval.
