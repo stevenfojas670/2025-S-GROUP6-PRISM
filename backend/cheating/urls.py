@@ -17,6 +17,8 @@ from .views import (
     LongitudinalCheatingGroupInstancesViewSet,
     similarity_plot,
     distribution_plot,
+    similarity_interval_plot,
+    generate_report,
 )
 
 app_name = "cheating"
@@ -58,13 +60,21 @@ router.register(
 urlpatterns = [
     path("", include(router.urls)),
     path(
-        "<int:assignment_id>/similarity-plot/",
-        similarity_plot,
-        name="similarity-plot"
+        "<int:assignment_id>/similarity-plot/", similarity_plot, name="similarity-plot"
     ),
     path(
         "<int:assignment_id>/distribution-plot/",
         distribution_plot,
-        name="distribution-plot"
+        name="distribution-plot",
+    ),
+    path(
+        "<int:assignment_id>/similarity-interval-plot/",
+        similarity_interval_plot,
+        name="similarity-interval-plot",
+    ),
+    path(
+        "<int:assignment_id>/generate-report/",
+        generate_report,
+        name="generate-report",
     ),
 ]

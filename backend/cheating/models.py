@@ -254,3 +254,63 @@ class LongitudinalCheatingGroupInstances(models.Model):
         Displays the short-term and longitudinal group IDs.
         """
         return f"CheatingGroup {self.id} → " f"LongitudinalGroup {self.id}"
+
+
+class AssignmentReport(models.Model):
+    """Stores summary statistics for one Assignment’s similarity report."""
+
+    assignment = models.ForeignKey(
+        "assignments.Assignments",
+        on_delete=models.CASCADE,
+        related_name="reports",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    mu = models.FloatField(help_text="Population mean of all similarity scores")
+    sigma = models.FloatField(help_text="Population standard deviation")
+    variance = models.FloatField(help_text="Population variance (sigma^2)")
+
+    class Meta:
+        """Model metadata configuration."""
+
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        """Return a human‐readable summary of the report."""
+        return (
+            f"Report for Assignment {self.assignment_id} "
+            f"@ {self.created_at:%Y-%m-%d %H:%M} — "
+            f"μ={self.mu:.2f}, σ={self.sigma:.2f}"
+        )
+
+
+class StudentReport(models.Model):
+    """Stores per-student inference results for one AssignmentReport."""
+
+    report = models.ForeignKey(
+        AssignmentReport,
+        on_delete=models.CASCADE,
+        related_name="student_reports",
+    )
+    submission = models.ForeignKey(
+        "assignments.Submissions",
+        on_delete=models.CASCADE,
+        help_text="The student submission referenced",
+    )
+    mean_similarity = models.FloatField(help_text="Student’s sample mean similarity")
+    z_score = models.FloatField(help_text="The student’s z-score of mean similarity")
+    ci_lower = models.FloatField(help_text="Lower bound of 95% CI for mean similarity")
+    ci_upper = models.FloatField(help_text="Upper bound of 95% CI for mean similarity")
+
+    class Meta:
+        """Model metadata configuration."""
+
+        unique_together = ("report", "submission")
+        ordering = ["-z_score"]
+
+    def __str__(self):
+        """Return a human‐readable summary of this student’s inference."""
+        return (
+            f"StudentReport(sub={self.submission_id}, "
+            f"z={self.z_score:.2f}, "
+            f"CI=[{self.ci_lower:.1f},{self.ci_upper:.1f}])"
+        )
