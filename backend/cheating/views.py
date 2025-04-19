@@ -448,100 +448,103 @@ def similarity_plot(request, assignment_id):
     """
     Render a vertical bar chart of flagged students’ z-scores as PNG.
 
-    Reads z_scores from StudentReport where z_score > cutoff, and
-    labels by student name.  Returns an HTTPResponse with image/png.
+    Pulls z-scores from StudentReport entries where z > cutoff.
+    Student names resolved via Submissions and plotted on x-axis.
     """
-    # 1) Load Assignment or 404
     assignment = get_object_or_404(Assignments, pk=assignment_id)
-
-    # 2) Get the corresponding AssignmentReport or 404
     report = get_object_or_404(AssignmentReport, assignment=assignment)
 
-    # 3) Fetch all StudentReport entries for this report with z>cutoff
+    # Define threshold
     cutoff = 1.282
-    flagged_qs = StudentReport.objects.filter(report=report, z_score__gt=cutoff)
+
+    # Fetch flagged students and cache them
+    flagged_qs = StudentReport.objects.filter(report=report, z_score__gt=cutoff).only(
+        "submission_id", "z_score"
+    )
 
     if not flagged_qs.exists():
-        raise Http404("No students exceed z-score cutoff")
+        raise Http404("No flagged students")
 
-    # 4) Build list of (name, z_score)
-    subs = Submissions.objects.filter(
-        pk__in=[sr.submission_id for sr in flagged_qs]
-    ).select_related("student")
+    # Bulk lookup submissions with related student info
+    submission_ids = [sr.submission_id for sr in flagged_qs]
+    sub_map = (
+        Submissions.objects.filter(pk__in=submission_ids)
+        .select_related("student")
+        .in_bulk(field_name="pk")
+    )
 
-    name_map = {
-        sub.pk: f"{sub.student.first_name} {sub.student.last_name}" for sub in subs
-    }
-
+    # Assemble (student name, z-score)
     entries = []
     for sr in flagged_qs:
-        name = name_map.get(sr.submission_id, f"ID {sr.submission_id}")
+        submission = sub_map.get(sr.submission_id)
+        if submission:
+            name = f"{submission.student.first_name} {submission.student.last_name}"
+        else:
+            name = f"ID {sr.submission_id}"
         entries.append((name, sr.z_score))
 
-    # 5) Sort by descending z_score
     entries.sort(key=lambda x: x[1], reverse=True)
     names, zs = zip(*entries)
 
-    # 6) Prepare plot
     fig, ax = plt.subplots(figsize=(max(8, len(names) * 0.5), 5))
-
     ax.bar(range(len(names)), zs, color="C1", edgecolor="black")
 
-    # 7) Annotate bars with z_value
     for i, z in enumerate(zs):
         ax.text(i, z + 0.02, f"{z:.2f}", ha="center", va="bottom", fontsize=8)
 
-    # 8) Draw cutoff line + legend
-    tail_pct = 90  # upper 90th percentile
     ax.axhline(
         cutoff,
         color="red",
         linestyle="--",
-        label=f"Cutoff: z > {cutoff:.3f} (upper {tail_pct}%)",
+        label=f"Cutoff: z > {cutoff:.3f} (upper 90%)",
     )
 
-    # 9) X-axis labels
     ax.set_xticks(range(len(names)))
     ax.set_xticklabels(names, rotation=45, ha="right", fontsize=8)
-
-    # 10) Final styling
     ax.set_ylabel("Z-score of Mean Similarity")
     ax.set_title(f"Assignment {assignment_id}: Flagged Students")
     ax.legend(loc="upper right", fontsize=8)
     plt.tight_layout()
 
-    # 11) Render to PNG
     buf = io.BytesIO()
     fig.savefig(buf, format="png")
     plt.close(fig)
     buf.seek(0)
-
     return HttpResponse(buf.read(), content_type="image/png")
 
 
 def distribution_plot(request, assignment_id):
-    """Render histogram of per-student means with Normal overlay.
-
-    Reads μ, σ, variance from AssignmentReport and sample means
-    from StudentReport. Returns PNG.
     """
-    # 1) Load Assignment & Report
+    Render histogram of per-student mean similarities with Normal overlay.
+
+    Uses StudentReport for means and AssignmentReport for population stats.
+    """
     assignment = get_object_or_404(Assignments, pk=assignment_id)
     report = get_object_or_404(AssignmentReport, assignment=assignment)
 
-    # 2) Pull all StudentReport.means for this report
-    srs = StudentReport.objects.filter(report=report)
-    if not srs.exists():
+    srs = list(
+        StudentReport.objects.filter(report=report).only(
+            "submission_id", "mean_similarity"
+        )
+    )
+    if not srs:
         raise Http404("No student data to plot")
 
     means = [sr.mean_similarity for sr in srs]
 
-    # 3) Extract population stats
+    # Get population values
     mu = report.mu
     sigma = report.sigma
-    variance = report.variance
+    var = report.variance
 
-    # 4) Build histogram
+    # Fetch all scores once to avoid recomputing
+    scores_map = get_all_scores_by_student(assignment)
+
+    # Compute average sample size
+    total_comparisons = sum(len(scores_map.get(sr.submission_id, [])) for sr in srs)
+    n_avg = total_comparisons / len(means)
+    se = sigma / (n_avg**0.5)
+
     fig, ax = plt.subplots(figsize=(8, 4))
     counts, bins, _ = ax.hist(
         means,
@@ -552,13 +555,6 @@ def distribution_plot(request, assignment_id):
         edgecolor="black",
     )
 
-    # 5) Overlay Normal PDF via CLT: se = sigma/√n_avg
-    n_avg = sum(
-        len(get_all_scores_by_student(assignment).get(sr.submission_id, []))
-        for sr in srs
-    ) / len(means)
-    se = sigma / (n_avg**0.5)
-
     xs = [bins[0] + i * (bins[-1] - bins[0]) / 200 for i in range(201)]
     pdf = [
         (1 / (se * (2 * math.pi) ** 0.5)) * math.exp(-0.5 * ((x - mu) / se) ** 2)
@@ -566,8 +562,7 @@ def distribution_plot(request, assignment_id):
     ]
     ax.plot(xs, pdf, "k--", label="Normal PDF (CLT)")
 
-    # 6) Annotate μ, σ, Var
-    text = f"μ = {mu:.2f}\nσ = {sigma:.2f}\nVar = {variance:.2f}"
+    text = f"μ = {mu:.2f}\nσ = {sigma:.2f}\nVar = {var:.2f}"
     ax.text(
         0.98,
         0.95,
@@ -579,61 +574,60 @@ def distribution_plot(request, assignment_id):
         bbox=dict(facecolor="white", alpha=0.7, boxstyle="round,pad=0.3"),
     )
 
-    # 7) Labels & legend
     ax.set_xlabel("Per‑student Mean Similarity (%)")
     ax.set_ylabel("Density")
     ax.set_title(f"Assignment {assignment_id}: Distribution")
     ax.legend(loc="upper left", fontsize=8)
     plt.tight_layout()
 
-    # 8) Render PNG
     buf = io.BytesIO()
     fig.savefig(buf, format="png")
     plt.close(fig)
     buf.seek(0)
-
     return HttpResponse(buf.read(), content_type="image/png")
 
 
 def similarity_interval_plot(request, assignment_id):
     """
-    Render horizontal error bars (95% CI) for flagged students.
+    Render forest plot of 95% CI for flagged students' mean similarities.
 
-    1) Reads μ, σ from AssignmentReport.
-    Reads CI bounds from StudentReport where z_score > cutoff.
+    Plots mean ± CI, labels with z-scores from StudentReport.
     """
-    # 1) Load Assignment & Report
     assignment = get_object_or_404(Assignments, pk=assignment_id)
     report = get_object_or_404(AssignmentReport, assignment=assignment)
 
-    # 2) Filter StudentReports by z_score > cutoff
     cutoff = 1.282
-    srs = StudentReport.objects.filter(report=report, z_score__gt=cutoff)
-    if not srs.exists():
-        raise Http404("No flagged students to plot CI")
+    srs = list(
+        StudentReport.objects.filter(report=report, z_score__gt=cutoff).only(
+            "submission_id", "mean_similarity", "ci_lower", "ci_upper", "z_score"
+        )
+    )
+    if not srs:
+        raise Http404("No flagged students to plot")
 
-    # 3) Build list of (name, mean, lower, upper)
-    subs = Submissions.objects.filter(
-        pk__in=[sr.submission_id for sr in srs]
-    ).select_related("student")
-    name_map = {
-        sub.pk: f"{sub.student.first_name} {sub.student.last_name}" for sub in subs
-    }
+    # Resolve all names via bulk lookup
+    submission_ids = [sr.submission_id for sr in srs]
+    sub_map = (
+        Submissions.objects.filter(pk__in=submission_ids)
+        .select_related("student")
+        .in_bulk(field_name="pk")
+    )
 
     data = []
     for sr in srs:
-        name = name_map.get(sr.submission_id, f"ID {sr.submission_id}")
-        data.append((name, sr.mean_similarity, sr.ci_lower, sr.ci_upper))
+        submission = sub_map.get(sr.submission_id)
+        if submission:
+            name = f"{submission.student.first_name} {submission.student.last_name}"
+        else:
+            name = f"ID {sr.submission_id}"
+        data.append((name, sr.mean_similarity, sr.ci_lower, sr.ci_upper, sr.z_score))
 
-    # 4) Sort by mean descending
     data.sort(key=lambda x: x[1], reverse=True)
-    names, means, lowers, uppers = zip(*data)
+    names, means, lowers, uppers, zs = zip(*data)
 
-    # 5) Compute left/right error lengths
     left_errs = [m - lo for m, lo in zip(means, lowers)]
     right_errs = [hi - m for hi, m in zip(uppers, means)]
 
-    # 6) Plot horizontal error bars
     fig, ax = plt.subplots(figsize=(6, max(4, len(names) * 0.4)))
     ax.errorbar(
         means,
@@ -644,7 +638,6 @@ def similarity_interval_plot(request, assignment_id):
         color="C1",
     )
 
-    # 7) Vertical line at μ
     ax.axvline(
         report.mu,
         color="grey",
@@ -652,26 +645,20 @@ def similarity_interval_plot(request, assignment_id):
         label=f"Population μ = {report.mu:.1f}%",
     )
 
-    # 8) Annotate each bar with its z_score
-    for idx, sr in enumerate(srs.order_by("-mean_similarity")):
-        z = sr.z_score
-        ax.text(uppers[idx] + 0.5, idx, f"z={z:.2f}", va="center", fontsize=8)
+    for i, z in enumerate(zs):
+        ax.text(uppers[i] + 0.5, i, f"z={z:.2f}", va="center", fontsize=8)
 
-    # 9) Y-axis labels & invert
     ax.set_yticks(range(len(names)))
     ax.set_yticklabels(names, fontsize=8)
     ax.invert_yaxis()
 
-    # 10) Labels, title, legend
     ax.set_xlabel("Mean Similarity (%) with 95% CI")
     ax.set_title(f"Assignment {assignment_id}: Flagged CI")
     ax.legend(loc="lower right", fontsize=8)
     plt.tight_layout()
 
-    # 11) Render PNG
     buf = io.BytesIO()
     fig.savefig(buf, format="png")
     plt.close(fig)
     buf.seek(0)
-
     return HttpResponse(buf.read(), content_type="image/png")
