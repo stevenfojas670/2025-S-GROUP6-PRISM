@@ -10,9 +10,11 @@ class KeywordAnalyzer:
     __words = None
     __jsonFileName = None
     __jsonFile = None
+    __found = None
 
     def __init__(self, inputFile):
         self.__words = list()
+        self.__found = list(dict())
         self.__openAndValidateFile(inputFile)
         self.__createJSON()
         self.__runAnalysis()
@@ -51,7 +53,7 @@ class KeywordAnalyzer:
         for f in os.listdir(dirName):
             if(not f.endswith(".csv")):
                 section = f.split("_")[2]
-                self.__jsonFile.write('{\n\t' + f'{section}' + ': [\n')
+                self.__jsonFile.write('{\n\t' + f'"{section}"' + ': [\n')
                 self.__checkStudentFiles(f"{dirName}/{f}")
                 self.__jsonFile.write('\t]\n')
                 self.__jsonFile.write('}\n')
@@ -60,7 +62,7 @@ class KeywordAnalyzer:
     def __checkStudentFiles(self,section):
         for f in os.listdir(section):
             headerList = None
-            self.__jsonFile.write('{\n\t\t' + f'{f.split("-")[1].strip("_")}' + ': [\n')
+            self.__jsonFile.write('{\n\t\t' + f'"{f.split("-")[1].strip("_")}"' + ': [\n')
 
             if(not f.endswith(".json")):
                 program = cindex.Index.create()
@@ -74,16 +76,17 @@ class KeywordAnalyzer:
 
                 # Start from the root cursor
                 self.__checkAST(ast.cursor)
+                print(self.__found)
+                json.dump(self.__found,self.__jsonFile,indent=8)
+                self.__jsonFile.write('\t\t]\n')
+                self.__jsonFile.write('}\n')
                 break
-            self.__jsonFile.write('\t\t]\n')
-            self.__jsonFile.write('}\n')
 
     def __checkAST(self, currNode):
         for w in self.__words:
             if w == currNode.spelling:
               if currNode.kind != CursorKind.VAR_DECL or currNode.kind != CursorKind.DECL_REF_EXPR:
-                    found = {'word' : w, 'line' : currNode.location.line}
-                    json.dump(found,self.__jsonFile,indent=8)
+                    self.__found.append({'word' : w, 'line' : currNode.location.line})
 
         for c in currNode.get_children():
             self.__checkAST(c)
