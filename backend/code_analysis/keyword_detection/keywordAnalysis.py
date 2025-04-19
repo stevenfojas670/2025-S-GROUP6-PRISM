@@ -1,3 +1,13 @@
+'''
+    Created by Daniel Levy, 4/19/2025
+
+    This script is designed to analyze blacklisted keywords from
+    student submissions. A user on the front end will manually
+    input which keywords and/or libraries that students should not
+    be using in their code. The file will then be sent to this script
+    for processing all student submissions, and we will return an
+    error json back to the front end to display the results to the user.
+'''
 import sys
 import os
 import json
@@ -51,12 +61,12 @@ class KeywordAnalyzer:
         dirName = f"/PRISM/data/assignments/assignment_{self.__assignmentNum}/bulk_submission"
         self.__jsonFile.write('{\n\t')
 
-        for f in os.listdir(dirName):
+        for i,f in enumerate(os.listdir(dirName)):
             if(not f.endswith(".csv")):
                 section = f.split("_")[2]
                 self.__jsonFile.write(f'"{section}"' + ': [\n')
                 self.__checkStudentFiles(f"{dirName}/{f}")
-                self.__jsonFile.write(',\n')
+                self.__jsonFile.write(']\n')
 
         self.__jsonFile.write('}\n')
 
@@ -67,8 +77,8 @@ class KeywordAnalyzer:
             if(not f.endswith(".json")):
                 self.__checkHeaders(f"{section}/{f}/main.cpp",headers)
                 if (len(headers) > 0):
-                    self.__jsonFile.write('{\n\t\t' + f'"{f.split("-")[1].strip("_")}"' + ':\n')
-                    json.dump({"headers": headers}, self.__jsonFile, indent=8)
+                    self.__found.append({"headers": headers})
+                    headers.clear()
 
                 program = cindex.Index.create()
 
@@ -77,13 +87,11 @@ class KeywordAnalyzer:
                 self.__checkAST(ast.cursor)
                 print(self.__found)
                 if(len(self.__found) > 0):
-                    if(len(headers) == 0):
-                        self.__jsonFile.write('{\n\t\t' + f'"{f.split("-")[1].strip("_")}"' + ':\n')
+                    self.__jsonFile.write('{\n\t\t' + f'"{f.split("-")[1].strip("_")}"' + ':\n')
 
                     json.dump(self.__found,self.__jsonFile,indent=8)
                     self.__found.clear()
-
-                headers.clear()
+                    self.__jsonFile.write(',')
 
     def __checkHeaders(self,file,headers):
         with open(file,'r') as iFile:
