@@ -49,38 +49,52 @@ class KeywordAnalyzer:
 
     def __runAnalysis(self):
         dirName = f"/PRISM/data/assignments/assignment_{self.__assignmentNum}/bulk_submission"
+        self.__jsonFile.write('{\n\t')
 
         for f in os.listdir(dirName):
             if(not f.endswith(".csv")):
                 section = f.split("_")[2]
-                self.__jsonFile.write('{\n\t' + f'"{section}"' + ': [\n')
+                self.__jsonFile.write(f'"{section}"' + ': [\n')
                 self.__checkStudentFiles(f"{dirName}/{f}")
-                self.__jsonFile.write('\t]\n')
-                self.__jsonFile.write('}\n')
-                break
+                self.__jsonFile.write(',\n')
+
+        self.__jsonFile.write('}\n')
 
     def __checkStudentFiles(self,section):
         for f in os.listdir(section):
-            headerList = None
-            self.__jsonFile.write('{\n\t\t' + f'"{f.split("-")[1].strip("_")}"' + ': [\n')
+            headers = list()
 
             if(not f.endswith(".json")):
+                self.__jsonFile.write('{\n\t\t' + f'"{f.split("-")[1].strip("_")}"' + ':\n')
+                self.__checkHeaders(f"{section}/{f}/main.cpp",headers)
+                if (len(headers) > 0):
+                    json.dump({"headers": headers}, self.__jsonFile, indent=8)
+
                 program = cindex.Index.create()
                 # Parse program with all headers first
                 ast = program.parse(f"{section}/{f}/main.cpp",args=['-std=c++11'])
                 headerList = ast.get_includes()
-                for i in headerList:
-                    print(f"Header file: {i.include.name}")
-                print(headerList)
+                # for i in headerList:
+                #     print(f"Header file: {i.include.name}")
+                # print(headerList)
                 ast = program.parse(f"{section}/{f}/main.cpp",args=['-std=c++11','-nostdinc','-nostdlibinc'])
 
-                # Start from the root cursor
                 self.__checkAST(ast.cursor)
                 print(self.__found)
-                json.dump(self.__found,self.__jsonFile,indent=8)
-                self.__jsonFile.write('\t\t]\n')
-                self.__jsonFile.write('}\n')
-                break
+                if(len(self.__found) > 0):
+                    json.dump(self.__found,self.__jsonFile,indent=8)
+                    self.__found.clear()
+
+    def __checkHeaders(self,file,headers):
+        with open(file,'r') as iFile:
+            for line in iFile:
+                if not line.startswith("#include"):
+                    break
+
+                lib = line[line.find("<")+1:line.find(">")]
+                for w in self.__words:
+                    if w == lib:
+                        headers.append(w)
 
     def __checkAST(self, currNode):
         for w in self.__words:
