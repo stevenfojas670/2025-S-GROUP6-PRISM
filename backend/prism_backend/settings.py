@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'assignments',
     'drf_spectacular',
     'django_filters',
+    'code_analysis'
     'data_ingestion',
     'dj_rest_auth',
     'rest_framework.authtoken',
