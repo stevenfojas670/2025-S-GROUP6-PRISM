@@ -65,25 +65,25 @@ class KeywordAnalyzer:
             headers = list()
 
             if(not f.endswith(".json")):
-                self.__jsonFile.write('{\n\t\t' + f'"{f.split("-")[1].strip("_")}"' + ':\n')
                 self.__checkHeaders(f"{section}/{f}/main.cpp",headers)
                 if (len(headers) > 0):
+                    self.__jsonFile.write('{\n\t\t' + f'"{f.split("-")[1].strip("_")}"' + ':\n')
                     json.dump({"headers": headers}, self.__jsonFile, indent=8)
 
                 program = cindex.Index.create()
-                # Parse program with all headers first
-                ast = program.parse(f"{section}/{f}/main.cpp",args=['-std=c++11'])
-                headerList = ast.get_includes()
-                # for i in headerList:
-                #     print(f"Header file: {i.include.name}")
-                # print(headerList)
+
                 ast = program.parse(f"{section}/{f}/main.cpp",args=['-std=c++11','-nostdinc','-nostdlibinc'])
 
                 self.__checkAST(ast.cursor)
                 print(self.__found)
                 if(len(self.__found) > 0):
+                    if(len(headers) == 0):
+                        self.__jsonFile.write('{\n\t\t' + f'"{f.split("-")[1].strip("_")}"' + ':\n')
+
                     json.dump(self.__found,self.__jsonFile,indent=8)
                     self.__found.clear()
+
+                headers.clear()
 
     def __checkHeaders(self,file,headers):
         with open(file,'r') as iFile:
