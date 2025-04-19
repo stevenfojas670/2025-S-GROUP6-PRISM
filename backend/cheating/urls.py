@@ -21,8 +21,6 @@ from .views import (
     generate_report,
 )
 
-app_name = "cheating"
-
 router = DefaultRouter()
 router.register(r"cheating-groups", CheatingGroupsViewSet, basename="cheating-groups")
 router.register(
