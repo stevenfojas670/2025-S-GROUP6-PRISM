@@ -1,5 +1,5 @@
-'''
-    Created by Daniel Levy, 4/19/2025
+"""
+    Created by Daniel Levy, 4/19/2025.
 
     This script is designed to analyze blacklisted keywords from
     student submissions. A user on the front end will manually
@@ -7,13 +7,14 @@
     be using in their code. The file will then be sent to this script
     for processing all student submissions, and we will return an
     error json back to the front end to display the results to the user.
-'''
+"""
 import sys
 import os
 import json
 
 from clang import cindex
 from clang.cindex import CursorKind
+
 
 class KeywordAnalyzer:
     # Fields
@@ -34,7 +35,7 @@ class KeywordAnalyzer:
     '''
         This method is responsible for opening the input file
         containing the banned keywords, storing them into the
-        KeywordAnalyzer's words array, and also getting the 
+        KeywordAnalyzer's words array, and also getting the
         assignment for which the keyword analysis will be done for
     '''
     def __openAndValidateFile(self,iFile):
@@ -125,8 +126,8 @@ class KeywordAnalyzer:
 
     '''
         This method is designed to check all import statements at the start
-        of a student's file and manually verify whether or not a library 
-        specified by the user was found inside a student's file. All we are 
+        of a student's file and manually verify whether or not a library
+        specified by the user was found inside a student's file. All we are
         going to do is add the library name so it can be saved in the JSON file
     '''
     def __checkHeaders(self,file,headers):
@@ -144,8 +145,8 @@ class KeywordAnalyzer:
         This method will analyze the AST for a student's input file and
         check if there any usages of keywords they weren't suppose to use.
         In this case, we are checking if the words used are not identifiers, 
-        so we manually verify if the current node represents a VARDECL or a 
-        NAMEEXPR first prior to adding the result to our error array. For right 
+        so we manually verify if the current node represents a VARDECL or a
+        NAMEEXPR first prior to adding the result to our error array. For right
         now, we note which word was used followed by the line number it came
         from.
     '''
@@ -158,8 +159,10 @@ class KeywordAnalyzer:
         for c in currNode.get_children():
             self.__checkAST(c)
 
+
 def main(fileName):
-    analyzer = KeywordAnalyzer(fileName)
+    KeywordAnalyzer(fileName)
+
 
 if __name__ == "__main__":
     main(sys.argv[1])
