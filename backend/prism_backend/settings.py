@@ -47,7 +47,6 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "django_filters",
     "data_ingestion",
-    "code_analysis",
     "dj_rest_auth",
     "rest_framework.authtoken",
     "rest_framework_simplejwt",
