@@ -130,13 +130,13 @@ class KeywordAnalyzer:
         specified by the user was found inside a student's file. All we are
         going to do is add the library name so it can be saved in the JSON file
     '''
-    def __checkHeaders(self,file,headers):
-        with open(file,'r') as iFile:
+    def __checkHeaders(self, file, headers):
+        with open(file, 'r') as iFile:
             for line in iFile:
                 if not line.startswith("#include"):
                     break
 
-                lib = line[line.find("<")+1:line.find(">")]
+                lib = line[line.find("<") + 1:line.find(">")]
                 for w in self.__words:
                     if w == lib:
                         headers.append(w)
@@ -153,13 +153,15 @@ class KeywordAnalyzer:
     def __checkAST(self, currNode):
         for w in self.__words:
             if w == currNode.spelling:
-              if currNode.kind != CursorKind.VAR_DECL or currNode.kind != CursorKind.DECL_REF_EXPR:
-                    self.__found.append({'word' : w, 'line' : currNode.location.line})
+                if currNode.kind != CursorKind.VAR_DECL or currNode.kind != CursorKind.DECL_REF_EXPR:
+                    self.__found.append({'word': w, 'line' : currNode.location.line})
 
         for c in currNode.get_children():
             self.__checkAST(c)
 
-
+'''
+    This is the main method to interface with the keywordAnalysis script.
+'''
 def main(fileName):
     KeywordAnalyzer(fileName)
 
