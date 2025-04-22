@@ -1,12 +1,12 @@
 """
-    Created by Daniel Levy, 4/19/2025.
+Created by Daniel Levy, 4/19/2025.
 
-    This script is designed to analyze blacklisted keywords from
-    student submissions. A user on the front end will manually
-    input which keywords and/or libraries that students should not
-    be using in their code. The file will then be sent to this script
-    for processing all student submissions, and we will return an
-    error json back to the front end to display the results to the user.
+This script is designed to analyze blacklisted keywords from
+student submissions. A user on the front end will manually
+input which keywords and/or libraries that students should not
+be using in their code. The file will then be sent to this script
+for processing all student submissions, and we will return an
+error json back to the front end to display the results to the user.
 """
 import sys
 import os
@@ -15,7 +15,11 @@ import json
 from clang import cindex
 from clang.cindex import CursorKind
 
-
+"""
+This is the main class for keywordAnalysis and contains
+the implementation for all the helper methods we will
+use to check for banned keywords.
+"""
 class KeywordAnalyzer:
     # Fields
     __assignmentNum = None
@@ -25,6 +29,9 @@ class KeywordAnalyzer:
     __found = None
 
     # Methods
+    """
+        Constructor for KeywordAnalyzer
+    """
     def __init__(self, inputFile):
         self.__words = list()
         self.__found = list(dict())
@@ -38,7 +45,7 @@ class KeywordAnalyzer:
         KeywordAnalyzer's words array, and also getting the
         assignment for which the keyword analysis will be done for
     '''
-    def __openAndValidateFile(self,iFile):
+    def __openAndValidateFile(self, iFile):
         # ERROR CHECK #1: Make sure the file exists in the
         #                 keyword_detection package
         if not os.path.exists(iFile):
@@ -58,31 +65,31 @@ class KeywordAnalyzer:
 
     '''
         This method is responsible for opening and creating the JSON
-        output file that will be used by the front end
+        output file that will be used by the front end.
     '''
     def __createJSON(self):
         self.__jsonFileName = f"{self.__assignmentNum}_found.json"
-        self.__jsonFile = open(self.__jsonFileName,'w')
+        self.__jsonFile = open(self.__jsonFileName, 'w')
 
     '''
         This is the main method for KeywordAnalyzer. We will do a bulk analysis
         for every section by looking at student file located in each directory.
-        Once this has been completed, we can then access a JSON file that will 
-        contain all the students who violated the rules for the assignment
+        Once this has been completed, we can then access a JSON file that will
+        contain all the students who violated the rules for the assignment.
     '''
     def __runAnalysis(self):
         dirName = f"/PRISM/data/assignments/assignment_{self.__assignmentNum}/bulk_submission"
         self.__jsonFile.write('{\n\t')
 
-        fileCount = len(os.listdir(dirName))//2
+        fileCount = len(os.listdir(dirName)) // 2
         for f in os.listdir(dirName):
-            if(not f.endswith(".csv")):
+            if not f.endswith(".csv"):
                 section = f.split("_")[2]
                 self.__jsonFile.write(f'"{section}"' + ': {\n')
                 self.__checkStudentFiles(f"{dirName}/{f}")
                 self.__jsonFile.write('}')
                 fileCount -= 1
-                if(fileCount > 0):
+                if fileCount > 0:
                     self.__jsonFile.write(',\n')
                 else:
                     self.__jsonFile.write('\n')
