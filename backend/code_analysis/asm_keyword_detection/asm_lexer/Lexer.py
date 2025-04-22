@@ -72,6 +72,19 @@ class Lexer:
 
         return Token(TokenType.NUM,number,startPos,self.__createPosition())
 
+    def __tokenizeName(self):
+        startPos = self.__createPosition()
+        id = ""
+        while self.__lookahead.isalpha() or self.__lookahead.isdigit():
+            id += self.__lookahead
+            self.__consume()
+
+        match id:
+            case 'mov': return Token(TokenType.MOV,id,startPos,self.__createPosition())
+            case 'lea': return Token(TokenType.LEA,id,startPos,self.__createPosition())
+
+
+
     def nextToken(self):
         while self.__lookahead != self.__EOF:
             startPos = self.__createPosition()
@@ -130,11 +143,15 @@ class Lexer:
                 case _:
                     if self.__lookahead.isdigit():
                         return self.__tokenizeNumber()
+                    elif self.__lookahead.isalpha():
+                        return self.__tokenizeName()
+                    else:
+                        return Token(TokenType.ERROR,"ERROR!",startPos,self.__createPosition())
 
         return Token(TokenType.EOF,"$",self.__createPosition(),self.__createPosition())
 
 def main():
-    inputStr = '"test 12345"'
+    inputStr = 'mov mov lea lea mov lea'
     tokens = list()
     lexer = Lexer(inputStr)
     while True:
