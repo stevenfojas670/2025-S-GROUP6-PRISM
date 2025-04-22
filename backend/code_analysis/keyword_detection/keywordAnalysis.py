@@ -31,7 +31,7 @@ class KeywordAnalyzer:
 
     # Methods
     def __init__(self, inputFile):
-        """ This is a constructor for KeywordAnalyzer. """
+        """ Constructs KeywordAnalyzer object. """
         self.__words = list()
         self.__found = list(dict())
         self.__openAndValidateFile(inputFile)
@@ -169,11 +169,7 @@ class KeywordAnalyzer:
 
 
 def main(fileName):
-    """
-    This is the main method to interface
-    with the keywordAnalysis script.
-    """
-
+    """ Interfaces with keywordAnalysis class. """
     KeywordAnalyzer(fileName)
 
 
