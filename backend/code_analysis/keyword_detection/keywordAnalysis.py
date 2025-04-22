@@ -17,7 +17,8 @@ from clang.cindex import CursorKind
 
 
 class KeywordAnalyzer:
-    """Create object to perform keyword analysis"""
+    """Create object to perform keyword analysis."""
+
     __assignmentNum = None
     __words = None
     __jsonFileName = None
