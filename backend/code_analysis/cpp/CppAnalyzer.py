@@ -30,6 +30,7 @@ class CppAnalyzer:
         self.__words = words
         self.__subDir = subDir
         self.__assignment = assignment
+        self.__students = dict(dict(dict()))
 
 
     '''
@@ -40,18 +41,18 @@ class CppAnalyzer:
     '''
     def generateAST(self):
         for f in os.listdir(self.__subDir):
-            studentName = f.split('-')[1].strip()
-            with open(f"{self.__subDir}/{f}/main.cpp",'r') as submission:
-                if not f.endswith(".json"):
-                    headers = self.__checkHeaders(f"{self.__subDir}/{f}/main.cpp")
+            if not f.endswith(".json"):
+                studentName = f.split('_')[2] + f.split('_')[3]
+                with open(f"{self.__subDir}/{f}/main.cpp",'r') as submission:
+                        headers = self.__checkHeaders(f"{self.__subDir}/{f}/main.cpp")
 
-                program = cindex.Index.create()
-                ast = program.parse(f"{self.__subDir}/{f}/main.cpp", args=['-std=c++11', '-nostdinc', '-nostdlibinc'])
-                self.__checkAST(ast.cursor, studentName)
+                        program = cindex.Index.create()
+                        ast = program.parse(f"{self.__subDir}/{f}/main.cpp", args=['-std=c++11', '-nostdinc', '-nostdlibinc'])
+                        self.__checkAST(ast.cursor, studentName)
 
-                if self.__students:
-                    if headers:
-                        self.__students[studentName]["headers"] = headers
+                        if self.__students:
+                            if headers:
+                                self.__students[studentName]["headers"] = headers
 
         return self.__students
 
