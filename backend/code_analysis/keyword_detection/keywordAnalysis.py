@@ -17,6 +17,7 @@ from clang.cindex import CursorKind
 
 
 class KeywordAnalyzer:
+
     """
     This is the main class for keywordAnalysis and contains
     the implementation for all the helper methods we will
@@ -33,7 +34,7 @@ class KeywordAnalyzer:
     # Methods
     def __init__(self, inputFile):
         """
-        Constructor for KeywordAnalyzer.
+        This is a constructor for KeywordAnalyzer.
         """
         self.__words = list()
         self.__found = list(dict())
@@ -171,12 +172,11 @@ class KeywordAnalyzer:
             self.__checkAST(c)
 
 
-
-"""
-This is the main method to interface
-with the keywordAnalysis script.
-"""
 def main(fileName):
+    """
+    This is the main method to interface
+    with the keywordAnalysis script.
+    """
     KeywordAnalyzer(fileName)
 
 
