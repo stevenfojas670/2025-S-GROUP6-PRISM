@@ -17,12 +17,7 @@ from clang.cindex import CursorKind
 
 
 class KeywordAnalyzer:
-    """
-    This is the main class for keywordAnalysis and contains
-    the implementation for all the helper methods we will
-    use to check for banned keywords.
-    """
-
+    """Create object to perform keyword analysis"""
     __assignmentNum = None
     __words = None
     __jsonFileName = None
@@ -31,7 +26,7 @@ class KeywordAnalyzer:
 
     # Methods
     def __init__(self, inputFile):
-        """ Constructs KeywordAnalyzer object. """
+        """Construct KeywordAnalyzer object."""
         self.__words = list()
         self.__found = list(dict())
         self.__openAndValidateFile(inputFile)
@@ -169,7 +164,7 @@ class KeywordAnalyzer:
 
 
 def main(fileName):
-    """ Interfaces with keywordAnalysis class. """
+    """Interfaces with keywordAnalysis class."""
     KeywordAnalyzer(fileName)
 
 
