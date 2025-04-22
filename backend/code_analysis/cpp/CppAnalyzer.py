@@ -40,39 +40,35 @@ class CppAnalyzer:
     '''
     def generateAST(self):
         for f in os.listdir(self.__subDir):
+            studentName = f.split('-')[1].strip()
             with open(f"{self.__subDir}/{f}/as{self.__assignment}.asm",'r') as submission:
+                if not f.endswith(".json"):
+                    headers = self.__checkHeaders(f"{self.__subDir}/{f}/main.cpp")
 
-        fileCount = len(os.listdir(section)) // 2
-        filesAdded = 0
 
-        for f in os.listdir(section):
-            headers = list()
 
-            if not f.endswith(".json"):
-                self.__checkHeaders(f"{section}/{f}/main.cpp", headers)
-                if len(headers) > 0:
-                    self.__found.append({"headers": headers})
-
-                program = cindex.Index.create()
-
-                ast = program.parse(f"{section}/{f}/main.cpp", args=['-std=c++11', '-nostdinc', '-nostdlibinc'])
-
-                self.__checkAST(ast.cursor)
-
-                if len(self.__found) > 0:
-                    if (filesAdded > 0):
-                        self.__jsonFile.write(',\n')
-                    filesAdded += 1
-
-                    self.__jsonFile.write('\n\t\t' + f'"{f.split("-")[1].strip("_")}"' + ': \n')
-
-                    json.dump(self.__found, self.__jsonFile, indent=8)
-                    self.__found.clear()
-                    if fileCount == filesAdded:
-                        break
-                headers.clear()
-                for i in range(len(self.__wordsCount)):
-                    self.__wordsCount[i] = 0
+        #
+        #
+        #         program = cindex.Index.create()
+        #
+        #         ast = program.parse(f"{section}/{f}/main.cpp", args=['-std=c++11', '-nostdinc', '-nostdlibinc'])
+        #
+        #         self.__checkAST(ast.cursor)
+        #
+        #         if len(self.__found) > 0:
+        #             if (filesAdded > 0):
+        #                 self.__jsonFile.write(',\n')
+        #             filesAdded += 1
+        #
+        #             self.__jsonFile.write('\n\t\t' + f'"{f.split("-")[1].strip("_")}"' + ': \n')
+        #
+        #             json.dump(self.__found, self.__jsonFile, indent=8)
+        #             self.__found.clear()
+        #             if fileCount == filesAdded:
+        #                 break
+        #         headers.clear()
+        #         for i in range(len(self.__wordsCount)):
+        #             self.__wordsCount[i] = 0
 
 
     '''
@@ -81,7 +77,8 @@ class CppAnalyzer:
         specified by the user was found inside a student's file. All we are
         going to do is add the library name so it can be saved in the JSON file
     '''
-    def __checkHeaders(self, file, headers):
+    def __checkHeaders(self, file):
+        foundHeaders = list()
         with open(file, 'r') as iFile:
             includeFound = False
             for line in iFile:
@@ -95,10 +92,8 @@ class CppAnalyzer:
 
                     for w in self.__words:
                         if w == headerName:
-                            headers.append(w)
-
-                elif includeFound:
-                    break
+                            foundHeaders.append(w)
+                elif includeFound: return foundHeaders
 
     '''
         This method will analyze the AST for a student's input file and
