@@ -53,25 +53,68 @@ class Lexer:
             match self.__lookahead:
                 case '\n':
                     self.__consumeNewLine()
-                case [' ','\t','\r']:
+                case ' ' | '\t' | '\r':
                     self.__consumeWhiteSpace()
                 case '+':
                     self.__match('+')
                     return Token(TokenType.PLUS,"+",startPos,self.__createPosition())
+                case '-':
+                    self.__match('-')
+                    return Token(TokenType.MINUS,"-",startPos,self.__createPosition())
+                case '*':
+                    self.__match('*')
+                    return Token(TokenType.MULT,"*",startPos,self.__createPosition())
+                case '/':
+                    self.__match('/')
+                    return Token(TokenType.DIV,"/",startPos,self.__createPosition())
+                case '%':
+                    self.__match('%')
+                    return Token(TokenType.MOD,"%",startPos,self.__createPosition())
+                case '|':
+                    self.__match('|')
+                    return Token(TokenType.OR,"|",startPos,self.__createPosition())
+                case '&':
+                    self.__match('&')
+                    return Token(TokenType.AND,"&",startPos,self.__createPosition())
+                case '.':
+                    self.__match('.')
+                    return Token(TokenType.PERIOD,".",startPos,self.__createPosition())
+                case ',':
+                    self.__match(',')
+                    return Token(TokenType.COMMA,",",startPos,self.__createPosition())
+                case '(':
+                    self.__match('(')
+                    return Token(TokenType.LPAREN,"(",startPos,self.__createPosition())
+                case ')':
+                    self.__match(')')
+                    return Token(TokenType.RPAREN,")",startPos,self.__createPosition())
+                case '[':
+                    self.__match('[')
+                    return Token(TokenType.LBRACK,"[",startPos,self.__createPosition())
+                case ']':
+                    self.__match(']')
+                    return Token(TokenType.RBRACK,"]",startPos,self.__createPosition())
+                case ':':
+                    self.__match(':')
+                    return Token(TokenType.COLON,":",startPos,self.__createPosition())
+                case '\'':
+                    self.__match('\'')
+                    return Token(TokenType.QUOTE,"\'",startPos,self.__createPosition())
 
         return Token(TokenType.EOF,"$",self.__createPosition(),self.__createPosition())
 
 def main():
-    inputStr = "++"
+    inputStr = "+-*/%:[]()     +    "
     tokens = list()
     lexer = Lexer(inputStr)
     while True:
         currToken = lexer.nextToken()
         tokens.append(currToken)
+        print(currToken.toString())
+
         if currToken.getType() == TokenType.EOF:
             break
 
-        print(currToken.toString())
 
 if __name__ == "__main__":
     main()
