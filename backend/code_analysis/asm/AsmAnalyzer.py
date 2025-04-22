@@ -6,15 +6,13 @@ from code_analysis.asm.asm_token.TokenType import TokenType
 class AsmAnalyzer:
 
     __words = None
-    __oFile = None
     __subDir = None
     __assignment = None
     __tokens = None
     __students:dict = None
 
-    def __init__(self, words, oFile, submissionDir, assignment):
+    def __init__(self, words, submissionDir, assignment):
         self.__words = words
-        self.__oFile = oFile
         self.__subDir = submissionDir
         self.__assignment = assignment
         self.__students = dict(dict(dict()))
