@@ -418,6 +418,7 @@ class TokenType(Enum):
 
 
     # OPERATORS
+    EQ = "="
     PLUS = "+"
     MINUS = "-"
     MULTIPLY = "*"

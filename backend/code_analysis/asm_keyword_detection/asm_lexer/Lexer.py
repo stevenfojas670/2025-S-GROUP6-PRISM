@@ -268,8 +268,8 @@ class Lexer:
             # MIPS Keywords
             case '$zero': return Token(TokenType.ZERO, id, startPos, self.__createPosition())
             case '$at': return Token(TokenType.AT, id, startPos, self.__createPosition())
-            case '$v0': return Token(TokenType.VO, id, startPos, self.__createPosition())
-            case '$v1': return Token(TokenType.VO, id, startPos, self.__createPosition())
+            case '$v0': return Token(TokenType.V0, id, startPos, self.__createPosition())
+            case '$v1': return Token(TokenType.V1, id, startPos, self.__createPosition())
             case '$a0': return Token(TokenType.A0, id, startPos, self.__createPosition())
             case '$a1': return Token(TokenType.A1, id, startPos, self.__createPosition())
             case '$a2': return Token(TokenType.A2, id, startPos, self.__createPosition())
@@ -377,7 +377,7 @@ class Lexer:
             case 'ble': return Token(TokenType.BLE, id, startPos, self.__createPosition())
             case 'bleu': return Token(TokenType.BLEU, id, startPos, self.__createPosition())
             case 'blez': return Token(TokenType.BLEZ, id, startPos, self.__createPosition())
-            case 'blezal': return Token(TokenType.BLEZEL, id, startPos, self.__createPosition())
+            case 'blezal': return Token(TokenType.BLEZAL, id, startPos, self.__createPosition())
             case 'bltzal': return Token(TokenType.BLTZAL, id, startPos, self.__createPosition())
             case 'blt': return Token(TokenType.BLT, id, startPos, self.__createPosition())
             case 'bltu': return Token(TokenType.BLTU, id, startPos, self.__createPosition())
@@ -471,55 +471,58 @@ class Lexer:
                 case ';' | '#': self.__consumeComment()
                 case '\n': self.__consumeNewLine()
                 case ' ' | '\t' | '\r': self.__consumeWhiteSpace()
+                case '=':
+                    self.__match('=')
+                    return Token(TokenType.EQ, "=", startPos, self.__createPosition())
                 case '+':
                     self.__match('+')
-                    return Token(TokenType.PLUS,"+",startPos,self.__createPosition())
+                    return Token(TokenType.PLUS, "+", startPos, self.__createPosition())
                 case '-':
                     self.__match('-')
-                    return Token(TokenType.MINUS,"-",startPos,self.__createPosition())
+                    return Token(TokenType.MINUS, "-", startPos, self.__createPosition())
                 case '*':
                     self.__match('*')
-                    return Token(TokenType.MULTIPLY,"*",startPos,self.__createPosition())
+                    return Token(TokenType.MULTIPLY, "*", startPos, self.__createPosition())
                 case '/':
                     self.__match('/')
-                    return Token(TokenType.DIVIDE,"/",startPos,self.__createPosition())
+                    return Token(TokenType.DIVIDE, "/", startPos, self.__createPosition())
                 case '%':
                     self.__match('%')
-                    return Token(TokenType.MOD,"%",startPos,self.__createPosition())
+                    return Token(TokenType.MOD, "%", startPos, self.__createPosition())
                 case '|':
                     self.__match('|')
-                    return Token(TokenType.BOR,"|",startPos,self.__createPosition())
+                    return Token(TokenType.BOR, "|", startPos, self.__createPosition())
                 case '&':
                     self.__match('&')
-                    return Token(TokenType.BAND,"&",startPos,self.__createPosition())
+                    return Token(TokenType.BAND, "&", startPos, self.__createPosition())
                 case '.':
                     self.__match('.')
                     if(self.__lookahead.isalpha()):
                         self.__currPos -= 1
                         self.__lookahead = '.'
                         return self.__tokenizeName()
-                    return Token(TokenType.PERIOD,".",startPos,self.__createPosition())
+                    return Token(TokenType.PERIOD, ".", startPos, self.__createPosition())
                 case ',':
                     self.__match(',')
-                    return Token(TokenType.COMMA,",",startPos,self.__createPosition())
+                    return Token(TokenType.COMMA, ",", startPos, self.__createPosition())
                 case '(':
                     self.__match('(')
-                    return Token(TokenType.LPAREN,"(",startPos,self.__createPosition())
+                    return Token(TokenType.LPAREN, "(", startPos, self.__createPosition())
                 case ')':
                     self.__match(')')
-                    return Token(TokenType.RPAREN,")",startPos,self.__createPosition())
+                    return Token(TokenType.RPAREN, ")", startPos, self.__createPosition())
                 case '[':
                     self.__match('[')
-                    return Token(TokenType.LBRACK,"[",startPos,self.__createPosition())
+                    return Token(TokenType.LBRACK, "[", startPos, self.__createPosition())
                 case ']':
                     self.__match(']')
-                    return Token(TokenType.RBRACK,"]",startPos,self.__createPosition())
+                    return Token(TokenType.RBRACK, "]", startPos, self.__createPosition())
                 case ':':
                     self.__match(':')
-                    return Token(TokenType.COLON,":",startPos,self.__createPosition())
+                    return Token(TokenType.COLON, ":", startPos, self.__createPosition())
                 case '\'':
                     self.__match('\'')
-                    return Token(TokenType.SQUOTE,"\'",startPos,self.__createPosition())
+                    return Token(TokenType.SQUOTE, "\'", startPos, self.__createPosition())
                 case '\"': return self.__tokenizeString()
                 case _:
                     if self.__lookahead.isdigit(): return self.__tokenizeNumber()
@@ -529,7 +532,7 @@ class Lexer:
                           or self.__lookahead == "$"):
                         return self.__tokenizeName()
                     else:
-                        return Token(TokenType.ERROR,"ERROR!",startPos,self.__createPosition())
+                        return Token(TokenType.ERROR, "ERROR!", startPos, self.__createPosition())
 
         return Token(TokenType.EOF,"$",self.__createPosition(),self.__createPosition())
 
