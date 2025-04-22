@@ -42,9 +42,9 @@ class AsmAnalyzer:
             for w in self.__words:
                 if t.getLexeme() == w:
                     if not studentName in self.__students :
-                        self.__students[studentName] = dict(dict())
-                    if not w in self.__students[studentName]:
-                        self.__students[studentName][w] = {"count":0,"positions":list()}
+                        self.__students[studentName] = {"totalFound":0,"wordsFound":dict(dict())}
+                    if not w in self.__students[studentName]["wordsFound"]:
+                        self.__students[studentName]["wordsFound"][w] = {"count":0,"positions":list()}
 
-                    self.__students[studentName][w]["count"] += 1
-                    self.__students[studentName][w]["positions"].append(t.getStartPos().toString())
+                    self.__students[studentName]["wordsFound"][w]["count"] += 1
+                    self.__students[studentName]["wordsFound"][w]["positions"].append(t.getStartPos().toString())
