@@ -45,30 +45,15 @@ class CppAnalyzer:
                 if not f.endswith(".json"):
                     headers = self.__checkHeaders(f"{self.__subDir}/{f}/main.cpp")
 
+                program = cindex.Index.create()
+                ast = program.parse(f"{self.__subDir}/{f}/main.cpp", args=['-std=c++11', '-nostdinc', '-nostdlibinc'])
+                self.__checkAST(ast.cursor, studentName)
 
+                if self.__students:
+                    if headers:
+                        self.__students[studentName]["headers"] = headers
 
-        #
-        #
-        #         program = cindex.Index.create()
-        #
-        #         ast = program.parse(f"{section}/{f}/main.cpp", args=['-std=c++11', '-nostdinc', '-nostdlibinc'])
-        #
-        #         self.__checkAST(ast.cursor)
-        #
-        #         if len(self.__found) > 0:
-        #             if (filesAdded > 0):
-        #                 self.__jsonFile.write(',\n')
-        #             filesAdded += 1
-        #
-        #             self.__jsonFile.write('\n\t\t' + f'"{f.split("-")[1].strip("_")}"' + ': \n')
-        #
-        #             json.dump(self.__found, self.__jsonFile, indent=8)
-        #             self.__found.clear()
-        #             if fileCount == filesAdded:
-        #                 break
-        #         headers.clear()
-        #         for i in range(len(self.__wordsCount)):
-        #             self.__wordsCount[i] = 0
+        return self.__students
 
 
     '''
@@ -104,21 +89,17 @@ class CppAnalyzer:
         now, we note which word was used followed by the line number it came
         from.
     '''
-    def __checkAST(self, currNode):
+    def __checkAST(self, currNode, studentName):
         for i,w in enumerate(self.__words):
             if w == currNode.spelling:
                 if currNode.kind != CursorKind.VAR_DECL or currNode.kind != CursorKind.DECL_REF_EXPR:
-                    self.__found.append({'word': w, 'line': currNode.location.line})
-                    self.__wordsCount[i] += 1
+                    if not studentName in self.__students:
+                        self.__students[studentName] = {"totalFound":0, "headers":list(), "wordsFound":dict(dict())}
+                    if not w in self.__students[studentName]["wordsFound"]:
+                        self.__students[studentName]["wordsFound"][w] = {"count": 0, "positions": list()}
+                        self.__students[studentName]["wordsFound"][w]["count"] += 1
+                        self.__students[studentName]["wordsFound"][w]["positions"].append(f"<{currNode.location.line}."
+                                                                                        f"{currNode.location.column}>")
 
         for c in currNode.get_children():
-            self.__checkAST(c)
-
-
-def main(fileName):
-    """Interfaces with keywordAnalysis class."""
-    CppAnalyzer(fileName)
-
-
-if __name__ == "__main__":
-    main(sys.argv[1])
+            self.__checkAST(c, studentName)
