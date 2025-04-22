@@ -468,7 +468,7 @@ class Lexer:
         while self.__lookahead != self.__EOF:
             startPos = self.__createPosition()
             match self.__lookahead:
-                case ';': self.__consumeComment()
+                case ';' | '#': self.__consumeComment()
                 case '\n': self.__consumeNewLine()
                 case ' ' | '\t' | '\r': self.__consumeWhiteSpace()
                 case '+':
