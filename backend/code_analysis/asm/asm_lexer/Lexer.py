@@ -1,7 +1,7 @@
 
-from code_analysis.asm_keyword_detection.asm_token.Position import Position
-from code_analysis.asm_keyword_detection.asm_token.Token import Token
-from code_analysis.asm_keyword_detection.asm_token.TokenType import TokenType
+from code_analysis.asm.asm_token.Position import Position
+from code_analysis.asm.asm_token.Token import Token
+from code_analysis.asm.asm_token.TokenType import TokenType
 
 class Lexer:
     __EOF:str = '\0'

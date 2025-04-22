@@ -1,8 +1,7 @@
 
 import os
-from code_analysis.asm_keyword_detection.asm_lexer.Lexer import Lexer
-from code_analysis.asm_keyword_detection.asm_token.Token import Token
-from code_analysis.asm_keyword_detection.asm_token.TokenType import TokenType
+from code_analysis.asm.asm_lexer.Lexer import Lexer
+from code_analysis.asm.asm_token.TokenType import TokenType
 
 class AsmAnalyzer:
 

@@ -1,6 +1,6 @@
 
-from code_analysis.asm_keyword_detection.asm_token import Position
-from code_analysis.asm_keyword_detection.asm_token.TokenType import TokenType
+from code_analysis.asm.asm_token import Position
+from code_analysis.asm.asm_token.TokenType import TokenType
 
 class Token:
     __type = None
