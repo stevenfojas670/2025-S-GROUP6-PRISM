@@ -535,21 +535,3 @@ class Lexer:
                         return Token(TokenType.ERROR, "ERROR!", startPos, self.__createPosition())
 
         return Token(TokenType.EOF,"$",self.__createPosition(),self.__createPosition())
-
-def main():
-    inputStr = """"""
-    tokens = list()
-    lexer = Lexer(inputStr)
-    while True:
-        currToken = lexer.nextToken()
-        tokens.append(currToken)
-        print(currToken.toString())
-
-        if currToken.getType() == TokenType.EOF:
-            break
-        elif currToken.getType() == TokenType.ERROR:
-            break
-
-
-if __name__ == "__main__":
-    main()
