@@ -19,19 +19,17 @@ from clang.cindex import CursorKind
 class CppAnalyzer:
     """Create object to perform keyword analysis."""
 
-    __assignmentNum = None
     __words = None
-    __wordsCount = None
-    __jsonFileName = None
-    __jsonFile = None
-    __found = None
+    __subDir = None
+    __assignment = None
+    __students:dict = None
 
     # Methods
-    def __init__(self, inputFile):
+    def __init__(self, words, subDir, assignment):
         """Construct CppAnalyzer object."""
-        self.__words = list()
-        self.__wordsCount = list()
-        self.__found = list(dict())
+        self.__words = words
+        self.__subDir = subDir
+        self.__assignment = assignment
 
 
     '''
@@ -40,7 +38,10 @@ class CppAnalyzer:
         blacklisted keywords and/or headers. All information will be written
         into the JSON file.
     '''
-    def __checkStudentFiles(self, section):
+    def generateAST(self):
+        for f in os.listdir(self.__subDir):
+            with open(f"{self.__subDir}/{f}/as{self.__assignment}.asm",'r') as submission:
+
         fileCount = len(os.listdir(section)) // 2
         filesAdded = 0
 
