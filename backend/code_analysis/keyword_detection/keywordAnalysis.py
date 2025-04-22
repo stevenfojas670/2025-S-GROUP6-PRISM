@@ -15,12 +15,12 @@ import json
 from clang import cindex
 from clang.cindex import CursorKind
 
-"""
-This is the main class for keywordAnalysis and contains
-the implementation for all the helper methods we will
-use to check for banned keywords.
-"""
 class KeywordAnalyzer:
+    """
+    This is the main class for keywordAnalysis and contains
+    the implementation for all the helper methods we will
+    use to check for banned keywords.
+    """
     # Fields
     __assignmentNum = None
     __words = None
@@ -29,10 +29,10 @@ class KeywordAnalyzer:
     __found = None
 
     # Methods
-    """
-        Constructor for KeywordAnalyzer
-    """
     def __init__(self, inputFile):
+        """
+            Constructor for KeywordAnalyzer
+        """
         self.__words = list()
         self.__found = list(dict())
         self.__openAndValidateFile(inputFile)
@@ -52,7 +52,7 @@ class KeywordAnalyzer:
             print("Error! Banned keyword file does not exist!")
             exit(1)
 
-        file = open(iFile,'r')
+        file = open(iFile, 'r')
 
         fileInput = file.readlines()
         for w in fileInput:
@@ -102,7 +102,7 @@ class KeywordAnalyzer:
         blacklisted keywords and/or headers. All information will be written
         into the JSON file.
     '''
-    def __checkStudentFiles(self,section):
+    def __checkStudentFiles(self, section):
         fileCount = len(os.listdir(section)) // 2
         filesAdded = 0
 
@@ -110,7 +110,7 @@ class KeywordAnalyzer:
             headers = list()
 
             if not f.endswith(".json"):
-                self.__checkHeaders(f"{section}/{f}/main.cpp",headers)
+                self.__checkHeaders(f"{section}/{f}/main.cpp", headers)
                 if len(headers) > 0:
                     self.__found.append({"headers": headers})
 
@@ -132,7 +132,6 @@ class KeywordAnalyzer:
                     if fileCount == filesAdded:
                         break
                 headers.clear()
-
 
     '''
         This method is designed to check all import statements at the start
@@ -164,17 +163,16 @@ class KeywordAnalyzer:
         for w in self.__words:
             if w == currNode.spelling:
                 if currNode.kind != CursorKind.VAR_DECL or currNode.kind != CursorKind.DECL_REF_EXPR:
-                    self.__found.append({'word':w, 'line':currNode.location.line})
+                    self.__found.append({'word': w, 'line': currNode.location.line})
 
         for c in currNode.get_children():
             self.__checkAST(c)
 
-
+"""
+This is the main method to interface
+with the keywordAnalysis script.
+"""
 def main(fileName):
-    '''
-        This is the main method to interface
-        with the keywordAnalysis script.
-    '''
     KeywordAnalyzer(fileName)
 
 
