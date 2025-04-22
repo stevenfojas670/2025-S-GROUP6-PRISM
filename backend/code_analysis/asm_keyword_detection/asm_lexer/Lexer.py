@@ -47,6 +47,18 @@ class Lexer:
     def __createPosition(self):
         return Position(self.__currLine,self.__currCol)
 
+    def __tokenizeNumber(self):
+        startPos = self.__createPosition()
+        number = ""
+        while self.__lookahead.isdigit():
+            number += self.__lookahead
+            self.__consume()
+            if self.__lookahead == '.':
+                number += self.__lookahead
+                self.__consume()
+
+        return Token(TokenType.NUM,number,startPos,self.__createPosition())
+
     def nextToken(self):
         while self.__lookahead != self.__EOF:
             startPos = self.__createPosition()
@@ -100,11 +112,14 @@ class Lexer:
                 case '\'':
                     self.__match('\'')
                     return Token(TokenType.QUOTE,"\'",startPos,self.__createPosition())
+                case _:
+                    if self.__lookahead.isdigit():
+                        return self.__tokenizeNumber()
 
         return Token(TokenType.EOF,"$",self.__createPosition(),self.__createPosition())
 
 def main():
-    inputStr = "+-*/%:[]()     +    "
+    inputStr = "123.4315"
     tokens = list()
     lexer = Lexer(inputStr)
     while True:
