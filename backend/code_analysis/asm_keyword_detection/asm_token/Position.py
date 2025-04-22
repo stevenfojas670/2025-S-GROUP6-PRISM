@@ -9,11 +9,7 @@ class Position:
     __line = None   # Line Placement
     __col = None    # Column Placement
 
-    def __init__(self):
-        self.__line = 0
-        self.__col = 0
-
-    def __init__(self,startLine,startCol):
+    def __init__(self,startLine=0,startCol=0):
         self.__line = startLine
         self.__col = startCol
 
