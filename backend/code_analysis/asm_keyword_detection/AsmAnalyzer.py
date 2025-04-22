@@ -19,10 +19,8 @@ class AsmAnalyzer:
         self.__subDir = submissionDir
         self.__assignment = assignment
         self.__students = dict(dict(dict()))
-        self.__tokenizeAssembly()
-        return self.__students
 
-    def __tokenizeAssembly(self):
+    def tokenizeAssembly(self):
         for f in os.listdir(self.__subDir):
             with open(f"{self.__subDir}/{f}/as{self.__assignment}.asm",'r') as submission:
                 lexer = Lexer(submission.read())
@@ -36,7 +34,8 @@ class AsmAnalyzer:
                     elif currToken.getType() == TokenType.ERROR:
                         break
 
-            self.__checkTokens(f.split('-')[1])
+            self.__checkTokens(f.split('-')[1].strip())
+        return self.__students
 
     def __checkTokens(self, studentName):
         for t in self.__tokens:
@@ -49,4 +48,3 @@ class AsmAnalyzer:
 
                     self.__students[studentName][w]["count"] += 1
                     self.__students[studentName][w]["positions"].append(t.getStartPos().toString())
-
