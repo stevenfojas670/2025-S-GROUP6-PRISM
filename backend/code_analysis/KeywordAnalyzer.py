@@ -55,7 +55,7 @@ class KeywordAnalyzer:
 
     def __runAnalysis(self):
         submissionDir = f"assignments/assignment_{self.__assignment}/bulk_submission"
-        fileCount = len(os.listdir(submissionDir)) // 2
+
         for f in os.listdir(submissionDir):
             if not f.endswith(".csv"):
                 section = f
@@ -66,13 +66,6 @@ class KeywordAnalyzer:
                     asm = AsmAnalyzer(self.__words,self.__jsonFile,f"{submissionDir}/{section}",self.__assignment)
                     students = asm.tokenizeAssembly()
                     self.__sections[section] = students
-
-                fileCount -= 1
-                if fileCount > 0:
-                    self.__jsonFile.write(',\n')
-                else:
-                    self.__jsonFile.write('\n')
-                    break
 
         json.dump(self.__sections, self.__jsonFile,indent=4)
 
