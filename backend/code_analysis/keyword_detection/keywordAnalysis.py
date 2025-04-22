@@ -96,33 +96,36 @@ class KeywordAnalyzer:
         into the JSON file.
     '''
     def __checkStudentFiles(self,section):
-        fileCount = len(os.listdir(section))//2
+        fileCount = len(os.listdir(section)) // 2
         filesAdded = 0
 
         for f in os.listdir(section):
             headers = list()
 
-            if(not f.endswith(".json")):
+            if not f.endswith(".json"):
                 self.__checkHeaders(f"{section}/{f}/main.cpp",headers)
-                if (len(headers) > 0):
+                if len(headers) > 0:
                     self.__found.append({"headers": headers})
 
                 program = cindex.Index.create()
 
-                ast = program.parse(f"{section}/{f}/main.cpp",args=['-std=c++11','-nostdinc','-nostdlibinc'])
+                ast = program.parse(f"{section}/{f}/main.cpp", args=['-std=c++11', '-nostdinc', '-nostdlibinc'])
 
                 self.__checkAST(ast.cursor)
 
-                if(len(self.__found) > 0):
+                if len(self.__found) > 0:
                     if (filesAdded > 0):
                         self.__jsonFile.write(',\n')
                     filesAdded += 1
 
                     self.__jsonFile.write('\n\t\t' + f'"{f.split("-")[1].strip("_")}"' + ': \n')
 
-                    json.dump(self.__found,self.__jsonFile,indent=8)
+                    json.dump(self.__found, self.__jsonFile, indent=8)
                     self.__found.clear()
+                    if fileCount == filesAdded:
+                        break
                 headers.clear()
+
 
     '''
         This method is designed to check all import statements at the start
@@ -144,7 +147,7 @@ class KeywordAnalyzer:
     '''
         This method will analyze the AST for a student's input file and
         check if there any usages of keywords they weren't suppose to use.
-        In this case, we are checking if the words used are not identifiers, 
+        In this case, we are checking if the words used are not identifiers,
         so we manually verify if the current node represents a VARDECL or a
         NAMEEXPR first prior to adding the result to our error array. For right
         now, we note which word was used followed by the line number it came
@@ -154,15 +157,17 @@ class KeywordAnalyzer:
         for w in self.__words:
             if w == currNode.spelling:
                 if currNode.kind != CursorKind.VAR_DECL or currNode.kind != CursorKind.DECL_REF_EXPR:
-                    self.__found.append({'word': w, 'line' : currNode.location.line})
+                    self.__found.append({'word':w, 'line':currNode.location.line})
 
         for c in currNode.get_children():
             self.__checkAST(c)
 
-'''
-    This is the main method to interface with the keywordAnalysis script.
-'''
+
 def main(fileName):
+    '''
+        This is the main method to interface
+        with the keywordAnalysis script.
+    '''
     KeywordAnalyzer(fileName)
 
 
