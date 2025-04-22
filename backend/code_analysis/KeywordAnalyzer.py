@@ -67,6 +67,12 @@ class KeywordAnalyzer:
                     students = asm.tokenizeAssembly()
                     self.__sections[section] = students
 
+                    for w in students:
+                        totalCount = 0
+                        for c in students[w]["wordsFound"]:
+                            totalCount += students[w]["wordsFound"][c]["count"]
+                        students[w]["totalFound"] = totalCount
+
         json.dump(self.__sections, self.__jsonFile,indent=4)
 
 
