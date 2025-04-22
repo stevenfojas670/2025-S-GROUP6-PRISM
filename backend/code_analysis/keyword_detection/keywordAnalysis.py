@@ -21,6 +21,7 @@ class KeywordAnalyzer:
 
     __assignmentNum = None
     __words = None
+    __wordsCount = None
     __jsonFileName = None
     __jsonFile = None
     __found = None
@@ -29,6 +30,7 @@ class KeywordAnalyzer:
     def __init__(self, inputFile):
         """Construct KeywordAnalyzer object."""
         self.__words = list()
+        self.__wordsCount = list()
         self.__found = list(dict())
         self.__openAndValidateFile(inputFile)
         self.__createJSON()
@@ -52,6 +54,7 @@ class KeywordAnalyzer:
         fileInput = file.readlines()
         for w in fileInput:
             self.__words.append(w.strip('\n'))
+            self.__wordsCount.append(0)
 
         fileNameParts = iFile.split('_')
         self.__assignmentNum = fileNameParts[0][2:]
@@ -127,6 +130,9 @@ class KeywordAnalyzer:
                     if fileCount == filesAdded:
                         break
                 headers.clear()
+                for i in range(len(self.__wordsCount)):
+                    self.__wordsCount[i] = 0
+
 
     '''
         This method is designed to check all import statements at the start
@@ -149,6 +155,7 @@ class KeywordAnalyzer:
                     for w in self.__words:
                         if w == headerName:
                             headers.append(w)
+
                 elif includeFound:
                     break
 
@@ -162,10 +169,11 @@ class KeywordAnalyzer:
         from.
     '''
     def __checkAST(self, currNode):
-        for w in self.__words:
+        for i,w in enumerate(self.__words):
             if w == currNode.spelling:
                 if currNode.kind != CursorKind.VAR_DECL or currNode.kind != CursorKind.DECL_REF_EXPR:
                     self.__found.append({'word': w, 'line': currNode.location.line})
+                    self.__wordsCount[i] += 1
 
         for c in currNode.get_children():
             self.__checkAST(c)
