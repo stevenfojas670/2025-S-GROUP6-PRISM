@@ -32,8 +32,8 @@ class Canvas_api:
         """Inizialize the class."""
         # Api data
         self.url = "https://canvas.instructure.com/api/v1/"
-        self.course_id = "33430000000184699"
-        self.COURSE_URL = (
+        self.__course_id = "33430000000184699"
+        self.__COURSE_URL = (
             "https://canvas.instructure.com/api/v1/courses/33430000000184699/"
         )
         self.__HEADERS = {"Authorization": "Bearer "}
@@ -44,15 +44,13 @@ class Canvas_api:
         self.course_name = ""
         self.course_code = ""
         self.course_term_id = ""
+        self.__files = {}
 
         # User data
         self.__users = {}
         self.__prof = {}
         self.__assi = {}
         self.__stud = {}
-
-        # Assignment File Data
-        self.__files = {}
         return
 
     def set_headers(self):
@@ -76,7 +74,7 @@ class Canvas_api:
     def set_course(self):
         """Set the attribute .course to the json course for easy access."""
         try:
-            url = self.COURSE_URL
+            url = self.__COURSE_URL
             response = requests.get(url, headers=self.__HEADERS)
             self.course = response.json()
             if response.status_code == 404:
@@ -118,7 +116,7 @@ class Canvas_api:
                 "sort": "sortable_name",
                 # "order": "asc",
             }
-            url = self.COURSE_URL + "/users"
+            url = self.__COURSE_URL + "/users"
             response = requests.get(url, headers=self.__HEADERS, params=PARAMS)
             self.__prof = response.json()
         except Exception as e:
@@ -136,7 +134,7 @@ class Canvas_api:
                 "enrollment_type[]": "student",
                 "sort": "sortable_name",
             }
-            url = self.COURSE_URL + "/users"
+            url = self.__COURSE_URL + "/users"
             response = requests.get(url, headers=self.__HEADERS, params=PARAMS)
             self.__stud = response.json()
         except Exception as e:
@@ -153,7 +151,7 @@ class Canvas_api:
                 "per_page": 150,
             }
             # 33430000000171032
-            url = self.COURSE_URL + "/users"
+            url = self.__COURSE_URL + "/users"
             response = requests.get(url, headers=self.__HEADERS, params=PARAMS)
             self.__users = response.json()
             for user in self.__users:
@@ -174,7 +172,7 @@ class Canvas_api:
                 "ordered_by": "name",
                 "bucket": "past",
             }
-            url = self.COURSE_URL + "/assignments"
+            url = self.__COURSE_URL + "/assignments"
             response = requests.get(url, headers=self.__HEADERS, params=PARAMS)
             self.__assi = response.json()
             return response.json()
@@ -183,13 +181,13 @@ class Canvas_api:
 
     def get_assi(self):
         """Print all assignments."""
-        print(self.__assi)
+        print("assi", self.__assi)
 
     def set_files(self):
-        """Set the __files class attribute."""
+        """Set the __files class attribute to be ALL course files in file tab."""
         try:
             PARAMS = {"per_page": 150}
-            url = self.COURSE_URL + "/files"
+            url = self.__COURSE_URL + "/files"
             response = requests.get(url, headers=self.__HEADERS, params=PARAMS)
             self.__files = response.json()
         except Exception as e:
@@ -219,7 +217,7 @@ class Canvas_api:
         """Retrieve the file object from api using id we get from the description(of assignment)."""
         try:
             PARAMS = {"per_page": 150}
-            url = self.COURSE_URL + "/files/" + id
+            url = self.__COURSE_URL + "/files/" + id
             response = requests.get(url, headers=self.__HEADERS, params=PARAMS)
             return response.json()
         except Exception as e:
@@ -243,9 +241,11 @@ class Canvas_api:
                 if response.status_code == 200:
                     with open(filepath, "wb") as f:
                         f.write(response.content)
-                    print(f"Downloaded file with file ID: {name}")
+                    print(f"\tDownloaded file with file name: {name}")
                 else:
-                    print(f"Failed to download: {url} (Status {response.status_code})")
+                    print(
+                        f"\tFailed to download: {url} (Status {response.status_code})"
+                    )
         except Exception as e:
             print(str(e), file=sys.stderr)
 
@@ -253,21 +253,30 @@ class Canvas_api:
 def main():
     """Set the object and call the references for testing."""
     canvas_data = Canvas_api()
+
+    # Set all the Class attributes
     canvas_data.set_headers()
     canvas_data.set_prof()
     canvas_data.set_stud()
     canvas_data.set_users()
-    assis = canvas_data.set_assi()
     canvas_data.set_course()
     canvas_data.set_course_data()
     canvas_data.set_files()
+
+    """
     # Print all the attributes we set from the code above.
-    # canvas_data.get_prof()
-    # canvas_data.get_stud()
-    # canvas_data.get_users()
-    # canvas_data.get_assi()
-    # canvas_data.get_course()
-    # canvas_data.get_course_data()
+    canvas_data.get_prof()
+    canvas_data.get_stud()
+    canvas_data.get_users()
+    canvas_data.get_course()
+    canvas_data.get_course_data()
+    """
+
+    # Get the assigments files
+    assis = canvas_data.set_assi()
+    # Canvas_data.get_assi()
+
+    # Export all assignment pdfs embedded in description
     for assi in assis:
         if not assi.get("attachment"):
             filepath = os.path.join(
@@ -276,6 +285,7 @@ def main():
             # If there are no attachment attributes in given assignment
             # then that means the links are in the description.
             ids = canvas_data.extract_file_ids(assi["description"])
+            print(f"Downloading files for assignment: {assi["name"]}")
             canvas_data.download_files(ids, filepath)
 
 
