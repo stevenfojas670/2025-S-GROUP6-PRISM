@@ -7,6 +7,10 @@ Data to extract:
   - Professor
   - assignment links
   - ...
+
+NOTE: The resulting "Canvas_attachments" folder will be created in the current
+directory of where the execution command takes place. If executed in the backend
+dir, then the folder will be created and populated there.
 """
 
 # requests: Request data from canvas API
@@ -23,6 +27,10 @@ from dotenv import load_dotenv
 
 # bs4: html parsing
 from bs4 import BeautifulSoup
+
+
+# datetime: lockdate and duedate
+from datetime import datetime
 
 
 class Canvas_api:
@@ -51,6 +59,10 @@ class Canvas_api:
         self.__prof = {}
         self.__assi = {}
         self.__stud = {}
+
+        # Assignment Data
+        # Make the due date = to lockdate if there is no lockdate.
+        self.lockdate = {}
         return
 
     def set_headers(self):
@@ -183,6 +195,17 @@ class Canvas_api:
         """Print all assignments."""
         print("assi", self.__assi)
 
+    def find_lockdate(self, assi):
+        """Find the lockdate of a given assi, and populate the class attr."""
+        lockdate = None
+        if assi["lock_at"] is None:
+            lockdate = datetime.fromisoformat(f'{assi["due_at"]}'[:-1])
+        else:
+            lockdate = datetime.fromisoformat(f'{assi["lock_at"]}'[:-1])
+        # Populate the class attribute.
+        self.lockdate[f"{assi["id"]}"] = lockdate
+        return lockdate
+
     def set_files(self):
         """Set the __files class attribute to be ALL course files in file tab."""
         try:
@@ -274,19 +297,22 @@ def main():
 
     # Get the assigments files
     assis = canvas_data.set_assi()
-    # Canvas_data.get_assi()
 
     # Export all assignment pdfs embedded in description
+    # Export only if lockdate has been passed
+    now = datetime.now()
     for assi in assis:
-        if not assi.get("attachment"):
-            filepath = os.path.join(
-                os.getcwd(), "canvas_attachments", f"{assi["name"]}"
-            )
-            # If there are no attachment attributes in given assignment
-            # then that means the links are in the description.
-            ids = canvas_data.extract_file_ids(assi["description"])
-            print(f"Downloading files for assignment: {assi["name"]}")
-            canvas_data.download_files(ids, filepath)
+        lockdate = canvas_data.find_lockdate(assi)
+        if lockdate < now:
+            if not assi.get("attachment"):
+                filepath = os.path.join(
+                    os.getcwd(), "canvas_attachments", f"{assi["name"]}"
+                )
+                # If there are no attachment attributes in given assignment
+                # then that means the links are in the description.
+                ids = canvas_data.extract_file_ids(assi["description"])
+                print(f"Downloading files for assignment: {assi["name"]}")
+                canvas_data.download_files(ids, filepath)
 
 
 if __name__ == "__main__":
