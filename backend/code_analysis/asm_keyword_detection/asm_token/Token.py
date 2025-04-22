@@ -1,6 +1,6 @@
 
-from Position import *
-from TokenType import TokenType
+from code_analysis.asm_keyword_detection.asm_token import Position
+from code_analysis.asm_keyword_detection.asm_token.TokenType import TokenType
 
 class Token:
     __type = None
@@ -9,10 +9,10 @@ class Token:
     __endPos = None
 
     def __init__(self, type:TokenType,lex:str,start:Position,end:Position):
-        __type = type
-        __lexeme = lex
-        __startPos = start
-        __endPos = end
+        self.__type = type
+        self.__lexeme = lex
+        self.__startPos = start
+        self.__endPos = end
 
     def getType(self):
         return self.__type
@@ -27,5 +27,5 @@ class Token:
         return self.__endPos
 
     def toString(self):
-        return (f"Type = {self.__type.value}, Lexeme = {self.__lexeme}, "
+        return (f"Type = {self.__type.name}, Lexeme = '{self.__lexeme}', "
                 f"Location = {self.__startPos.toString()} to {self.__endPos.toString()}")
