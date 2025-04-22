@@ -42,7 +42,7 @@ class CppAnalyzer:
     def generateAST(self):
         for f in os.listdir(self.__subDir):
             if not f.endswith(".json"):
-                studentName = f.split('_')[2] + f.split('_')[3]
+                studentName = f"{f.split('_')[2]} {f.split('_')[3]}"
                 with open(f"{self.__subDir}/{f}/main.cpp",'r') as submission:
                         headers = self.__checkHeaders(f"{self.__subDir}/{f}/main.cpp")
 

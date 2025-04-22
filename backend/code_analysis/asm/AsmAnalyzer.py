@@ -31,7 +31,7 @@ class AsmAnalyzer:
                     elif currToken.getType() == TokenType.ERROR:
                         break
 
-            self.__checkTokens(f.split('_')[2] + f.split('_')[3])
+            self.__checkTokens(f"{f.split('_')[2]} {f.split('_')[3]}")
         return self.__students
 
     def __checkTokens(self, studentName):
