@@ -33,6 +33,12 @@ class Lexer:
             return True
         return False
 
+    def __consumeComment(self):
+        self.__consume()
+        while self.__lookahead != '\n':
+            self.__consume()
+        self.__consumeNewLine()
+
     def __consumeNewLine(self):
         self.__consume()
         self.__currLine += 1
@@ -58,7 +64,6 @@ class Lexer:
 
         string += "\""
         return Token(TokenType.STR,string,startPos,self.__createPosition())
-
 
     def __tokenizeNumber(self):
         startPos = self.__createPosition()
@@ -260,6 +265,8 @@ class Lexer:
         while self.__lookahead != self.__EOF:
             startPos = self.__createPosition()
             match self.__lookahead:
+                case ';':
+                    self.__consumeComment()
                 case '\n':
                     self.__consumeNewLine()
                 case ' ' | '\t' | '\r':
@@ -322,7 +329,7 @@ class Lexer:
         return Token(TokenType.EOF,"$",self.__createPosition(),self.__createPosition())
 
 def main():
-    inputStr = 'r8 r9 r10b rax rbx ebx edx al'
+    inputStr = '; hi this is a comment\n lea mov blah'
     tokens = list()
     lexer = Lexer(inputStr)
     while True:
