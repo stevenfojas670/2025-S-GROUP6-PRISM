@@ -11,13 +11,16 @@ class AsmAnalyzer:
     __subDir = None
     __assignment = None
     __tokens = None
+    __students:dict = None
 
     def __init__(self, words, oFile, submissionDir, assignment):
         self.__words = words
         self.__oFile = oFile
         self.__subDir = submissionDir
         self.__assignment = assignment
+        self.__students = dict(dict(dict()))
         self.__tokenizeAssembly()
+        return self.__students
 
     def __tokenizeAssembly(self):
         for f in os.listdir(self.__subDir):
@@ -32,10 +35,18 @@ class AsmAnalyzer:
                         break
                     elif currToken.getType() == TokenType.ERROR:
                         break
-            self.__checkTokens()
 
-    def __checkTokens(self):
+            self.__checkTokens(f.split('-')[1])
+
+    def __checkTokens(self, studentName):
         for t in self.__tokens:
             for w in self.__words:
                 if t.getLexeme() == w:
-                    print("Found bad word!")
+                    if not studentName in self.__students :
+                        self.__students[studentName] = dict(dict())
+                    if not w in self.__students[studentName]:
+                        self.__students[studentName][w] = {"count":0,"positions":list()}
+
+                    self.__students[studentName][w]["count"] += 1
+                    self.__students[studentName][w]["positions"].append(t.getStartPos().toString())
+
