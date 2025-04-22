@@ -1,6 +1,9 @@
 
-import sys
+import json
 import os
+import sys
+
+from asm_keyword_detection.AsmAnalyzer import AsmAnalyzer
 
 class KeywordAnalyzer:
 
@@ -8,9 +11,12 @@ class KeywordAnalyzer:
     __course:str = None
     __assignment:str = None
     __jsonFile = None
+    __sections = None
 
     def __init__(self):
+        self.__sections = dict(dict())
         self.__openAndValidateFile()
+        self.__createOutputFile()
         self.__runAnalysis()
 
     '''
@@ -48,10 +54,28 @@ class KeywordAnalyzer:
         self.__jsonFile = open(f"{self.__course}_{self.__assignment}_Found_Words.json", "w")
 
     def __runAnalysis(self):
-        if self.__course == "135":
-            pass
-        elif self.__course == "218":
-            pass
+        submissionDir = f"assignments/assignment_{self.__assignment}/bulk_submission"
+        fileCount = len(os.listdir(submissionDir)) // 2
+        for f in os.listdir(submissionDir):
+            if not f.endswith(".csv"):
+                section = f
+
+                if self.__course == "135":
+                    pass
+                elif self.__course == "218":
+                    asm = AsmAnalyzer(self.__words,self.__jsonFile,f"{submissionDir}/{section}",self.__assignment)
+                    students = asm.tokenizeAssembly()
+                    self.__sections[section] = students
+
+                fileCount -= 1
+                if fileCount > 0:
+                    self.__jsonFile.write(',\n')
+                else:
+                    self.__jsonFile.write('\n')
+                    break
+
+        json.dump(self.__sections, self.__jsonFile,indent=4)
+
 
 def main():
     KeywordAnalyzer()
