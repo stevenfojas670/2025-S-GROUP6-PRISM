@@ -16,7 +16,7 @@ from clang import cindex
 from clang.cindex import CursorKind
 
 
-class KeywordAnalyzer:
+class CppAnalyzer:
     """Create object to perform keyword analysis."""
 
     __assignmentNum = None
@@ -28,7 +28,7 @@ class KeywordAnalyzer:
 
     # Methods
     def __init__(self, inputFile):
-        """Construct KeywordAnalyzer object."""
+        """Construct CppAnalyzer object."""
         self.__words = list()
         self.__wordsCount = list()
         self.__found = list(dict())
@@ -149,7 +149,7 @@ class KeywordAnalyzer:
 
 def main(fileName):
     """Interfaces with keywordAnalysis class."""
-    KeywordAnalyzer(fileName)
+    CppAnalyzer(fileName)
 
 
 if __name__ == "__main__":
