@@ -3,7 +3,8 @@ import json
 import os
 import sys
 
-from asm_keyword_detection.AsmAnalyzer import AsmAnalyzer
+from code_analysis.asm.AsmAnalyzer import AsmAnalyzer
+from code_analysis.cpp.CppAnalyzer import CppAnalyzer
 
 class KeywordAnalyzer:
 
@@ -53,25 +54,34 @@ class KeywordAnalyzer:
     def __createOutputFile(self):
         self.__jsonFile = open(f"{self.__course}_{self.__assignment}_Found_Words.json", "w")
 
+    '''
+        This is the main method for KeywordAnalyzer. We will do a bulk analysis
+        for every section by looking at student file located in each directory.
+        Once this has been completed, we can then access a JSON file that will
+        contain all the students who violated the rules for the assignment.
+    '''
     def __runAnalysis(self):
-        submissionDir = f"assignments/assignment_{self.__assignment}/bulk_submission"
+        submissionDir = f"/PRISM/data/assignments/assignment_{self.__assignment}/bulk_submission"
 
         for f in os.listdir(submissionDir):
             if not f.endswith(".csv"):
-                section = f
+                fileParts = f.split("_")
+                section = fileParts[2]
+                students = dict()
 
                 if self.__course == "135":
-                    pass
+                    cpp = CppAnalyzer(self.__words, f"{submissionDir}/{f}", self.__assignment)
+                    students = cpp.generateAST()
                 elif self.__course == "218":
-                    asm = AsmAnalyzer(self.__words,self.__jsonFile,f"{submissionDir}/{section}",self.__assignment)
+                    asm = AsmAnalyzer(self.__words, f"{submissionDir}/{f}", self.__assignment)
                     students = asm.tokenizeAssembly()
-                    self.__sections[section] = students
 
-                    for w in students:
-                        totalCount = 0
-                        for c in students[w]["wordsFound"]:
-                            totalCount += students[w]["wordsFound"][c]["count"]
-                        students[w]["totalFound"] = totalCount
+                self.__sections[section] = students
+                for w in students:
+                    totalCount = 0
+                    for c in students[w]["wordsFound"]:
+                        totalCount += students[w]["wordsFound"][c]["count"]
+                    students[w]["totalFound"] = totalCount
 
         json.dump(self.__sections, self.__jsonFile,indent=4)
 
