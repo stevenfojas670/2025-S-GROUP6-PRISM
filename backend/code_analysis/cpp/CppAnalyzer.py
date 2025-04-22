@@ -32,35 +32,7 @@ class CppAnalyzer:
         self.__words = list()
         self.__wordsCount = list()
         self.__found = list(dict())
-        self.__openAndValidateFile(inputFile)
-        self.__createJSON()
-        self.__runAnalysis()
 
-
-    '''
-        This is the main method for KeywordAnalyzer. We will do a bulk analysis
-        for every section by looking at student file located in each directory.
-        Once this has been completed, we can then access a JSON file that will
-        contain all the students who violated the rules for the assignment.
-    '''
-    def __runAnalysis(self):
-        dirName = f"/PRISM/data/assignments/assignment_{self.__assignmentNum}/bulk_submission"
-        self.__jsonFile.write('{\n\t')
-
-        fileCount = len(os.listdir(dirName)) // 2
-        for f in os.listdir(dirName):
-            if not f.endswith(".csv"):
-                section = f.split("_")[2]
-                self.__jsonFile.write(f'"{section}"' + ': {\n')
-                self.__checkStudentFiles(f"{dirName}/{f}")
-                self.__jsonFile.write('}')
-                fileCount -= 1
-                if fileCount > 0:
-                    self.__jsonFile.write(',\n')
-                else:
-                    self.__jsonFile.write('\n')
-                    break
-        self.__jsonFile.write('}\n')
 
     '''
         This is a helper method for runAnalysis. The goal is to parse each
