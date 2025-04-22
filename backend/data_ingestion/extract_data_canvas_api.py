@@ -9,21 +9,20 @@ Data to extract:
   - ...
 """
 
+# requests: Request data from canvas API
 import requests
 
-# requests: Request data from canvas API
+# sys: File error
 import sys
 
-# sys: File error
+# os: getenv, path.join, makedirs, getcwd (file/directory logic)
 import os
 
-# os: getenv, path.join, makedirs, getcwd (file/directory logic)
+# dotenv: environment varibales
 from dotenv import load_dotenv
 
-# dotenv: environment varibales
-from bs4 import BeautifulSoup
-
 # bs4: html parsing
+from bs4 import BeautifulSoup
 
 
 class Canvas_api:
