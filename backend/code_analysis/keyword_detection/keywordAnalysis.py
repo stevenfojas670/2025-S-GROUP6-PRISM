@@ -136,14 +136,21 @@ class KeywordAnalyzer:
     '''
     def __checkHeaders(self, file, headers):
         with open(file, 'r') as iFile:
+            includeFound = False
             for line in iFile:
-                if not line.startswith("#include"):
-                    break
+                if line.startswith("#include"):
+                    includeFound = True
+                    headerName = ""
+                    if line.find("<"):
+                        headerName = line[line.find("<") + 1:line.find(">")]
+                    else:
+                        headerName = line[line.find(" ") + 1:line.find(" ")]
 
-                lib = line[line.find("<") + 1:line.find(">")]
-                for w in self.__words:
-                    if w == lib:
-                        headers.append(w)
+                    for w in self.__words:
+                        if w == headerName:
+                            headers.append(w)
+                elif includeFound:
+                    break
 
     '''
         This method will analyze the AST for a student's input file and
