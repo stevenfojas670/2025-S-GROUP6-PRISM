@@ -7,10 +7,11 @@ class KeywordAnalyzer:
     __words:set = None
     __course:str = None
     __assignment:str = None
+    __jsonFile = None
 
     def __init__(self):
         self.__openAndValidateFile()
-        print(self.__course,self.__assignment,self.__words)
+        self.__runAnalysis()
 
     '''
         This method is responsible for opening the input file
@@ -42,6 +43,15 @@ class KeywordAnalyzer:
             self.__words = set()
             for l in iFile.readlines():
                 self.__words.add(l.strip('\n'))
+
+    def __createOutputFile(self):
+        self.__jsonFile = open(f"{self.__course}_{self.__assignment}_Found_Words.json", "w")
+
+    def __runAnalysis(self):
+        if self.__course == "135":
+            pass
+        elif self.__course == "218":
+            pass
 
 def main():
     KeywordAnalyzer()

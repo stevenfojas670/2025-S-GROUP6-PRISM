@@ -36,38 +36,6 @@ class KeywordAnalyzer:
         self.__createJSON()
         self.__runAnalysis()
 
-    '''
-        This method is responsible for opening the input file
-        containing the banned keywords, storing them into the
-        KeywordAnalyzer's words array, and also getting the
-        assignment for which the keyword analysis will be done for
-    '''
-    def __openAndValidateFile(self, iFile):
-        # ERROR CHECK #1: Make sure the file exists in the
-        #                 keyword_detection package
-        if not os.path.exists(iFile):
-            print("Error! Banned keyword file does not exist!")
-            exit(1)
-
-        file = open(iFile, 'r')
-
-        fileInput = file.readlines()
-        for w in fileInput:
-            self.__words.append(w.strip('\n'))
-            self.__wordsCount.append(0)
-
-        fileNameParts = iFile.split('_')
-        self.__assignmentNum = fileNameParts[0][2:]
-
-        file.close()
-
-    '''
-        This method is responsible for opening and creating the JSON
-        output file that will be used by the front end.
-    '''
-    def __createJSON(self):
-        self.__jsonFileName = f"{self.__assignmentNum}_found.json"
-        self.__jsonFile = open(self.__jsonFileName, 'w')
 
     '''
         This is the main method for KeywordAnalyzer. We will do a bulk analysis
