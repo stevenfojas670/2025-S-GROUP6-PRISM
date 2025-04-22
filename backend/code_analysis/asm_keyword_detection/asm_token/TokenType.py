@@ -1,4 +1,11 @@
+"""
+Created by Daniel Levy, 4/21/2025
 
+This is an enum representing all possible token types for
+the Lexer. This currently includes all possible keywords and
+symbols found in both x86 and MIPS assembly programs as taught
+in CS 218.
+"""
 from enum import Enum
 
 class TokenType(Enum):
@@ -237,7 +244,7 @@ class TokenType(Enum):
     K0 = "$k0"
     K1 = "$k1"
     GP = "$gp"
-    MSP = "$sp"
+    MIPS_SP = "$sp"
     FP = "$fp"
     RA = "$ra"
     HI = "$hi"
@@ -354,7 +361,7 @@ class TokenType(Enum):
     NOR = "nor"
     ORI = "ori"
     SLL = "sll"
-    SRA = "SRA"
+    SRA = "sra"
     SRL = "srl"
     XORI = "xori"
     SB = "sb"
