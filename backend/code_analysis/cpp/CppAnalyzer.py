@@ -52,6 +52,9 @@ class CppAnalyzer:
 
                         if self.__students:
                             if headers:
+                                if studentName not in self.__students:
+                                    self.__students[studentName] = {"totalFound": 0, "headers": list(),
+                                                                    "wordsFound": dict(dict())}
                                 self.__students[studentName]["headers"] = headers
 
         return self.__students
@@ -93,13 +96,17 @@ class CppAnalyzer:
     def __checkAST(self, currNode, studentName):
         for i,w in enumerate(self.__words):
             if w == currNode.spelling:
-                if currNode.kind != CursorKind.VAR_DECL or currNode.kind != CursorKind.DECL_REF_EXPR:
-                    if not studentName in self.__students:
-                        self.__students[studentName] = {"totalFound":0, "headers":list(), "wordsFound":dict(dict())}
-                    if not w in self.__students[studentName]["wordsFound"]:
-                        self.__students[studentName]["wordsFound"][w] = {"count": 0, "positions": list()}
-                        self.__students[studentName]["wordsFound"][w]["count"] += 1
-                        self.__students[studentName]["wordsFound"][w]["positions"].append(f"<{currNode.location.line}."
+                if currNode.kind == CursorKind.CALL_EXPR:
+                    if currNode.location.file.name == "main.cpp":
+                        continue
+
+                if not studentName in self.__students:
+                    self.__students[studentName] = {"totalFound":0, "headers":list(), "wordsFound":dict(dict())}
+                if not w in self.__students[studentName]["wordsFound"]:
+                    self.__students[studentName]["wordsFound"][w] = {"count": 0, "positions": list()}
+
+                self.__students[studentName]["wordsFound"][w]["count"] += 1
+                self.__students[studentName]["wordsFound"][w]["positions"].append(f"<{currNode.location.line}."
                                                                                         f"{currNode.location.column}>")
 
         for c in currNode.get_children():
