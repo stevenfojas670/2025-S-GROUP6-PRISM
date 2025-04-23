@@ -41,13 +41,15 @@ export default function LeftPanel() {
 
 	return (
 		<Box
-			sx={{
+			sx={(theme) => ({
 				width: 250,
 				minWidth: 200,
-				borderRadius: 1,
-				border: "1px solid white",
+				minHeight: "100%",
+				position: "relative",
+				backgroundColor: theme.palette.primary.main,
+				color: theme.palette.primary.contrastText,
 				p: 2,
-			}}
+			})}
 		>
 			<List>
 				<ListItemButton onClick={() => setSemOpen(!semOpen)}>
@@ -63,40 +65,38 @@ export default function LeftPanel() {
 								>
 									<ListItemText>{semester.name}</ListItemText>
 								</ListItemButton>
-								<Divider />
 							</React.Fragment>
 						))}
-						{dummySemesters.map((ds) => (
+						{/* {dummySemesters.map((ds) => (
 							<React.Fragment key={ds.id}>
 								<ListItemButton>
 									<ListItemText>{ds.name}</ListItemText>
 								</ListItemButton>
-								<Divider />
+								 
 							</React.Fragment>
-						))}
+						))} */}
 					</List>
 				</Collapse>
-				<Divider />
+
 				<ListItemButton onClick={() => router.push("/student_comparison")}>
 					<ListItemText>Student Comparison</ListItemText>
 				</ListItemButton>
-				<Divider />
+
 				<ListItemButton onClick={() => router.push("/plagiarism_report")}>
 					<ListItemText>Plagiarism Report</ListItemText>
 				</ListItemButton>
-				<Divider />
+
 				<ListItemButton onClick={() => router.push("/alerts")}>
 					<ListItemText>Alerts</ListItemText>
 				</ListItemButton>
-				<Divider />
+
 				<ListItemButton onClick={() => router.push("/account")}>
 					<ListItemText>Account</ListItemText>
 				</ListItemButton>
-				<Divider />
+
 				<ListItemButton onClick={() => router.push("/alerts")}>
 					<ListItemText>Settings</ListItemText>
 				</ListItemButton>
-				<Divider />
 			</List>
 		</Box>
 	)

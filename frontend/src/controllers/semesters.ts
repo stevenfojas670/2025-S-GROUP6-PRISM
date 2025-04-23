@@ -5,7 +5,7 @@ import { APIError } from "@/types/APIError"
 export async function GetSemesters(): Promise<SemesterResponse | APIError> {
 	try {
 		const response = await easyFetch(
-			"http://localhost:8000/api/course/coursessemester",
+			"http://localhost:8000/api/course/semester/",
 			{ method: "GET" }
 		)
 
@@ -30,7 +30,7 @@ export async function GetSemesters(): Promise<SemesterResponse | APIError> {
 export async function GetSemester(id: number): Promise<Semester[] | APIError> {
 	try {
 		const response = await easyFetch(
-			`http://localhost:8000/api/course/coursessemester?semester_id=${id}`,
+			`http://localhost:8000/api/course/semester?semester_id=${id}`,
 			{ method: "GET" }
 		)
 
