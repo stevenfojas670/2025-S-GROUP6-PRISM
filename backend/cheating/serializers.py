@@ -2,12 +2,14 @@
 
 from rest_framework import serializers
 
+from assignments import serializers as asSerializers
+
 from .models import (
     CheatingGroups,
     CheatingGroupMembers,
     ConfirmedCheaters,
     FlaggedStudents,
-    SubmissionSimiliarityPairs,
+    SubmissionSimilarityPairs,
     LongitudinalCheatingGroups,
     LongitudinalCheatingGroupMembers,
     LongitudinalCheatingGroupInstances,
@@ -74,18 +76,22 @@ class FlaggedStudentsSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class SubmissionSimiliarityPairsSerializer(serializers.ModelSerializer):
-    """Serializer for the SubmissionSimiliarityPairs model."""
+class SubmissionSimilarityPairsSerializer(serializers.ModelSerializer):
+    """Serializer for the SubmissionSimilarityPairs model."""
+
+    submissions = asSerializers.SubmissionsSerializer()
+
+    submissions = asSerializers.SubmissionsSerializer()
 
     class Meta:
-        """Meta options for SubmissionSimiliarityPairsSerializer.
+        """Meta options for SubmissionSimilarityPairsSerializer.
 
         Attributes:
-            model: The SubmissionSimiliarityPairs model.
+            model: The SubmissionSimilarityPairs model.
             fields: All model fields.
         """
 
-        model = SubmissionSimiliarityPairs
+        model = SubmissionSimilarityPairs
         fields = "__all__"
 
 

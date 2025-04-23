@@ -1,11 +1,16 @@
 import * as React from "react"
 import { ThemeProvider } from "@mui/material/styles"
+import AppLayoutWrapper from "./AppLayoutWrapper"
 import CssBaseline from "@mui/material/CssBaseline"
 import theme from "../theme"
 import InitColorSchemeScript from "@mui/material/InitColorSchemeScript"
 import Providers from "@/components/Providers"
 
-export default function RootLayout(props: { children: React.ReactNode }) {
+interface Props {
+	children: React.ReactNode
+}
+
+export default function RootLayout({ children }: Props) {
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<body>
@@ -13,7 +18,9 @@ export default function RootLayout(props: { children: React.ReactNode }) {
 				<ThemeProvider theme={theme}>
 					{/* CssBaseline kickstart an elegant, consistent, and simple baseline to build upon. */}
 					<CssBaseline />
-					<Providers>{props.children}</Providers>
+					<Providers>
+						<AppLayoutWrapper>{children}</AppLayoutWrapper>
+					</Providers>
 				</ThemeProvider>
 			</body>
 		</html>
