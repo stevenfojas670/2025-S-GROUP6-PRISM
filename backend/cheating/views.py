@@ -226,30 +226,29 @@ def similarity_plot(request, assignment_id):
     cutoff = 2.0
 
     # Step 3: Query only the fields we need to minimize data transfer
-    flagged_qs = StudentReport.objects.filter(
-        report=report,
-        z_score__gt=cutoff
-    ).only('submission_id', 'z_score')
+    flagged_qs = StudentReport.objects.filter(report=report, z_score__gt=cutoff).only(
+        "submission_id", "z_score"
+    )
 
     if not flagged_qs.exists():
-        raise Http404('No flagged students')
+        raise Http404("No flagged students")
 
     # Step 4: Bulk-fetch the related Submissions to retrieve student names
     sub_ids = [sr.submission_id for sr in flagged_qs]
-    sub_map = (Submissions.objects
-               .filter(pk__in=sub_ids)
-               .select_related('student')
-               .in_bulk(field_name='pk'))
+    sub_map = (
+        Submissions.objects.filter(pk__in=sub_ids)
+        .select_related("student")
+        .in_bulk(field_name="pk")
+    )
 
     # Step 5: Build a list of (student name, z-score)
     entries = []
     for sr in flagged_qs:
         submission = sub_map.get(sr.submission_id)
         if submission:
-            name = f'{submission.student.first_name} ' \
-                   f'{submission.student.last_name}'
+            name = f"{submission.student.first_name} " f"{submission.student.last_name}"
         else:
-            name = f'ID {sr.submission_id}'
+            name = f"ID {sr.submission_id}"
         entries.append((name, sr.z_score))
 
     # Step 6: Sort by z-score descending for the bar chart
@@ -257,39 +256,30 @@ def similarity_plot(request, assignment_id):
     names, zs = zip(*entries)
 
     # Step 7: Create the bar chart, sizing width by number of bars
-    fig, ax = plt.subplots(
-        figsize=(max(8, len(names) * 0.5), 5)
-    )
-    ax.bar(range(len(names)), zs, color='C1', edgecolor='black')
+    fig, ax = plt.subplots(figsize=(max(8, len(names) * 0.5), 5))
+    ax.bar(range(len(names)), zs, color="C1", edgecolor="black")
 
     # Step 8: Annotate each bar with its z-score
     for i, z in enumerate(zs):
-        ax.text(i, z + 0.02, f'{z:.2f}', ha='center',
-                va='bottom', fontsize=8)
+        ax.text(i, z + 0.02, f"{z:.2f}", ha="center", va="bottom", fontsize=8)
 
     # Step 9: Draw a horizontal line at the cutoff
-    ax.axhline(
-        cutoff,
-        color='red',
-        linestyle='--',
-        label=f'Cutoff: z > {cutoff:.2f}'
-    )
+    ax.axhline(cutoff, color="red", linestyle="--", label=f"Cutoff: z > {cutoff:.2f}")
 
     # Step 10: Label and rotate x-ticks for readability
     ax.set_xticks(range(len(names)))
-    ax.set_xticklabels(names, rotation=45,
-                       ha='right', fontsize=8)
-    ax.set_ylabel('Z-score of Mean Similarity')
-    ax.set_title(f'Assignment {assignment_id}: Flagged Students')
-    ax.legend(loc='upper right', fontsize=8)
+    ax.set_xticklabels(names, rotation=45, ha="right", fontsize=8)
+    ax.set_ylabel("Z-score of Mean Similarity")
+    ax.set_title(f"Assignment {assignment_id}: Flagged Students")
+    ax.legend(loc="upper right", fontsize=8)
     plt.tight_layout()
 
     # Step 11: Stream the plot back as a PNG
     buf = io.BytesIO()
-    fig.savefig(buf, format='png')
+    fig.savefig(buf, format="png")
     plt.close(fig)
     buf.seek(0)
-    return HttpResponse(buf.read(), content_type='image/png')
+    return HttpResponse(buf.read(), content_type="image/png")
 
 
 @require_GET
@@ -307,12 +297,14 @@ def distribution_plot(request, assignment_id):
     report = get_object_or_404(AssignmentReport, assignment=assignment)
 
     # Fetch only submission_id and mean_similarity
-    srs = list(StudentReport.objects.filter(
-        report=report
-    ).only('submission_id', 'mean_similarity'))
+    srs = list(
+        StudentReport.objects.filter(report=report).only(
+            "submission_id", "mean_similarity"
+        )
+    )
 
     if not srs:
-        raise Http404('No student data to plot')
+        raise Http404("No student data to plot")
 
     means = [sr.mean_similarity for sr in srs]
 
@@ -322,57 +314,49 @@ def distribution_plot(request, assignment_id):
 
     # Compute average sample size for SE: reuse cached scores map
     scores_map = get_all_scores_by_student(assignment)
-    total_comparisons = sum(len(scores_map.get(sr.submission_id, []))
-                            for sr in srs)
+    total_comparisons = sum(len(scores_map.get(sr.submission_id, [])) for sr in srs)
     n_avg = total_comparisons / len(means)
-    se = sigma / (n_avg ** 0.5)
+    se = sigma / (n_avg**0.5)
 
     # Plot histogram
     fig, ax = plt.subplots(figsize=(8, 4))
     counts, bins, _ = ax.hist(
-        means,
-        bins=30,
-        density=True,
-        alpha=0.6,
-        color='C0',
-        edgecolor='black'
+        means, bins=30, density=True, alpha=0.6, color="C0", edgecolor="black"
     )
 
     # Build Normal PDF points
-    xs = [bins[0] + i * (bins[-1] - bins[0]) / 200
-          for i in range(201)]
+    xs = [bins[0] + i * (bins[-1] - bins[0]) / 200 for i in range(201)]
     pdf = [
-        (1 / (se * (2 * math.pi) ** 0.5)) *
-        math.exp(-0.5 * ((x - mu) / se) ** 2)
+        (1 / (se * (2 * math.pi) ** 0.5)) * math.exp(-0.5 * ((x - mu) / se) ** 2)
         for x in xs
     ]
-    ax.plot(xs, pdf, 'k--', label='Normal PDF (CLT)')
+    ax.plot(xs, pdf, "k--", label="Normal PDF (CLT)")
 
     # Annotate with μ, σ, variance
-    stats_text = (f'μ = {mu:.2f}\n'
-                  f'σ = {sigma:.2f}\n'
-                  f'Var = {report.variance:.2f}')
+    stats_text = f"μ = {mu:.2f}\n" f"σ = {sigma:.2f}\n" f"Var = {report.variance:.2f}"
     ax.text(
-        0.98, 0.95, stats_text,
+        0.98,
+        0.95,
+        stats_text,
         transform=ax.transAxes,
-        ha='right', va='top',
+        ha="right",
+        va="top",
         fontsize=9,
-        bbox=dict(facecolor='white', alpha=0.7,
-                  boxstyle='round,pad=0.3')
+        bbox=dict(facecolor="white", alpha=0.7, boxstyle="round,pad=0.3"),
     )
 
-    ax.set_xlabel('Per-student Mean Similarity (%)')
-    ax.set_ylabel('Density')
-    ax.set_title(f'Assignment {assignment_id}: Distribution')
-    ax.legend(loc='upper left', fontsize=8)
+    ax.set_xlabel("Per-student Mean Similarity (%)")
+    ax.set_ylabel("Density")
+    ax.set_title(f"Assignment {assignment_id}: Distribution")
+    ax.legend(loc="upper left", fontsize=8)
     plt.tight_layout()
 
     # Stream PNG back
     buf = io.BytesIO()
-    fig.savefig(buf, format='png')
+    fig.savefig(buf, format="png")
     plt.close(fig)
     buf.seek(0)
-    return HttpResponse(buf.read(), content_type='image/png')
+    return HttpResponse(buf.read(), content_type="image/png")
 
 
 @require_GET
@@ -391,38 +375,32 @@ def similarity_interval_plot(request, assignment_id):
 
     # z-score threshold
     cutoff = 2.0
-    srs = list(StudentReport.objects.filter(
-        report=report,
-        z_score__gt=cutoff
-    ).only(
-        'submission_id',
-        'mean_similarity',
-        'ci_lower',
-        'ci_upper',
-        'z_score'
-    ))
+    srs = list(
+        StudentReport.objects.filter(report=report, z_score__gt=cutoff).only(
+            "submission_id", "mean_similarity", "ci_lower", "ci_upper", "z_score"
+        )
+    )
 
     if not srs:
-        raise Http404('No flagged students to plot')
+        raise Http404("No flagged students to plot")
 
     # Bulk-fetch student names
     sub_ids = [sr.submission_id for sr in srs]
-    sub_map = (Submissions.objects
-               .filter(pk__in=sub_ids)
-               .select_related('student')
-               .in_bulk(field_name='pk'))
+    sub_map = (
+        Submissions.objects.filter(pk__in=sub_ids)
+        .select_related("student")
+        .in_bulk(field_name="pk")
+    )
 
     # Build display data
     data = []
     for sr in srs:
         submission = sub_map.get(sr.submission_id)
         if submission:
-            name = f'{submission.student.first_name} ' \
-                   f'{submission.student.last_name}'
+            name = f"{submission.student.first_name} " f"{submission.student.last_name}"
         else:
-            name = f'ID {sr.submission_id}'
-        data.append((name, sr.mean_similarity,
-                     sr.ci_lower, sr.ci_upper, sr.z_score))
+            name = f"ID {sr.submission_id}"
+        data.append((name, sr.mean_similarity, sr.ci_lower, sr.ci_upper, sr.z_score))
 
     # Sort by mean similarity descending
     data.sort(key=lambda x: x[1], reverse=True)
@@ -433,45 +411,42 @@ def similarity_interval_plot(request, assignment_id):
     right_err = [hi - m for hi, m in zip(uppers, means)]
 
     # Plot forest plot
-    fig, ax = plt.subplots(
-        figsize=(6, max(4, len(names) * 0.4))
-    )
+    fig, ax = plt.subplots(figsize=(6, max(4, len(names) * 0.4)))
     ax.errorbar(
         means,
         list(range(len(names))),
         xerr=[left_err, right_err],
-        fmt='o',
+        fmt="o",
         capsize=4,
-        color='C1'
+        color="C1",
     )
 
     # Reference line at population mean
     ax.axvline(
         report.mu,
-        color='grey',
-        linestyle='--',
-        label=f'Population μ = {report.mu:.1f}%'
+        color="grey",
+        linestyle="--",
+        label=f"Population μ = {report.mu:.1f}%",
     )
 
     # Annotate with z-scores
     for idx, z in enumerate(zs):
-        ax.text(uppers[idx] + 0.5, idx, f'z={z:.2f}',
-                va='center', fontsize=8)
+        ax.text(uppers[idx] + 0.5, idx, f"z={z:.2f}", va="center", fontsize=8)
 
     ax.set_yticks(range(len(names)))
     ax.set_yticklabels(names, fontsize=8)
     ax.invert_yaxis()
-    ax.set_xlabel('Mean Similarity (%) with 95% CI')
-    ax.set_title(f'Assignment {assignment_id}: Flagged CI')
-    ax.legend(loc='lower right', fontsize=8)
+    ax.set_xlabel("Mean Similarity (%) with 95% CI")
+    ax.set_title(f"Assignment {assignment_id}: Flagged CI")
+    ax.legend(loc="lower right", fontsize=8)
     plt.tight_layout()
 
     # Stream PNG back
     buf = io.BytesIO()
-    fig.savefig(buf, format='png')
+    fig.savefig(buf, format="png")
     plt.close(fig)
     buf.seek(0)
-    return HttpResponse(buf.read(), content_type='image/png')
+    return HttpResponse(buf.read(), content_type="image/png")
 
 
 @require_GET
@@ -500,10 +475,7 @@ def kmeans_clusters_plot(request, course_id, semester_id):
     #    feature_vector is a length-7 list on each profile.
     X_raw = np.vstack([p.feature_vector for p in profiles])
     labels = np.array([p.cluster_label for p in profiles])
-    names = [
-        f"{p.student.first_name} {p.student.last_name}"
-        for p in profiles
-    ]
+    names = [f"{p.student.first_name} {p.student.last_name}" for p in profiles]
 
     # 3) Standardize features to zero mean and unit variance,
     #    then project down to two principal components.
@@ -518,10 +490,7 @@ def kmeans_clusters_plot(request, course_id, semester_id):
     # 4) Compute each cluster’s centroid on the avg_z (first) feature
     #    without refitting the clusterer.
     unique_labels = sorted(set(labels))
-    centroids = {
-        lbl: X_scaled[labels == lbl].mean(axis=0)
-        for lbl in unique_labels
-    }
+    centroids = {lbl: X_scaled[labels == lbl].mean(axis=0) for lbl in unique_labels}
     avg_z = {lbl: centroids[lbl][0] for lbl in unique_labels}
 
     #    Determine which label is lowest vs highest risk.
@@ -553,7 +522,8 @@ def kmeans_clusters_plot(request, course_id, semester_id):
         xs = dim1[labels == lbl]
         ys = dim2[labels == lbl]
         ax.scatter(
-            xs, ys,
+            xs,
+            ys,
             c=color_map[lbl],
             marker=marker_map[lbl],
             s=100,
@@ -575,12 +545,8 @@ def kmeans_clusters_plot(request, course_id, semester_id):
         # Draw a circle for 1–2 points
         elif pts:
             cx, cy = np.mean(xs), np.mean(ys)
-            radius = (
-                (np.hypot(xs - cx, ys - cy).max()
-                 if len(xs) > 1 else 0.5) * 1.5
-            )
-            circ = Circle((cx, cy), radius=radius,
-                          color=color_map[lbl], alpha=0.2)
+            radius = (np.hypot(xs - cx, ys - cy).max() if len(xs) > 1 else 0.5) * 1.5
+            circ = Circle((cx, cy), radius=radius, color=color_map[lbl], alpha=0.2)
             ax.add_patch(circ)
 
     # 7) Annotate extreme outliers beyond the 10th/90th percentiles.
@@ -603,17 +569,9 @@ def kmeans_clusters_plot(request, course_id, semester_id):
 
     ax.set_xlabel(f"Dim1 ({var1:.1f}% var)", fontsize=12)
     ax.set_ylabel(f"Dim2 ({var2:.1f}% var)", fontsize=12)
-    ax.set_title(
-        f"K-Means Clusters → {course} — {semester}",
-        fontsize=14,
-        pad=15
-    )
+    ax.set_title(f"K-Means Clusters → {course} — {semester}", fontsize=14, pad=15)
     ax.grid(True, linestyle=":", linewidth=0.5, alpha=0.7)
-    ax.legend(
-        loc="upper left",
-        bbox_to_anchor=(1.02, 1),
-        title="Student Groups"
-    )
+    ax.legend(loc="upper left", bbox_to_anchor=(1.02, 1), title="Student Groups")
     plt.tight_layout()
 
     # 9) Output the figure as a PNG image.
@@ -624,7 +582,6 @@ def kmeans_clusters_plot(request, course_id, semester_id):
     return HttpResponse(buf.read(), content_type="image/png")
 
 
-@require_GET
 def run_kmeans_for_pair_stats(
     course_id,
     semester_id,
@@ -667,17 +624,15 @@ def run_kmeans_for_pair_stats(
             course_catalog_id=course_id,
             semester_id=semester_id,
         ).only("student_id", "cluster_label")
-        student_lbl = {
-            p.student_id: (p.cluster_label or 0) for p in prof_qs
-        }
+        student_lbl = {p.student_id: (p.cluster_label or 0) for p in prof_qs}
 
     # 2) Assemble raw feature matrix shape=(num_pairs, 5)
     #    Features: mean_z^9, max_z^5, mean_sim^2, proportion*100, sum of student labels
     X_raw = np.zeros((len(pairs), 5), dtype=float)
     for idx, ps in enumerate(pairs):
-        X_raw[idx, 0] = ps.mean_z_score ** 9
-        X_raw[idx, 1] = ps.max_z_score ** 5
-        X_raw[idx, 2] = ps.mean_similarity ** 2
+        X_raw[idx, 0] = ps.mean_z_score**9
+        X_raw[idx, 1] = ps.max_z_score**5
+        X_raw[idx, 2] = ps.mean_similarity**2
         X_raw[idx, 3] = ps.proportion * 100.0
         la = student_lbl.get(ps.student_a_id, 0)
         lb = student_lbl.get(ps.student_b_id, 0)
@@ -729,11 +684,7 @@ def run_kmeans_for_pair_stats(
         # Recover raw centroids to compute composite scores
         centers_raw = scaler.inverse_transform(km.cluster_centers_)
         # Composite = mean_z^9 + max_z^5 + proportion*100
-        composites = (
-            centers_raw[:, 0] +
-            centers_raw[:, 1] +
-            centers_raw[:, 3]
-        )
+        composites = centers_raw[:, 0] + centers_raw[:, 1] + centers_raw[:, 3]
 
         # Identify which label is “red” (highest composite)
         red_lbl = int(np.argmax(composites))
@@ -768,9 +719,7 @@ def run_kmeans_for_pair_stats(
 
         if flagged:
             with transaction.atomic():
-                FlaggedStudentPair.objects.bulk_create(
-                    flagged, ignore_conflicts=True
-                )
+                FlaggedStudentPair.objects.bulk_create(flagged, ignore_conflicts=True)
         break
 
     # 5) Remap cluster labels so 0 always = lowest-risk centroid
@@ -780,7 +729,7 @@ def run_kmeans_for_pair_stats(
         ps.kmeans_label = remap[int(lbl)]
 
     with transaction.atomic():
-        PairFlagStat.objects.bulk_update(pairs, ['kmeans_label'])
+        PairFlagStat.objects.bulk_update(pairs, ["kmeans_label"])
 
     # Log timing and return the fitted model
     duration = time.time() - start_ts
@@ -806,38 +755,36 @@ def kmeans_pairs_plot(request, course_id, semester_id):
     """
     # 1) Load all PairFlagStat rows at once, including related students
     pairs = list(
-        PairFlagStat.objects
-        .filter(course_catalog_id=course_id,
-                semester_id=semester_id)
-        .select_related('student_a', 'student_b')
+        PairFlagStat.objects.filter(
+            course_catalog_id=course_id, semester_id=semester_id
+        ).select_related("student_a", "student_b")
     )
     if not pairs:
         # No data to show, so return 404
-        raise Http404('No pair statistics found.')
+        raise Http404("No pair statistics found.")
 
     # 2) Build a quick lookup of student_id → student cluster label
     profs = StudentSemesterProfile.objects.filter(
         course_catalog_id=course_id,
         semester_id=semester_id,
-    ).only('student_id', 'cluster_label')
-    student_lbl = {
-        p.student_id: (p.cluster_label or 0)
-        for p in profs
-    }
+    ).only("student_id", "cluster_label")
+    student_lbl = {p.student_id: (p.cluster_label or 0) for p in profs}
 
     # 3) Assemble the raw feature matrix for clustering:
     #    [avg_z**9, max_z**5, mean_sim**2, proportion*100, label_sum]
-    X_raw = np.vstack([
+    X_raw = np.vstack(
         [
-            ps.mean_z_score ** 9,
-            ps.max_z_score ** 5,
-            ps.mean_similarity ** 2,
-            ps.proportion * 100.0,
-            student_lbl.get(ps.student_a_id, 0)
-            + student_lbl.get(ps.student_b_id, 0),
+            [
+                ps.mean_z_score**9,
+                ps.max_z_score**5,
+                ps.mean_similarity**2,
+                ps.proportion * 100.0,
+                student_lbl.get(ps.student_a_id, 0)
+                + student_lbl.get(ps.student_b_id, 0),
+            ]
+            for ps in pairs
         ]
-        for ps in pairs
-    ])
+    )
     labels = np.array([ps.kmeans_label for ps in pairs])
 
     # 4) Standardize features then project to 2D via PCA
@@ -849,12 +796,9 @@ def kmeans_pairs_plot(request, course_id, semester_id):
 
     # 5) Determine which cluster is “red” by highest centroid on PC1
     unique_lbls = sorted(set(labels))
-    centroids = {
-        lbl: dim1[labels == lbl].mean()
-        for lbl in unique_lbls
-    }
+    centroids = {lbl: dim1[labels == lbl].mean() for lbl in unique_lbls}
     red_lbl = max(centroids, key=centroids.get)
-    red_mask = (labels == red_lbl)
+    red_mask = labels == red_lbl
     red_n = int(red_mask.sum())
 
     # 6) Decide plotting mode based on red cluster size
@@ -871,17 +815,15 @@ def kmeans_pairs_plot(request, course_id, semester_id):
         high_mask = highlight
 
         low_n, med_n, high_n = int(low_mask.sum()), 0, 1
-        highlight_color = 'gold'
-        highlight_label = 'Outlier Candidate (n=1)'
+        highlight_color = "gold"
+        highlight_label = "Outlier Candidate (n=1)"
         show_names = False
     else:
         # Standard low/medium/high split
         low_lbl = min(centroids, key=centroids.get)
-        med_lbls = [
-            l for l in unique_lbls if l not in (low_lbl, red_lbl)
-        ]
+        med_lbls = [l for l in unique_lbls if l not in (low_lbl, red_lbl)]
 
-        low_mask = (labels == low_lbl)
+        low_mask = labels == low_lbl
         med_mask = np.isin(labels, med_lbls)
         high_mask = red_mask
 
@@ -889,8 +831,8 @@ def kmeans_pairs_plot(request, course_id, semester_id):
         med_n = int(med_mask.sum())
         high_n = red_n
 
-        highlight_color = 'darkred'
-        highlight_label = f'High Intensity (n={high_n})'
+        highlight_color = "darkred"
+        highlight_label = f"High Intensity (n={high_n})"
         show_names = True
 
     # 7) Begin plotting clusters
@@ -903,9 +845,13 @@ def kmeans_pairs_plot(request, course_id, semester_id):
         """
         xi, yi = dim1[mask], dim2[mask]
         ax.scatter(
-            xi, yi,
-            c=color, marker=marker,
-            s=100, edgecolor='k', alpha=0.8,
+            xi,
+            yi,
+            c=color,
+            marker=marker,
+            s=100,
+            edgecolor="k",
+            alpha=0.8,
             label=label,
         )
 
@@ -920,17 +866,15 @@ def kmeans_pairs_plot(request, course_id, semester_id):
         elif points:
             # For 1-2 points, draw a circle around center
             cx, cy = np.mean(xi), np.mean(yi)
-            radius = (np.hypot(xi - cx, yi - cy).max()
-                      if len(xi) > 1 else 0.5) * 1.5
-            circ = Circle((cx, cy), radius=radius,
-                          color=color, alpha=0.2)
+            radius = (np.hypot(xi - cx, yi - cy).max() if len(xi) > 1 else 0.5) * 1.5
+            circ = Circle((cx, cy), radius=radius, color=color, alpha=0.2)
             ax.add_patch(circ)
 
     # 8) Plot each group: low always green, medium if any, then high/outlier
-    plot_group(low_mask, 'green', 'o', f'Low Intensity (n={low_n})')
+    plot_group(low_mask, "green", "o", f"Low Intensity (n={low_n})")
     if med_mask.any():
-        plot_group(med_mask, 'gold', 's', f'Medium Intensity (n={med_n})')
-    plot_group(high_mask, highlight_color, '^', highlight_label)
+        plot_group(med_mask, "gold", "s", f"Medium Intensity (n={med_n})")
+    plot_group(high_mask, highlight_color, "^", highlight_label)
 
     # 9) Annotate and list names only for true high cluster
     if show_names and high_n:
@@ -940,60 +884,64 @@ def kmeans_pairs_plot(request, course_id, semester_id):
                 str(idx_num),
                 xy=(dim1[i], dim2[i]),
                 xytext=(4, 4),
-                textcoords='offset points',
-                fontsize=11, fontweight='bold',
+                textcoords="offset points",
+                fontsize=11,
+                fontweight="bold",
                 color=highlight_color,
             )
 
         # Sidebar with student-pair names and max_z
         names = [
-            f'{pairs[i].student_a.first_name} '
-            f'{pairs[i].student_a.last_name} & '
-            f'{pairs[i].student_b.first_name} '
-            f'{pairs[i].student_b.last_name}'
+            f"{pairs[i].student_a.first_name} "
+            f"{pairs[i].student_a.last_name} & "
+            f"{pairs[i].student_b.first_name} "
+            f"{pairs[i].student_b.last_name}"
             for i in high_indices
         ]
         y_top, y_bottom = 0.98, 0.04
         y_step = (y_top - y_bottom) / (len(names) + 1)
         for j, text in enumerate(names, start=1):
             fig.text(
-                0.79, y_top - j * y_step,
-                f'{j}: {text} '
-                f'(max_z={pairs[high_indices[j-1]].max_z_score:.2f})',
+                0.79,
+                y_top - j * y_step,
+                f"{j}: {text} " f"(max_z={pairs[high_indices[j-1]].max_z_score:.2f})",
                 transform=fig.transFigure,
-                va='top', ha='left',
-                fontsize=11, fontweight='bold',
-                color=highlight_color, family='monospace',
+                va="top",
+                ha="left",
+                fontsize=11,
+                fontweight="bold",
+                color=highlight_color,
+                family="monospace",
             )
     elif not show_names:
         # If we’re in outlier mode, show a simple info message
         fig.text(
-            0.79, 0.5,
-            'Not enough evidence of anomalies',
+            0.79,
+            0.5,
+            "Not enough evidence of anomalies",
             transform=fig.transFigure,
-            va='center', ha='left',
-            fontsize=14, fontstyle='italic',
+            va="center",
+            ha="left",
+            fontsize=14,
+            fontstyle="italic",
         )
 
     # 10) Final axes labels, title, grid, and legend
-    ax.set_xlabel(f'Dimension 1 ({var1:.1f}% var)', fontsize=12)
-    ax.set_ylabel(f'Dimension 2 ({var2:.1f}% var)', fontsize=12)
+    ax.set_xlabel(f"Dimension 1 ({var1:.1f}% var)", fontsize=12)
+    ax.set_ylabel(f"Dimension 2 ({var2:.1f}% var)", fontsize=12)
 
     course = get_object_or_404(CourseCatalog, pk=course_id)
     sem = get_object_or_404(Semester, pk=semester_id)
-    ax.set_title(
-        f'K-Means Clusters → {course} Pairs → {sem}',
-        fontsize=16, pad=15
-    )
-    ax.grid(True, linestyle=':', linewidth=0.5, alpha=0.7)
+    ax.set_title(f"K-Means Clusters → {course} Pairs → {sem}", fontsize=16, pad=15)
+    ax.grid(True, linestyle=":", linewidth=0.5, alpha=0.7)
 
     fig.subplots_adjust(bottom=0.06)
     ncols = 2 if not med_mask.any() else 3
     ax.legend(
-        loc='upper center',
+        loc="upper center",
         bbox_to_anchor=(0.50, -0.18),
         ncol=ncols,
-        title='Pair Groups',
+        title="Pair Groups",
         frameon=True,
         fontsize=11,
         title_fontsize=13,
@@ -1001,10 +949,10 @@ def kmeans_pairs_plot(request, course_id, semester_id):
 
     # 11) Render to PNG and return in HTTP response
     buf = io.BytesIO()
-    fig.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+    fig.savefig(buf, format="png", dpi=150, bbox_inches="tight")
     plt.close(fig)
     buf.seek(0)
-    return HttpResponse(buf.read(), content_type='image/png')
+    return HttpResponse(buf.read(), content_type="image/png")
 
 
 def _generate_one(assignment_id):
@@ -1059,8 +1007,7 @@ def run_full_pipeline(request, course_id, semester_id):
     if not assignments:
         raise Http404("No assignments for that course+semester.")
     print(
-        f"  📋 Found {len(assignments)} assignments; "
-        "generating reports in parallel…"
+        f"  📋 Found {len(assignments)} assignments; " "generating reports in parallel…"
     )
 
     # 2a) Generate each report concurrently; collect all flagged-pair data.
@@ -1078,10 +1025,7 @@ def run_full_pipeline(request, course_id, semester_id):
                 continue
 
             if report:
-                print(
-                    f"    ▶ report.id={report.id}, "
-                    f"flagged_pairs={len(flagged)}"
-                )
+                print(f"    ▶ report.id={report.id}, " f"flagged_pairs={len(flagged)}")
                 all_flagged.extend(flagged)
 
     # 3) Perform a single bulk-upsert of all pair stats.
