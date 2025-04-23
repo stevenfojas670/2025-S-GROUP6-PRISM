@@ -113,23 +113,6 @@ class SemesterViewSet(viewsets.ModelViewSet, CachedViewMixin):
         return queryset.filter(courseinstances__professor__id=professor_id).distinct()
 
 
-class CourseAssignmentCollaborationViewSet(viewsets.ModelViewSet, CachedViewMixin):
-    """ViewSet for handling CourseAssignmentCollaboration entries."""
-
-    queryset = CourseAssignmentCollaboration.objects.all()
-    serializer_class = CourseAssignmentCollaborationSerializer
-    pagination_class = StandardResultsSetPagination
-    filter_backends = [
-        DjangoFilterBackend,
-        filters.OrderingFilter,
-        filters.SearchFilter,
-    ]
-    filterset_fields = ["assignment", "course_instance"]
-    ordering_fields = ["assignment", "course_instance"]
-    ordering = ["assignment"]
-    search_fields = []
-
-
 class StudentsViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling Students entries."""
 

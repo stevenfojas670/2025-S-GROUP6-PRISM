@@ -10,36 +10,36 @@ const roboto = Roboto({
 
 const theme = createTheme({
 	palette: {
-		mode: "dark",
+		mode: "light",
 		background: {
-			default: "#0a0a0a", // true black background
-			paper: "#161616", // slightly lighter surface
+			default: "#f9fafb", // soft light background
+			paper: "#ffffff", // white surface
 		},
 		primary: {
-			main: "#0fffc1", // neon aqua
-			contrastText: "#0a0a0a",
+			main: "#277ee3", // bold blue
+			contrastText: "#ffffff",
 		},
 		secondary: {
-			main: "#ff5af1", // electric pink
-			contrastText: "#0a0a0a",
+			main: "#5ad1ff", // neon aqua accent
+			contrastText: "#000000",
 		},
 		text: {
-			primary: "#f8f8f8", // bright white
-			secondary: "#94a3b8", // steel gray
+			primary: "#1e293b", // slate-900
+			secondary: "#64748b", // slate-500
 		},
 		error: {
-			main: "#ff4d4d", // bright red
+			main: "#ef4444", // red-500
 		},
 		warning: {
-			main: "#facc15", // neon yellow
+			main: "#facc15", // yellow-400
 		},
 		success: {
-			main: "#6ee7b7", // mint green
+			main: "#22c55e", // green-500
 		},
 		info: {
-			main: "#5ad1ff", // neon sky blue
+			main: "#60a5fa", // sky-400
 		},
-		divider: "rgba(255, 255, 255, 0.08)",
+		divider: "rgba(0, 0, 0, 0.12)",
 	},
 	typography: {
 		fontFamily: roboto.style.fontFamily,
@@ -56,6 +56,19 @@ const theme = createTheme({
 							props: { severity: "info" },
 							style: {
 								backgroundColor: "#60a5fa",
+							},
+						},
+					],
+				},
+			},
+		},
+		MuiDivider: {
+			styleOverrides: {
+				root: {
+					variants: [
+						{
+							style: {
+								backgroundColor: "#f0f0f0",
 							},
 						},
 					],

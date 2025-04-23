@@ -35,25 +35,12 @@ export default function Courses() {
 
 	return (
 		<Box>
-			<SignOutButton />
-
-			{/* Main banner */}
 			<div>
-				<div className="Banner">
+				<div>
 					<Typography>Welcome {user?.first_name}</Typography>
-					<h1>Professor ID: {user?.professor_id}</h1>
-					<h1>User ID: {user?.pk}</h1>
+					<Typography>Professor ID: {user?.professor_id}</Typography>
+					<Typography>User ID: {user?.pk}</Typography>
 				</div>
-
-				{/* 2 buttons -> compare students, alerts */}
-				<div className="comapreButtons">
-					<button onClick={() => router.push("/student_comparison")}>
-						Compare Students
-					</button>
-					<button onClick={() => router.push("/alerts")}>Alerts</button>
-				</div>
-
-				{/* Main Navigation */}
 				<div className="sections">
 					{courses.map((course) => (
 						<CourseCards key={course.id}>
