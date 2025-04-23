@@ -43,7 +43,12 @@ export default function Courses() {
 				</div>
 				<div className="sections">
 					{courses.map((course) => (
-						<CourseCards key={course.id}>
+						<CourseCards
+							key={course.id}
+							onClick={() =>
+								router.push(`/courses/${course.course_catalog.id}/assignments`)
+							}
+						>
 							<Typography>{course.course_catalog.name}</Typography>
 						</CourseCards>
 					))}

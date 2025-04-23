@@ -2,8 +2,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { Container, Typography, Button, Box } from "@mui/material"
 import { easyFetch } from "@/utils/fetchWrapper"
-import Plotly from "plotly.js"
-import Plot from "react-plotly.js"
+import { useParams } from "next/navigation"
 /**
  * This will be used for pagination if necessary
  */
@@ -29,12 +28,13 @@ interface AssignmentItem {
 
 export default function Assignments() {
 	const [assignments, setAssignments] = useState<AssignmentItem[]>([])
+	const { course_catalog_id } = useParams()
 
 	useEffect(() => {
 		const fetchAssignments = async () => {
 			try {
 				const queryParams = new URLSearchParams({
-					course_instance: String(3),
+					course_catalog: String(course_catalog_id),
 				})
 
 				const response = await easyFetch(
@@ -66,14 +66,13 @@ export default function Assignments() {
 			<Typography variant="h4" gutterBottom>
 				Assignments
 			</Typography>
-			<Box sx={{ display: "flex", height: "80vh" }}>
+			<Box sx={{ display: "flex" }}>
 				<Box
 					sx={{
 						width: "250px",
 						display: "flex",
 						flexDirection: "column",
 						gap: 1,
-						borderRight: "1px solid #ccc",
 						paddingRight: 2,
 					}}
 				>
@@ -87,9 +86,6 @@ export default function Assignments() {
 						</Button>
 					))}
 				</Box>
-
-				{/* Main content area */}
-				<Box sx={{ flexGrow: 1, paddingLeft: 2 }}>Main body</Box>
 			</Box>
 		</Box>
 	)

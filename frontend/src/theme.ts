@@ -12,7 +12,7 @@ const theme = createTheme({
 	palette: {
 		mode: "light",
 		background: {
-			default: "#f9fafb", // soft light background
+			default: "#dedede", // soft light background
 			paper: "#ffffff", // white surface
 		},
 		primary: {

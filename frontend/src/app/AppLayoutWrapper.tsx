@@ -39,11 +39,9 @@ export default function AppLayoutWrapper({ children }: Props) {
 					</Button>
 				</Toolbar>
 			</AppBar>
-			{/* Outerbox */}
 			<Box
 				sx={{
 					display: "flex",
-					gap: 2,
 					height: "100%",
 					overflow: "hidden",
 				}}
