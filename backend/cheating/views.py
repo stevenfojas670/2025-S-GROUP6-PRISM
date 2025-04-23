@@ -1,35 +1,49 @@
 """Views for the Cheating app with enhanced filtering, ordering, search, and pagination."""
 
+from django.db import connection
 import io
 import math
-
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from sklearn.cluster import KMeans
+from sklearn.discriminant_analysis import StandardScaler
+from courses.models import CourseCatalog, Semester
 import matplotlib
 from matplotlib import pyplot as plt
-
+import time
+import numpy as np
 from django.db import transaction
-from django.db.models import Q
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
-
 from rest_framework import filters, viewsets
 from django_filters.rest_framework import DjangoFilterBackend
-
 from prism_backend.mixins import CachedViewMixin
-
+from django.views.decorators.http import require_POST
 from assignments.models import Assignments, Submissions
-
+from scipy.spatial import ConvexHull, QhullError
+from sklearn.decomposition import PCA
+from matplotlib.patches import Circle
+from .services import (
+    bulk_recompute_semester_profiles,
+    run_kmeans_for_course_semester,
+)
+from .services import generate_report as generate_report_service
+from django.views.decorators.http import require_GET
 from .models import (
     CheatingGroups,
     CheatingGroupMembers,
     ConfirmedCheaters,
+    FlaggedStudentPair,
     FlaggedStudents,
+    PairFlagStat,
     SubmissionSimilarityPairs,
     LongitudinalCheatingGroups,
     LongitudinalCheatingGroupMembers,
     LongitudinalCheatingGroupInstances,
     AssignmentReport,
     StudentReport,
+    StudentSemesterProfile,
 )
+from assignments.models import Assignments
 
 from .serializers import (
     CheatingGroupsSerializer,
@@ -45,10 +59,8 @@ from .serializers import (
 from .pagination import StandardResultsSetPagination
 
 from .utils.similarity_analysis import (
-    compute_population_stats,
-    compute_student_confidence_interval,
-    compute_student_z_score,
     get_all_scores_by_student,
+    update_all_pair_stats,
 )
 
 # Set up non-interactive backend for matplotlib
@@ -195,298 +207,6 @@ class LongitudinalCheatingGroupInstancesViewSet(viewsets.ModelViewSet, CachedVie
     search_fields = []
 
 
-def cleanup_old_student_reports(assignment, keep_report_id):
-    """Delete all StudentReports (old) for the given assignment.
-
-    That are tied to older AssignmentReports (i.e., not the newly created one).
-    Args:
-        assignment (Assignments): Assignment instance.
-        keep_report_id (int): The ID of the AssignmentReport to retain.
-    """
-    # Get all older reports tied to this assignment (except the new one)
-    old_report_ids = (
-        AssignmentReport.objects.filter(assignment=assignment)
-        .exclude(id=keep_report_id)
-        .values_list("id", flat=True)
-    )
-
-    # Delete all StudentReports tied to those old reports
-    StudentReport.objects.filter(report_id__in=old_report_ids).delete()
-
-
-def flag_student_pairs(report, professor, cutoff=1.282):
-    """
-    Flag all similarity pairs involving students with z > cutoff.
-
-    Before inserting, deletes any existing FlaggedStudents for this
-    assignment/professor to avoid duplicates from older reports.
-
-    Args:
-        report (AssignmentReport): the current report instance.
-        professor (Professors): professor doing the flagging.
-        cutoff (float): z-score cutoff (default = 1.282 for 90%).
-
-    Returns:
-        int: number of new FlaggedStudents created.
-    """
-    created_rows = []
-
-    # 1) Get all flagged students with z > cutoff
-    suspects = report.student_reports.filter(z_score__gt=cutoff)
-
-    if not suspects.exists():
-        return 0
-
-    # 2) Delete previous flags by this professor for this assignment
-    FlaggedStudents.objects.filter(
-        professor=professor,
-        similarity__assignment=report.assignment,
-    ).delete()
-
-    # 3) For each flagged student, fetch their submission and similarity pairs
-    for sr in suspects:
-        submission = sr.submission
-        student = submission.student
-
-        pairs = SubmissionSimilarityPairs.objects.filter(
-            assignment=report.assignment,
-        ).filter(Q(submission_id_1=submission) | Q(submission_id_2=submission))
-
-        # 4) Create one FlaggedStudents row per pair
-        for pair in pairs:
-            created_rows.append(
-                FlaggedStudents(
-                    professor=professor,
-                    student=student,
-                    similarity=pair,
-                    generative_ai=False,
-                )
-            )
-
-    # 5) Insert all, skip duplicates just in case
-    inserted = FlaggedStudents.objects.bulk_create(
-        created_rows,
-        ignore_conflicts=True,
-    )
-
-    return len(inserted)
-
-
-def generate_report(request, assignment_id):
-    """
-    Compute and persist an AssignmentReport and related StudentReports.
-
-    This function:
-      - Computes population stats (μ, σ, variance).
-      - Generates one StudentReport per submission.
-      - Flags similarity pairs for students above a z-score cutoff.
-      - Ensures only the most recent report and its children are kept.
-
-    Args:
-        request (HttpRequest): incoming HTTP request (unused here).
-        assignment_id (int): ID of the assignment to analyze.
-
-    Returns:
-        JsonResponse: report ID, stats, and number of students flagged.
-    """
-    # 1) Load the Assignment or raise 404 if not found
-    assignment = get_object_or_404(Assignments, pk=assignment_id)
-
-    # 2) Collect all pairwise similarity scores per student submission
-    scores_map = get_all_scores_by_student(assignment)
-    if not scores_map:
-        raise Http404("No similarity data found for this assignment.")
-
-    # 3) Compute μ (mean), σ (std), and total pair count N for finite correction
-    mu, sigma = compute_population_stats(scores_map)
-    variance = sigma**2
-    total_pairs = sum(len(v) for v in scores_map.values()) // 2
-
-    # 4) Perform all DB changes in a transaction for atomicity
-    with transaction.atomic():
-        # 4a) Create the new AssignmentReport
-        report = AssignmentReport.objects.create(
-            assignment=assignment,
-            mu=mu,
-            sigma=sigma,
-            variance=variance,
-        )
-
-        # 4b) Build StudentReport rows in memory
-        student_reports = []
-        for sid, sims in scores_map.items():
-            mean_i = sum(sims) / len(sims)
-
-            _, z_val = compute_student_z_score(
-                scores=sims,
-                mu=mu,
-                sigma=sigma,
-                use_fpc=True,
-                population_size=total_pairs,
-            )
-
-            lo, hi = compute_student_confidence_interval(
-                scores=sims,
-                sigma=sigma,
-                conf_level=0.95,
-                use_fpc=True,
-                population_size=total_pairs,
-            )
-
-            student_reports.append(
-                StudentReport(
-                    report=report,
-                    submission_id=sid,
-                    mean_similarity=mean_i,
-                    z_score=z_val,
-                    ci_lower=lo,
-                    ci_upper=hi,
-                )
-            )
-
-        # 4c) Bulk insert all StudentReports at once
-        StudentReport.objects.bulk_create(student_reports)
-
-        # 4d) Resolve professor via the course_instance on any Submission
-        first_sub = (
-            Submissions.objects.filter(assignment=assignment)
-            .select_related("course_instance__professor")
-            .first()
-        )
-        if not first_sub:
-            raise Http404("No submissions found to determine professor.")
-        professor = first_sub.course_instance.professor
-
-        # 4e) Flag all similarity pairs for high-z students
-        flags_created = flag_student_pairs(
-            report=report,
-            professor=professor,
-            cutoff=1.282,
-        )
-
-        # 4f) Delete all older AssignmentReports for this assignment
-        AssignmentReport.objects.filter(assignment=assignment).exclude(
-            id=report.id
-        ).delete()
-
-        # 4g) Clean up orphaned StudentReports for deleted reports
-        cleanup_old_student_reports(
-            assignment=assignment,
-            keep_report_id=report.id,
-        )
-
-    # 5) Return stats and summary to frontend
-    return JsonResponse(
-        {
-            "report_id": report.id,
-            "assignment_id": assignment.id,
-            "students_analyzed": len(scores_map),
-            "students_flagged": FlaggedStudents.objects.filter(
-                professor=professor,
-                similarity__assignment=assignment,
-            ).values("student").distinct().count(),
-            "flagged_similarity_rows": flags_created,
-            "population_mu": mu,
-            "population_sigma": sigma,
-            "population_variance": variance,
-        },
-        json_dumps_params={"indent": 2},
-    )
-
-
-# -------------------------------
-# Step-by-Step Example of generate_report
-# -------------------------------
-#
-# Suppose for assignment #5 we have these similarity lists:
-# scores_map = {
-#     1: [30, 50],   # Student 1’s two comparisons (with 2 and 3)
-#     2: [30, 20],   # Student 2’s comparisons (with 1 and 3)
-#     3: [50, 20],   # Student 3’s comparisons (with 1 and 2)
-# }
-#
-# And we have these students and their IDs:
-#   Submission 1 → Student Alice
-#   Submission 2 → Student Bob
-#   Submission 3 → Student Carol
-#
-# 1) The user calls:
-#      POST /api/cheating/5/generate_report/
-#
-# 2) Inside generate_report:
-#    • Loads Assignment #5
-#    • Calls get_all_scores_by_student() and receives the scores_map above
-#
-# 3) Compute population stats:
-#      all_scores = [30, 50, 30, 20, 50, 20]
-#      N_pop      = 6
-#      μ          = (30+50+30+20+50+20)/6 = 33.33…
-#      σ          = sqrt(variance) ≈ 12.91
-#      Var        = σ² ≈ 166.7
-#      N_pairs    = 6 // 2 = 3
-#
-# 4) Create AssignmentReport row:
-#      AssignmentReport(
-#        assignment=5,
-#        mu=33.33,
-#        sigma=12.91,
-#        variance=166.7
-#      )
-#
-# 5) For each student (sid → sims):
-#
-#    a) Student 1 (Alice): sims = [30, 50]
-#       mean1 = 40.0
-#       SE    = 12.91 / sqrt(2) * sqrt((3–2)/(3–1)) ≈ 6.45
-#       z1    = (40.0 – 33.33) / 6.45 ≈ 1.04
-#       CI    = 40 ± 1.96×6.45 ≈ [27.36, 52.64]
-#
-#    b) Student 2 (Bob): sims = [30, 20]
-#       mean2 = 25.0
-#       z2    = (25.0 – 33.33) / 6.45 ≈ –1.29
-#       CI    = [12.36, 37.64]
-#
-#    c) Student 3 (Carol): sims = [50, 20]
-#       mean3 = 35.0
-#       z3    = (35.0 – 33.33) / 6.45 ≈ 0.26
-#       CI    = [22.36, 47.64]
-#
-# 6) Save 3 StudentReport rows:
-#      StudentReport(report=..., submission=1, mean_similarity=40.0, z_score=1.04, ...)
-#      StudentReport(report=..., submission=2, mean_similarity=25.0, z_score=–1.29, ...)
-#      StudentReport(report=..., submission=3, mean_similarity=35.0, z_score=0.26, ...)
-#
-# 7) Flagging phase (z > 1.282):
-#      • None of the students exceed z = 1.282
-#      • So no one is flagged, and the FlaggedStudents table stays empty
-#
-# 8) Example alternate case: if Alice had [60, 70] → mean=65 → z ≈ 2.0
-#      • Alice would be flagged
-#      • We'd lookup all SubmissionSimilarityPairs involving submission 1
-#         (e.g. Alice–Bob and Alice–Carol)
-#      • For each pair, we'd save:
-#          FlaggedStudents(professor=..., student=Alice, similarity=pair, generative_ai=False)
-#
-# 9) JSON response looks like:
-# {
-#   "report_id": 17,
-#   "assignment_id": 5,
-#   "students_reported": 3,
-#   "flags_created": 0,
-#   "population_mu": 33.33,
-#   "population_sigma": 12.91,
-#   "population_variance": 166.7
-# }
-#
-# Now the frontend can:
-#   • Fetch report 17 to populate:
-#       - forest plots (CI)
-#       - z-score bar charts
-#       - distribution histograms
-#   • See who was flagged and why (via FlaggedStudents)
-#   • Link flagged students by shared similarity pairs
-
-
 def similarity_plot(request, assignment_id):
     """
     Render a vertical bar chart of flagged students’ z-scores as PNG.
@@ -494,21 +214,28 @@ def similarity_plot(request, assignment_id):
     Pulls z-scores from StudentReport entries where z > cutoff.
     Student names resolved via Submissions and plotted on x-axis.
     """
+    # here I’m retrieving the Assignment and its latest report to get the z-scores
     assignment = get_object_or_404(Assignments, pk=assignment_id)
     report = get_object_or_404(AssignmentReport, assignment=assignment)
 
-    # Define threshold
-    cutoff = 1.282
+    # this is our z-score cutoff — anything above this is considered suspicious
+    # I’m using 1.282 for the upper 90% threshold (z > 1.282)
+    # i am using 2.0 for the upper 95% threshold (z > 2.0)
+    # ill have to selct one of the 2
+    cutoff = 2.0
 
-    # Fetch flagged students and cache them
+    # now I’m pulling all students with z-scores above the threshold from the latest report
+    # I’m also caching only what I need to minimize query overhead
     flagged_qs = StudentReport.objects.filter(report=report, z_score__gt=cutoff).only(
         "submission_id", "z_score"
     )
 
+    # if no one is above threshold, we bail early with a 404
     if not flagged_qs.exists():
         raise Http404("No flagged students")
 
-    # Bulk lookup submissions with related student info
+    # here I’m resolving all submission IDs to fetch student names in one go
+    # using in_bulk for faster lookup instead of one query per student
     submission_ids = [sr.submission_id for sr in flagged_qs]
     sub_map = (
         Submissions.objects.filter(pk__in=submission_ids)
@@ -516,7 +243,7 @@ def similarity_plot(request, assignment_id):
         .in_bulk(field_name="pk")
     )
 
-    # Assemble (student name, z-score)
+    # now we pair student names with their z-scores to build the bar chart entries
     entries = []
     for sr in flagged_qs:
         submission = sub_map.get(sr.submission_id)
@@ -526,6 +253,7 @@ def similarity_plot(request, assignment_id):
             name = f"ID {sr.submission_id}"
         entries.append((name, sr.z_score))
 
+    # I want to display from highest z down, so let’s sort by z descending
     entries.sort(key=lambda x: x[1], reverse=True)
     names, zs = zip(*entries)
 
@@ -562,9 +290,11 @@ def distribution_plot(request, assignment_id):
 
     Uses StudentReport for means and AssignmentReport for population stats.
     """
+    # load the assignment and associated stats report
     assignment = get_object_or_404(Assignments, pk=assignment_id)
     report = get_object_or_404(AssignmentReport, assignment=assignment)
 
+    # pulling all student-level stats from the report
     srs = list(
         StudentReport.objects.filter(report=report).only(
             "submission_id", "mean_similarity"
@@ -573,20 +303,21 @@ def distribution_plot(request, assignment_id):
     if not srs:
         raise Http404("No student data to plot")
 
+    # extract the mean similarities from the queryset for histogram plotting
     means = [sr.mean_similarity for sr in srs]
 
-    # Get population values
+    # we need the population-level stats to overlay the normal curve
     mu = report.mu
     sigma = report.sigma
     var = report.variance
 
-    # Fetch all scores once to avoid recomputing
+    # I’ll reuse cached similarity scores to compute average sample size (used for SE)
     scores_map = get_all_scores_by_student(assignment)
 
-    # Compute average sample size
+    # compute average number of comparisons per student to estimate SE (CLT)
     total_comparisons = sum(len(scores_map.get(sr.submission_id, [])) for sr in srs)
     n_avg = total_comparisons / len(means)
-    se = sigma / (n_avg**0.5)
+    se = sigma / (n_avg**0.5)  # this is the SE used in normal overlay
 
     fig, ax = plt.subplots(figsize=(8, 4))
     counts, bins, _ = ax.hist(
@@ -636,10 +367,12 @@ def similarity_interval_plot(request, assignment_id):
 
     Plots mean ± CI, labels with z-scores from StudentReport.
     """
+    # we start off by resolving the assignment and its current report
     assignment = get_object_or_404(Assignments, pk=assignment_id)
     report = get_object_or_404(AssignmentReport, assignment=assignment)
 
-    cutoff = 1.282
+    # students above this z-score threshold will be shown in the forest plot
+    cutoff = 2.0
     srs = list(
         StudentReport.objects.filter(report=report, z_score__gt=cutoff).only(
             "submission_id", "mean_similarity", "ci_lower", "ci_upper", "z_score"
@@ -648,7 +381,7 @@ def similarity_interval_plot(request, assignment_id):
     if not srs:
         raise Http404("No flagged students to plot")
 
-    # Resolve all names via bulk lookup
+    # I want names to show up instead of submission IDs, so I bulk-fetch student info
     submission_ids = [sr.submission_id for sr in srs]
     sub_map = (
         Submissions.objects.filter(pk__in=submission_ids)
@@ -656,6 +389,7 @@ def similarity_interval_plot(request, assignment_id):
         .in_bulk(field_name="pk")
     )
 
+    # building the final display data: name, mean sim, CI bounds, and z-score
     data = []
     for sr in srs:
         submission = sub_map.get(sr.submission_id)
@@ -665,9 +399,11 @@ def similarity_interval_plot(request, assignment_id):
             name = f"ID {sr.submission_id}"
         data.append((name, sr.mean_similarity, sr.ci_lower, sr.ci_upper, sr.z_score))
 
+    # I want top cheaters first, so I sort by mean similarity in descending order
     data.sort(key=lambda x: x[1], reverse=True)
     names, means, lowers, uppers, zs = zip(*data)
 
+    # here I’m computing the left and right error bars (distance from mean to CI)
     left_errs = [m - lo for m, lo in zip(means, lowers)]
     right_errs = [hi - m for hi, m in zip(uppers, means)]
 
@@ -705,3 +441,568 @@ def similarity_interval_plot(request, assignment_id):
     plt.close(fig)
     buf.seek(0)
     return HttpResponse(buf.read(), content_type="image/png")
+
+
+@require_GET
+def kmeans_clusters_plot(request, course_id, semester_id):
+    """
+    2D PCA plot of K‑Means clusters for students, colored & labeled:
+      • convex‐hull if ≥3 points
+      • circle if 1–2 points
+      • extremes (outliers) annotated
+
+      Low Intensity = cluster with lowest avg_z
+      High Intensity = cluster with highest avg_z
+      Medium Intensity = everything in between
+    """
+    # — 1) Load profiles + student names
+    qs = StudentSemesterProfile.objects.filter(
+        course_catalog_id=course_id,
+        semester_id=semester_id,
+    ).select_related("student")
+    if not qs.exists():
+        raise Http404("No data for that course & semester.")
+
+    # — 2) Extract raw vectors, labels, names
+    #    each feature_vector is now length=7
+    X_raw = np.vstack([p.feature_vector for p in qs])  # (n_students, 7)
+    labels = np.array([p.cluster_label for p in qs])
+    names = [f"{p.student.first_name} {p.student.last_name}" for p in qs]
+
+    # — 3) Standardize + PCA → 2D
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X_raw)
+    pca = PCA(n_components=2, random_state=42)
+    XY = pca.fit_transform(X_scaled)
+    dim1, dim2 = XY[:, 0], XY[:, 1]
+    var1 = pca.explained_variance_ratio_[0] * 100
+    var2 = pca.explained_variance_ratio_[1] * 100
+
+    # — 4) Compute each cluster’s centroid avg_z (feature #0) WITHOUT re‑fitting
+    unique_lbls = sorted(set(labels))
+    centroids = {lbl: X_scaled[labels == lbl].mean(axis=0) for lbl in unique_lbls}
+    avg_z = {lbl: centroids[lbl][0] for lbl in unique_lbls}
+
+    # figure out low‐z vs high‐z clusters
+    min_lbl = min(unique_lbls, key=lambda l: avg_z[l])
+    max_lbl = max(unique_lbls, key=lambda l: avg_z[l])
+
+    # — 5) Build style maps
+    color_map, legend_map, marker_map = {}, {}, {}
+    for lbl in unique_lbls:
+        cnt = int((labels == lbl).sum())
+        if lbl == min_lbl:
+            color_map[lbl], marker_map[lbl] = "green", "o"
+            legend_map[lbl] = f"Low Intensity (n={cnt})"
+        elif lbl == max_lbl:
+            color_map[lbl], marker_map[lbl] = "red", "^"
+            legend_map[lbl] = f"High Intensity (n={cnt})"
+        else:
+            color_map[lbl], marker_map[lbl] = "gold", "s"
+            legend_map[lbl] = f"Medium Intensity (n={cnt})"
+
+    # — 6) Plot each cluster
+    fig, ax = plt.subplots(figsize=(10, 8))
+    for lbl in unique_lbls:
+        xi = dim1[labels == lbl]
+        yi = dim2[labels == lbl]
+
+        ax.scatter(
+            xi,
+            yi,
+            c=color_map[lbl],
+            marker=marker_map[lbl],
+            s=100,
+            edgecolor="k",
+            alpha=0.8,
+            label=legend_map[lbl],
+        )
+
+        pts = list(zip(xi, yi))
+        if len(pts) >= 3:
+            try:
+                hull = ConvexHull(pts)
+                hull_pts = [pts[i] for i in hull.vertices]
+                hx, hy = zip(*hull_pts)
+                ax.fill(hx, hy, color=color_map[lbl], alpha=0.2)
+            except QhullError:
+                pass
+        elif pts:
+            cx, cy = np.mean(xi), np.mean(yi)
+            dists = np.hypot(xi - cx, yi - cy)
+            r = (dists.max() if dists.size else 0.5) * 1.5
+            circ = Circle(
+                (cx, cy),
+                radius=r or 0.5,
+                color=color_map[lbl],
+                alpha=0.2,
+                edgecolor=None,
+            )
+            ax.add_patch(circ)
+
+    # — 7) Annotate only the extreme outliers
+    x_lo, x_hi = np.percentile(dim1, [10, 90])
+    y_lo, y_hi = np.percentile(dim2, [10, 90])
+    for x, y, name in zip(dim1, dim2, names):
+        if not (x_lo < x < x_hi and y_lo < y < y_hi):
+            ax.annotate(
+                name,
+                xy=(x, y),
+                xytext=(5, 5),
+                textcoords="offset points",
+                fontsize=8,
+                alpha=0.9,
+            )
+
+    # — 8) Final styling & title
+    course = get_object_or_404(CourseCatalog, pk=course_id)
+    semester = get_object_or_404(Semester, pk=semester_id)
+    ax.set_xlabel(f"Dim1 ({var1:.1f}% variance)", fontsize=12)
+    ax.set_ylabel(f"Dim2 ({var2:.1f}% variance)", fontsize=12)
+    ax.set_title(f"K‑Means Clusters → {course} — {semester}", fontsize=14, pad=15)
+    ax.grid(True, linestyle=":", linewidth=0.5, alpha=0.7)
+    ax.legend(loc="upper left", bbox_to_anchor=(1.02, 1), title="Student Groups")
+    plt.tight_layout()
+
+    # — 9) Return as PNG
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=150)
+    plt.close(fig)
+    buf.seek(0)
+    return HttpResponse(buf.read(), content_type="image/png")
+
+
+def run_kmeans_for_pair_stats(
+    course_id,
+    semester_id,
+    student_km=None,
+    n_clusters=6,
+    random_state=0,
+    b_refs=10,
+    red_threshold=30,
+    max_multiplier=2,
+):
+    """
+    1) (optional) we can use student_km to get per-student labels
+    2) build & weight a 5-dim feature matrix for each pair
+    3) standardize, gap-statistic → pick best_k
+    4) fit & find 'red' cluster; if red_size > red_threshold, clear FlaggedStudentPair
+       else create FlaggedStudentPair records for every pair in 'red'
+    5) remap PairFlagStat.kmeans_label
+    """
+    start_ts = time.time()
+
+    # 1) load pair stats
+    pairs = list(
+        PairFlagStat.objects.filter(
+            course_catalog_id=course_id,
+            semester_id=semester_id,
+        )
+    )
+    if not pairs:
+        raise Http404("No pair stats available")
+
+    # student→label map
+    if student_km:
+        ids, labs = student_km._fit_student_ids_, student_km.labels_
+        student_lbl = dict(zip(ids, labs))
+    else:
+        qs = StudentSemesterProfile.objects.filter(
+            course_catalog_id=course_id,
+            semester_id=semester_id,
+        ).only("student_id", "cluster_label")
+        student_lbl = {p.student_id: (p.cluster_label or 0) for p in qs}
+
+    # 2) assemble feature matrix
+    X_raw = np.zeros((len(pairs), 5), dtype=float)
+    for i, ps in enumerate(pairs):
+        X_raw[i, 0] = ps.mean_z_score**9
+        X_raw[i, 1] = ps.max_z_score**5
+        X_raw[i, 2] = ps.mean_similarity**2
+        X_raw[i, 3] = ps.proportion * 100.0
+        la = student_lbl.get(ps.student_a_id, 0)
+        lb = student_lbl.get(ps.student_b_id, 0)
+        X_raw[i, 4] = la + lb
+
+    # standardize
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X_raw)
+
+    # 3) gap-statistic to choose best_k
+    def _disp(data, labels, centers):
+        return sum(np.sum((data[labels == i] - c) ** 2) for i, c in enumerate(centers))
+
+    mins, maxs = X_scaled.min(0), X_scaled.max(0)
+    best_k, best_gap = None, -np.inf
+
+    for k in range(2, n_clusters + 1):
+        km_ref = KMeans(n_clusters=k, random_state=random_state).fit(X_scaled)
+        Wk = _disp(X_scaled, km_ref.labels_, km_ref.cluster_centers_)
+        logWk = np.log(Wk)
+
+        ref_logs = []
+        for _ in range(b_refs):
+            Xb = np.random.uniform(mins, maxs, size=X_scaled.shape)
+            kmb = KMeans(n_clusters=k, random_state=random_state).fit(Xb)
+            Wkb = _disp(Xb, kmb.labels_, kmb.cluster_centers_)
+            ref_logs.append(np.log(Wkb))
+
+        gap_k = np.mean(ref_logs) - logWk
+        if gap_k > best_gap:
+            best_gap, best_k = gap_k, k
+
+    # 4) fit final and identify red cluster
+    km = KMeans(n_clusters=best_k, random_state=random_state)
+    labels = km.fit_predict(X_scaled)
+    ctrs = km.cluster_centers_
+    # undo scaling to compute composites
+    ctr_raw = scaler.inverse_transform(ctrs)
+    # composite = avg_z^9 + max_z^5 + proportion*100
+    composites = ctr_raw[:, 0] + ctr_raw[:, 1] + ctr_raw[:, 3]
+    red_lbl = int(np.argmax(composites))
+    counts = np.bincount(labels, minlength=best_k)
+    red_size = int(counts[red_lbl])
+
+    # 4a) clear old flagged pairs
+    FlaggedStudentPair.objects.filter(
+        course_catalog_id=course_id,
+        semester_id=semester_id,
+    ).delete()
+
+    # 4b) if red cluster small enough, flag them
+    if red_size <= red_threshold:
+        flagged_objs = []
+        for ps, lbl in zip(pairs, labels):
+            if lbl == red_lbl:
+                # fallback if ps.max_similarity doesn't exist
+                max_sim = getattr(ps, "max_similarity", ps.mean_similarity)
+                flagged_objs.append(
+                    FlaggedStudentPair(
+                        course_catalog_id=course_id,
+                        semester_id=semester_id,
+                        student_a_id=ps.student_a_id,
+                        student_b_id=ps.student_b_id,
+                        mean_similarity=ps.mean_similarity,
+                        max_similarity=max_sim,
+                        mean_z_score=ps.mean_z_score,
+                        max_z_score=ps.max_z_score,
+                    )
+                )
+
+        if flagged_objs:
+            with transaction.atomic():
+                FlaggedStudentPair.objects.bulk_create(
+                    flagged_objs, ignore_conflicts=True
+                )
+
+    # 5) remap PairFlagStat.kmeans_label so 0=lowest composite
+    order = np.argsort(composites)
+    remap = {old: new for new, old in enumerate(order)}
+    for ps, lbl in zip(pairs, labels):
+        ps.kmeans_label = remap[int(lbl)]
+
+    with transaction.atomic():
+        PairFlagStat.objects.bulk_update(pairs, ["kmeans_label"])
+
+    print(
+        f"✔️ run_kmeans_for_pair_stats done in {time.time() - start_ts:.2f}s; "
+        f"red_size={red_size}"
+    )
+    return km
+
+
+@require_GET
+def kmeans_pairs_plot(request, course_id, semester_id):
+    # 1) fetch all the pairs
+    pairs = list(
+        PairFlagStat.objects.filter(
+            course_catalog_id=course_id,
+            semester_id=semester_id,
+        ).select_related("student_a", "student_b")
+    )
+    if not pairs:
+        raise Http404()
+
+    # 1a) student → cluster_label map
+    profs = StudentSemesterProfile.objects.filter(
+        course_catalog_id=course_id,
+        semester_id=semester_id,
+    ).only("student_id", "cluster_label")
+    student_lbl = {p.student_id: (p.cluster_label or 0) for p in profs}
+
+    # 2) build 5-dim feature matrix
+    X_raw = np.vstack(
+        [
+            [
+                ps.mean_z_score**9,
+                ps.max_z_score**5,
+                ps.mean_similarity**2,
+                ps.proportion * 100.0,
+                student_lbl.get(ps.student_a_id, 0)
+                + student_lbl.get(ps.student_b_id, 0),
+            ]
+            for ps in pairs
+        ]
+    )
+    labels = np.array([ps.kmeans_label for ps in pairs])
+
+    # 3) Standardize + PCA → 2D
+    X_scaled = StandardScaler().fit_transform(X_raw)
+    pca = PCA(n_components=2, random_state=42)
+    coords = pca.fit_transform(X_scaled)
+    dim1, dim2 = coords[:, 0], coords[:, 1]
+    var1, var2 = pca.explained_variance_ratio_[:2] * 100
+
+    # 4) find the “red” cluster by PC1 centroid
+    unique_lbls = sorted(set(labels))
+    centroids = {lbl: dim1[labels == lbl].mean() for lbl in unique_lbls}
+    red_lbl = max(centroids, key=centroids.get)
+    red_mask = labels == red_lbl
+    red_n = int(red_mask.sum())
+
+    # 5) decide rendering mode
+    red_threshold = 30
+    if red_n > red_threshold:
+        # too many “reds”: highlight only the single worst point
+        comps = X_raw[:, 0] + X_raw[:, 1] + X_raw[:, 3]
+        worst_idx = int(np.argmax(comps))
+        highlight = np.zeros_like(labels, dtype=bool)
+        highlight[worst_idx] = True
+
+        low_mask, med_mask, high_mask = (
+            ~highlight,
+            np.zeros_like(labels, bool),
+            highlight,
+        )
+        low_n, med_n, high_n = int(low_mask.sum()), 0, 1
+        highlight_color = "gold"
+        highlight_label = "Outlier Candidate (n=1)"
+        show_names = False
+    else:
+        # normal low/med/high split
+        low_lbl = min(centroids, key=centroids.get)
+        med_lbls = [l for l in unique_lbls if l not in (low_lbl, red_lbl)]
+
+        low_mask = labels == low_lbl
+        med_mask = np.isin(labels, med_lbls)
+        high_mask = red_mask
+        low_n, med_n, high_n = int(low_mask.sum()), int(med_mask.sum()), red_n
+
+        highlight_color = "darkred"
+        highlight_label = f"High Intensity (n={high_n})"
+        show_names = True
+
+    # 6) plotting
+    fig = plt.figure(figsize=(14, 9))
+    ax = fig.add_axes([0.00, 0.04, 0.78, 0.96])
+
+    def plot_group(mask, color, marker, label):
+        xi, yi = dim1[mask], dim2[mask]
+        ax.scatter(
+            xi, yi, c=color, marker=marker, s=100, edgecolor="k", alpha=0.8, label=label
+        )
+        pts = list(zip(xi, yi))
+        if len(pts) >= 3:
+            try:
+                hull = ConvexHull(pts)
+                hx, hy = zip(*(pts[i] for i in hull.vertices))
+                ax.fill(hx, hy, color=color, alpha=0.2)
+            except QhullError:
+                pass
+        elif pts:
+            cx, cy = xi.mean(), yi.mean()
+            r = (np.hypot(xi - cx, yi - cy).max() if len(xi) > 1 else 0.5) * 1.5
+            ax.add_patch(Circle((cx, cy), radius=r, color=color, alpha=0.2))
+
+    # plot low (always green)
+    plot_group(low_mask, "green", "o", f"Low Intensity (n={low_n})")
+    # plot medium if present
+    if med_n:
+        plot_group(med_mask, "gold", "s", f"Medium Intensity (n={med_n})")
+    # plot high or highlight
+    plot_group(high_mask, highlight_color, "^", highlight_label)
+
+    # annotate & sidebar for true high cluster only
+    if show_names and high_n:
+        idxs = np.where(high_mask)[0]
+        for num, i in enumerate(idxs, start=1):
+            ax.annotate(
+                str(num),
+                xy=(dim1[i], dim2[i]),
+                xytext=(4, 4),
+                textcoords="offset points",
+                fontsize=11,
+                fontweight="bold",
+                color=highlight_color,
+            )
+        # sidebar names
+        names = [
+            f"{pairs[i].student_a.first_name} {pairs[i].student_a.last_name} & "
+            f"{pairs[i].student_b.first_name} {pairs[i].student_b.last_name}"
+            for i in idxs
+        ]
+        y0, y1 = 0.98, 0.04
+        dy = (y0 - y1) / (len(names) + 1)
+        for j, txt in enumerate(names, start=1):
+            fig.text(
+                0.79,
+                y0 - j * dy,
+                f"{j}: {txt} (max_z={pairs[idxs[j-1]].max_z_score:.2f})",
+                transform=fig.transFigure,
+                va="top",
+                ha="left",
+                fontsize=11,
+                fontweight="bold",
+                color=highlight_color,
+                family="monospace",
+            )
+    elif not show_names:
+        # display a short message instead of sidebar
+        fig.text(
+            0.79,
+            0.5,
+            "Not enough evidence of anomalies",
+            transform=fig.transFigure,
+            va="center",
+            ha="left",
+            fontsize=14,
+            fontstyle="italic",
+        )
+
+    # 7) axes, titles, legend
+    ax.set_xlabel(f"Dimension 1 ({var1:.1f}% var)", fontsize=12)
+    ax.set_ylabel(f"Dimension 2 ({var2:.1f}% var)", fontsize=12)
+
+    course = get_object_or_404(CourseCatalog, pk=course_id)
+    semester = get_object_or_404(Semester, pk=semester_id)
+    ax.set_title(f"K-Means Clusters → {course} Pairs → {semester}", fontsize=16, pad=15)
+    ax.grid(True, linestyle=":", linewidth=0.5, alpha=0.7)
+
+    fig.subplots_adjust(bottom=0.06)
+    # legend: only two columns if no medium/high names
+    ncols = 2 if (med_n == 0) else 3
+    ax.legend(
+        loc="upper center",
+        bbox_to_anchor=(0.50, -0.18),
+        ncol=ncols,
+        title="Pair Groups",
+        frameon=True,
+        fontsize=11,
+        title_fontsize=13,
+    )
+
+    # 8) render PNG
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    buf.seek(0)
+    return HttpResponse(buf.read(), content_type="image/png")
+
+
+def _generate_one(assignment_id):
+    """
+    Helper for ThreadPoolExecutor: close the old DB connection
+    then run the report service in a fresh one.
+    """
+    connection.close()
+    return generate_report_service(assignment_id)
+
+
+@require_GET
+def run_full_pipeline(request, course_id, semester_id):
+    """
+    0) Clear ALL AssignmentReport rows for this course+semester
+    1) Clear PairFlagStat once
+    2) Parallel–generate each assignment report (+ collect flagged pairs)
+    3) Bulk–upsert all PairFlagStat in one go
+    4) Clear & recompute StudentSemesterProfile
+    5) Run student K-Means (capture model)
+    6) Run pair K-Means (inject student labels)
+    """
+    start_ts = time.time()
+    print(
+        f"\n🚀 [PIPELINE] Starting full pipeline "
+        f"for course={course_id}, semester={semester_id}"
+    )
+
+    # 0) DELETE all old AssignmentReport rows (and cascade StudentReports)
+    AssignmentReport.objects.filter(
+        assignment__course_catalog_id=course_id,
+        assignment__semester_id=semester_id,
+    ).delete()
+    print("  🔄 Cleared old AssignmentReport rows")
+
+    # 1) DELETE all old PairFlagStat rows
+    PairFlagStat.objects.filter(
+        course_catalog_id=course_id,
+        semester_id=semester_id,
+    ).delete()
+    print("  🔄 Cleared old PairFlagStat rows")
+
+    # 2) FETCH assignments
+    assignments = list(
+        Assignments.objects.filter(
+            course_catalog_id=course_id,
+            semester_id=semester_id,
+        )
+    )
+    if not assignments:
+        raise Http404("No assignments for that course+semester.")
+    print(f"  📋 Found {len(assignments)} assignments; generating in parallel…")
+
+    # 2a) generate each report in parallel, collect flagged pairs
+    all_flagged = []
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        futures = {pool.submit(_generate_one, a.id): a for a in assignments}
+        for fut in as_completed(futures):
+            a = futures[fut]
+            try:
+                report, flagged = fut.result()
+            except Exception as e:
+                print(f"  ❌ generate_report({a.id}) failed:", e)
+                continue
+            if report:
+                print(f"    ▶ report.id={report.id}, flagged_pairs={len(flagged)}")
+                all_flagged.extend(flagged)
+
+    # 3) BULK-UPSERT all flagged pairs once
+    print(f"  🔄 Bulk-upserting {len(all_flagged)} flagged entries…")
+    inserted = update_all_pair_stats(course_id, semester_id, all_flagged)
+    print(f"    ✔️ update_all_pair_stats inserted/updated {inserted} rows")
+
+    # 4) CLEAR & recompute StudentSemesterProfile
+    StudentSemesterProfile.objects.filter(
+        course_catalog_id=course_id,
+        semester_id=semester_id,
+    ).delete()
+    print("  🔄 Cleared old StudentSemesterProfile rows")
+    print("  🔄 Recomputing StudentSemesterProfile features")
+    t0 = time.time()
+    bulk_recompute_semester_profiles(course_id, semester_id)
+    print(f"  ✔️ Profiles recomputed in {time.time() - t0:.2f}s")
+
+    # 5) RUN student K-Means & keep the model
+    print("  🔄 Running student KMeans")
+    t1 = time.time()
+    student_km = run_kmeans_for_course_semester(course_id, semester_id)
+    print(
+        f"  ✔️ Student KMeans done in {time.time() - t1:.2f}s "
+        f"(k={student_km.n_clusters})"
+    )
+
+    # 6) RUN pair K-Means (inject student_km)
+    print("  🔄 Running pair KMeans")
+    t2 = time.time()
+    run_kmeans_for_pair_stats(
+        course_id=course_id,
+        semester_id=semester_id,
+        student_km=student_km,
+        n_clusters=6,
+        random_state=0,
+        b_refs=10,
+    )
+    print(f"  ✔️ Pair KMeans done in {time.time() - t2:.2f}s")
+
+    total = time.time() - start_ts
+    print(f"✅ [PIPELINE] Finished full pipeline in {total:.2f}s\n")
+    return JsonResponse({"status": "success", "duration_s": total})

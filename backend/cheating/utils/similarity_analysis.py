@@ -11,12 +11,24 @@ The main functions are:
   of similarity scores.
 """
 
-from cheating.models import SubmissionSimilarityPairs
+from cheating.models import PairFlagStat, SubmissionSimilarityPairs
 from collections import defaultdict
 from django.db import models
 import math
 from typing import Dict, List, Tuple
 from scipy.stats import norm
+import time
+from django.shortcuts import get_object_or_404
+from django.db import transaction
+from django.db.models import Q
+
+from assignments.models import Assignments, Submissions
+from cheating.models import (
+    AssignmentReport,
+    StudentReport,
+    FlaggedStudents,
+    SubmissionSimilarityPairs,
+)
 
 
 def get_all_scores_by_student(assignment):
@@ -235,44 +247,206 @@ def compute_student_confidence_interval(
     return lower, upper
 
 
-# -------------------------------
-# Example usage with 3 students:
-# -------------------------------
-# Suppose after fetching from the database we have:
-# scores_by_student = {
-#     1: [30, 50],    # student 1’s two comparisons
-#     2: [30, 20],    # student 2’s two comparisons
-#     3: [50, 20],    # student 3’s two comparisons
-# }
-#
-# Then calling:
-#   mu, sigma = compute_population_stats(scores_by_student)
-#
-# Will do:
-#   all_scores = [30, 50, 30, 20, 50, 20]
-#   N = 6
-#   mu = (30 + 50 + 30 + 20 + 50 + 20) / 6 = 33.333...
-#   variance = ((30-33.33)^2 + (50-33.33)^2 + ... ) / 6
-#   sigma = sqrt(variance)
-#
-# Now for student 1:
-#   scores = [30, 50]
-#   n = 2
-#   mean_i = (30 + 50) / 2 = 40
-#   SE = sigma / sqrt(2) * sqrt((6 - 2)/(6 - 1))
-#   z = (mean_i - mu) / SE
-#
-# So calling:
-#   compute_student_z_score(scores_by_student[1], mu, sigma, True, 6)
-#
-# Will return:
-#   mean_i = 40.0
-#   z_i ≈ 0.866  ← how many SEs above the mean
-#
-# And calling:
-#   compute_student_confidence_interval(scores_by_student[1], sigma, 0.95, True, 6)
-#
-# Will return:
-#   lower ≈ 21.65
-#   upper ≈ 58.34
-#   Meaning we are 95% confident this student’s true mean similarity lies in that interval.
+def update_all_pair_stats(course_id, semester_id, flagged_data):
+    """
+    Build the entire PairFlagStat table for this course+semester in one go.
+
+    flagged_data is a LIST of dicts with keys:
+      "student_a", "student_b", "sim", "z"
+    """
+
+    # 1) nuke the old rows
+    PairFlagStat.objects.filter(
+        course_catalog_id=course_id,
+        semester_id=semester_id,
+    ).delete()
+
+    # 2) do a single scan of EVERY similarity pair for this course+semester
+    qs = SubmissionSimilarityPairs.objects.filter(
+        assignment__course_catalog_id=course_id, assignment__semester_id=semester_id
+    ).values(
+        "submission_id_1__student_id",
+        "submission_id_2__student_id",
+        "percentage",
+    )
+
+    from collections import defaultdict
+
+    stats = defaultdict(
+        lambda: {
+            "assignments_shared": 0,
+            "total_similarity": 0.0,
+            "flagged_count": 0,
+            "total_z_score": 0.0,
+            "max_z_score": 0.0,
+        }
+    )
+
+    # 2a) accumulate counts & sums for every pair
+    for row in qs:
+        a = row["submission_id_1__student_id"]
+        b = row["submission_id_2__student_id"]
+        if a > b:
+            a, b = b, a
+        rec = stats[(a, b)]
+        rec["assignments_shared"] += 1
+        rec["total_similarity"] += row["percentage"]
+
+    # 2b) now layer on your flagged info
+    for d in flagged_data:
+        a, b = d["student_a"], d["student_b"]
+        rec = stats[(a, b)]
+        rec["flagged_count"] += 1
+        rec["total_z_score"] += d["z"]
+        rec["max_z_score"] = max(rec["max_z_score"], d["z"])
+
+    # 3) materialize them into a bulk_create list
+    to_create = []
+    for (a, b), rec in stats.items():
+        to_create.append(
+            PairFlagStat(
+                course_catalog_id=course_id,
+                semester_id=semester_id,
+                student_a_id=a,
+                student_b_id=b,
+                assignments_shared=rec["assignments_shared"],
+                total_similarity=rec["total_similarity"],
+                flagged_count=rec["flagged_count"],
+                total_z_score=rec["total_z_score"],
+                max_z_score=rec["max_z_score"],
+            )
+        )
+
+    # 4) blow them all in one shot
+    with transaction.atomic():
+        PairFlagStat.objects.bulk_create(to_create)
+
+    return len(to_create)
+
+
+def generate_report(assignment_id):
+    """
+    1) Builds AssignmentReport + StudentReport
+    2) Flags high‑z students (z > 2.0)
+    3) Returns (report, flagged_data), where flagged_data is a list of dicts:
+         {
+           "student_a": int,  # smaller student_id
+           "student_b": int,  # larger student_id
+           "sim": float,      # raw similarity %
+           "z": float,        # z‑score
+         }
+    """
+    print(f"\n⏳ [START] generate_report({assignment_id})")
+    t0 = time.time()
+
+    # 1) load assignment & gather per‑student similarity lists
+    assignment = get_object_or_404(Assignments, pk=assignment_id)
+    scores_map = get_all_scores_by_student(assignment)
+    print(f"  • Found similarity for {len(scores_map)} submissions")
+
+    # 2) compute population μ, σ, etc.
+    mu, sigma = compute_population_stats(scores_map)
+    variance = sigma**2
+    total_pairs = sum(len(v) for v in scores_map.values()) // 2
+    print(f"  • Stats: μ={mu:.2f}, σ={sigma:.2f}, pairs={total_pairs}")
+
+    flagged_data = []
+
+    with transaction.atomic():
+        # 3) create AssignmentReport
+        report = AssignmentReport.objects.create(
+            assignment=assignment,
+            mu=mu,
+            sigma=sigma,
+            variance=variance,
+        )
+        print(f"    ✔️ Created AssignmentReport id={report.id}")
+
+        # 4) bulk‑create StudentReport rows
+        sr_objs = []
+        for sub_id, sims in scores_map.items():
+            mean_sim = sum(sims) / len(sims)
+            _, z_val = compute_student_z_score(
+                scores=sims,
+                mu=mu,
+                sigma=sigma,
+                use_fpc=True,
+                population_size=total_pairs,
+            )
+            lo, hi = compute_student_confidence_interval(
+                scores=sims,
+                sigma=sigma,
+                conf_level=0.95,
+                use_fpc=True,
+                population_size=total_pairs,
+            )
+            sr_objs.append(
+                StudentReport(
+                    report=report,
+                    submission_id=sub_id,
+                    mean_similarity=mean_sim,
+                    z_score=z_val,
+                    ci_lower=lo,
+                    ci_upper=hi,
+                )
+            )
+        StudentReport.objects.bulk_create(sr_objs)
+        print(f"    ✔️ Bulk‑created {len(sr_objs)} StudentReport rows")
+
+        # 5) flag high‑z students and collect flagged‐pair info
+        cutoff = 2.0
+        first_sub = (
+            Submissions.objects.filter(assignment=assignment)
+            .select_related("course_instance__professor")
+            .first()
+        )
+
+        if first_sub:
+            prof = first_sub.course_instance.professor
+            print(f"    • Flagging under Professor id={prof.id}")
+            flags = []
+
+            # only consider students whose z_score > cutoff
+            for sr in report.student_reports.filter(z_score__gt=cutoff):
+                sub = sr.submission
+                pairs = SubmissionSimilarityPairs.objects.filter(
+                    assignment=assignment
+                ).filter(Q(submission_id_1=sub) | Q(submission_id_2=sub))
+
+                for pair in pairs:
+                    sim = pair.percentage
+                    z_val = (sim - mu) / sigma if sigma else 0.0
+
+                    # queue up FlaggedStudents
+                    flags.append(
+                        FlaggedStudents(
+                            professor=prof,
+                            student=sub.student,
+                            similarity=pair,
+                            generative_ai=False,
+                        )
+                    )
+
+                    # collect for global pair‐stat rebuild
+                    a_id = pair.submission_id_1.student_id
+                    b_id = pair.submission_id_2.student_id
+                    if a_id > b_id:
+                        a_id, b_id = b_id, a_id
+
+                    flagged_data.append(
+                        {
+                            "student_a": a_id,
+                            "student_b": b_id,
+                            "sim": sim,
+                            "z": z_val,
+                        }
+                    )
+
+            FlaggedStudents.objects.bulk_create(flags, ignore_conflicts=True)
+            print(f"    🚩 Inserted {len(flags)} FlaggedStudents")
+        else:
+            print("    ⚠️ No submissions; skipped flagging")
+
+    duration = time.time() - t0
+    print(f"✅ [DONE] generate_report({assignment_id}) in {duration:.2f}s")
+    return report, flagged_data

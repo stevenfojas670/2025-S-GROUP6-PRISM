@@ -2,6 +2,7 @@
 
 from django.db import models
 from assignments.models import Assignments, Submissions
+from django.contrib.postgres.fields import ArrayField
 
 
 class CheatingGroups(models.Model):
@@ -306,6 +307,12 @@ class StudentReport(models.Model):
 
         unique_together = ("report", "submission")
         ordering = ["-z_score"]
+        indexes = [
+            models.Index(fields=["submission"]),
+            # index z_score and mean_similarity so filters are fast
+            models.Index(fields=["z_score"]),
+            models.Index(fields=["mean_similarity"]),
+        ]
 
     def __str__(self):
         """Return a human‐readable summary of this student’s inference."""
@@ -314,3 +321,163 @@ class StudentReport(models.Model):
             f"z={self.z_score:.2f}, "
             f"CI=[{self.ci_lower:.1f},{self.ci_upper:.1f}])"
         )
+
+
+class StudentSemesterProfile(models.Model):
+    """Pre‑computed semester‑level metrics for each student."""
+
+    student = models.ForeignKey(
+        "courses.Students",
+        on_delete=models.CASCADE,
+        help_text="Which student these features belong to",
+    )
+    course_catalog = models.ForeignKey(
+        "courses.CourseCatalog",
+        on_delete=models.CASCADE,
+        help_text="The course this profile belongs to",
+    )
+    semester = models.ForeignKey(
+        "courses.Semester",
+        on_delete=models.CASCADE,
+        help_text="The semester this profile covers",
+    )
+
+    # ─────────────── raw summary stats ───────────────
+    avg_z_score = models.FloatField(
+        help_text="Average of that student's z‑scores across assignments"
+    )
+    max_z_score = models.FloatField(help_text="Maximum single‑assignment z‑score")
+    num_flagged_assignments = models.PositiveIntegerField(
+        help_text="How many assignments where z > threshold"
+    )
+
+    mean_similarity_variance = models.FloatField(
+        help_text="Population variance of per‑assignment mean similarities"
+    )
+    mean_similarity_skewness = models.FloatField(
+        help_text="Skewness of per‑assignment mean similarities"
+    )
+    mean_similarity_kurtosis = models.FloatField(
+        help_text="Kurtosis of per‑assignment mean similarities"
+    )
+
+    high_similarity_fraction = models.FloatField(
+        help_text=(
+            "Fraction of *all* pairwise comparisons > threshold " "across the semester"
+        )
+    )
+
+    # ───────── full 7‑dim feature vector ─────────
+    feature_vector = ArrayField(
+        base_field=models.FloatField(),
+        size=7,
+        help_text="[avg_z, max_z, num_flagged, sim_var, sim_skew, sim_kurt, high_frac]",
+    )
+
+    # ───────── clustering output ─────────
+    cluster_label = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Cluster assignment from the latest KMeans run",
+    )
+
+    last_updated = models.DateTimeField(
+        auto_now=True,
+        help_text="When these features were last recomputed",
+    )
+
+    class Meta:
+        unique_together = (("student", "course_catalog", "semester"),)
+        ordering = ["-last_updated"]
+
+    def __str__(self):
+        return (
+            f"{self.student} | {self.course_catalog} @ {self.semester}: "
+            f"avg_z={self.avg_z_score:.2f}, max_z={self.max_z_score:.2f}, "
+            f"cluster={self.cluster_label}"
+        )
+
+
+class PairFlagStat(models.Model):
+    course_catalog = models.ForeignKey(
+        "courses.CourseCatalog", on_delete=models.CASCADE
+    )
+    semester = models.ForeignKey("courses.Semester", on_delete=models.CASCADE)
+    student_a = models.ForeignKey(
+        "courses.Students", on_delete=models.CASCADE, related_name="+"
+    )
+    student_b = models.ForeignKey(
+        "courses.Students", on_delete=models.CASCADE, related_name="+"
+    )
+
+    # how many assignments both turned in
+    assignments_shared = models.PositiveIntegerField(default=0)
+    # how many times they landed in the high‑z / red zone
+    flagged_count = models.PositiveIntegerField(default=0)
+    # cumulative sum of their raw similarity %s (or whatever your score metric is)
+    total_similarity = models.FloatField(default=0.0)
+    # cumulative sum of their z‑scores
+    total_z_score = models.FloatField(default=0.0)
+    max_z_score = models.FloatField(default=0.0)
+
+    kmeans_label = models.SmallIntegerField(
+        null=True,
+        blank=True,
+        help_text="Cluster ID from latest KMeans run",
+    )
+
+    class Meta:
+        unique_together = (
+            "course_catalog",
+            "semester",
+            "student_a",
+            "student_b",
+        )
+
+    @property
+    def proportion(self) -> float:
+        return (
+            (self.flagged_count / self.assignments_shared)
+            if self.assignments_shared
+            else 0.0
+        )
+
+    @property
+    def mean_similarity(self) -> float:
+        return (
+            (self.total_similarity / self.assignments_shared)
+            if self.assignments_shared
+            else 0.0
+        )
+
+    @property
+    def mean_z_score(self) -> float:
+        return (
+            (self.total_z_score / self.assignments_shared)
+            if self.assignments_shared
+            else 0.0
+        )
+
+
+class FlaggedStudentPair(models.Model):
+    """
+    Represents a pair of students flagged for potential misconduct."""
+
+    course_catalog = models.ForeignKey(
+        "courses.CourseCatalog", on_delete=models.CASCADE
+    )
+    semester = models.ForeignKey("courses.Semester", on_delete=models.CASCADE)
+    student_a = models.ForeignKey(
+        "courses.Students", related_name="+", on_delete=models.CASCADE
+    )
+    student_b = models.ForeignKey(
+        "courses.Students", related_name="+", on_delete=models.CASCADE
+    )
+    mean_similarity = models.FloatField()
+    max_similarity = models.FloatField()
+    mean_z_score = models.FloatField()
+    max_z_score = models.FloatField()
+    flagged_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("course_catalog", "semester", "student_a", "student_b")

@@ -18,7 +18,9 @@ from .views import (
     similarity_plot,
     distribution_plot,
     similarity_interval_plot,
-    generate_report,
+    kmeans_clusters_plot,
+    run_full_pipeline,
+    kmeans_pairs_plot,
 )
 
 router = DefaultRouter()
@@ -71,8 +73,18 @@ urlpatterns = [
         name="similarity-interval-plot",
     ),
     path(
-        "<int:assignment_id>/generate-report/",
-        generate_report,
-        name="generate-report",
+        "kmeans-plot/<int:course_id>/<int:semester_id>/",
+        kmeans_clusters_plot,
+        name="kmeans-plot",
+    ),
+    path(
+        "full-pipeline/<int:course_id>/<int:semester_id>/",
+        run_full_pipeline,
+        name="full-pipeline",
+    ),
+    path(
+        "kmeans-pairs-plot/<int:course_id>/<int:semester_id>/",
+        kmeans_pairs_plot,
+        name="kmeans-pairs-plot",
     ),
 ]
