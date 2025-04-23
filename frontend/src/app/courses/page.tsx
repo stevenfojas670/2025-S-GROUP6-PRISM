@@ -1,20 +1,26 @@
 "use client"
 import { Typography, Button, Box } from "@mui/material"
 import CourseCards from "@/components/CourseCards"
-import { SignOutButton } from "@/components/AuthenticationMethod"
 import { useRouter } from "next/navigation"
 import { GetCourses } from "@/controllers/courses"
 import { Course, CourseCatalog, CourseResponse } from "@/types/coursesTypes"
 import { useAuth } from "@/context/AuthContext"
 import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
+import { useCourseContext } from "@/context/CourseContext"
 
 export default function Courses() {
 	const router = useRouter()
 	const { user } = useAuth()
+	const { setCourseInstanceId } = useCourseContext()
 	const searchParams = useSearchParams()
 	const semesterId = searchParams.get("semester")
 	const [courses, setCourses] = useState<Course[]>([])
+
+	const courseClick = (courseInstanceId: number, catalogId: number) => {
+		setCourseInstanceId(courseInstanceId)
+		router.push(`/courses/${catalogId}/assignments`)
+	}
 
 	useEffect(() => {
 		if (!(semesterId && user?.professor_id)) return
@@ -45,11 +51,10 @@ export default function Courses() {
 					{courses.map((course) => (
 						<CourseCards
 							key={course.id}
-							onClick={() =>
-								router.push(`/courses/${course.course_catalog.id}/assignments`)
-							}
+							onClick={() => courseClick(course.id, course.course_catalog.id)}
 						>
 							<Typography>{course.course_catalog.name}</Typography>
+							<Typography>{course.section_number}</Typography>
 						</CourseCards>
 					))}
 				</div>

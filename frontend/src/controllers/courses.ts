@@ -23,7 +23,7 @@ export async function GetCourses(
 			return data as CourseResponse
 		} else {
 			return {
-				detail: data.detail ?? "Failed to fetch semesters.",
+				detail: data.detail ?? "Failed to fetch courses.",
 				status: response.status,
 			}
 		}

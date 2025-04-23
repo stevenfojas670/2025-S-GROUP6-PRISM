@@ -42,8 +42,8 @@ export default function LeftPanel() {
 	return (
 		<Box
 			sx={(theme) => ({
-				width: 250,
 				minWidth: 200,
+				maxWidth: 250,
 				minHeight: "100%",
 				position: "relative",
 				backgroundColor: theme.palette.primary.main,

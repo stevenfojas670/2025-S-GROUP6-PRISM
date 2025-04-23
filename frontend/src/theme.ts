@@ -68,7 +68,7 @@ const theme = createTheme({
 					variants: [
 						{
 							style: {
-								backgroundColor: "#f0f0f0",
+								backgroundColor: "#cccccc",
 							},
 						},
 					],
