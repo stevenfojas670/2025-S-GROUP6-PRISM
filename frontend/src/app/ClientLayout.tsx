@@ -18,7 +18,7 @@ const staticUsername = "Alex"; // Replace with your auth logic or context
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const hideHeader = pathname === "/login/";
-  // console.log(location.pathname);
+  console.log(location.pathname);
   const { user } = useAuth();
   
   const [username, setUsername] = useState<string | null>(null);

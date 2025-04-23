@@ -64,7 +64,7 @@ const LoginComponent: React.FC = () => {
 
 		// handles the form submission by fetching the api call for logging in
 		try {
-			const response = await easyFetch("http://localhost:8000/api/login", {
+			const response = await fetch("http://localhost:8000/api/login", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ username, password }),
