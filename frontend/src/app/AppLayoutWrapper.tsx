@@ -28,6 +28,7 @@ export default function AppLayoutWrapper({ children }: Props) {
 					sx={(theme) => ({
 						backgroundColor: theme.palette.background.paper,
 						color: theme.palette.text.primary,
+						zIndex: 100,
 					})}
 				>
 					<Toolbar>
