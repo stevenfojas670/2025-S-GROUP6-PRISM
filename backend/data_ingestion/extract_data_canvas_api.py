@@ -36,9 +36,35 @@ from bs4 import BeautifulSoup
 # datetime: lockdate and duedate
 from datetime import datetime
 
+from extract_student_data_from_API import API_Data
+
+import codegrade
+
 
 class Canvas_api:
     """Canvas API manager that will interact with the api and retrieve data."""
+
+    # Course data
+    course = {}
+    course_name = ""
+    course_code = ""
+    course_term_id = ""
+    __files = {}
+
+    # User data
+    __users = {}
+    __prof = {}
+    __assi = {}
+    __stud = {}
+
+    # Assignment Data
+    # Make the due date = to lockdate if there is no lockdate.
+    duedate = {}
+    lockdate = {}
+    # {
+    #       "assignment1_id" : {datetime.datetime lockdate},
+    #       ...
+    # }
 
     def __init__(self):
         """Inizialize the class."""
@@ -51,27 +77,16 @@ class Canvas_api:
         )
         self.__HEADERS = {"Authorization": "Bearer "}
 
-        # Course data
-        self.course = {}
-        self.course_name = ""
-        self.course_code = ""
-        self.course_term_id = ""
-        self.__files = {}
-
-        # User data
-        self.__users = {}
-        self.__prof = {}
-        self.__assi = {}
-        self.__stud = {}
-
-        # Assignment Data
-        # Make the due date = to lockdate if there is no lockdate.
-        self.duedate = {}
-        self.lockdate = {}
-        # {
-        #       "assignment1_id" : {datetime.datetime lockdate},
-        #       ...
-        # }
+        # Set all the Class attributes
+        self.set_headers()
+        self.set_prof()
+        self.set_stud()
+        self.set_users()
+        self.set_course()
+        self.set_course_data()
+        self.set_files()
+        self.set_assi()
+        self.set_dates()
 
     # Populate the Class Attributes
     def set_headers(self):
@@ -93,16 +108,24 @@ class Canvas_api:
         return True
 
     def find_head_id(self, id):
-        """Given the end of an id, find the resulting 17 char id."""
+        """Given the tail end of an id, return the resulting 17 char id."""
         complement = 17 - (len(str(id)) + 4)
         head = self.id_head
         # Eg: 3433{0+}id
         i = 0
         for i in range(complement):
-            head += '0'
+            head += "0"
         head += id
         return head
 
+    def find_tailend_id(self, id):
+        """Given the full 17 char id, find the tailend."""
+        id = str(id)
+        split_id = id[4:]
+        split_id = split_id.lstrip("0")
+        return int(split_id)
+
+    # Populate the class attributes
     def set_course(self):
         """Set the attribute .course to the json course for easy access."""
         try:
@@ -115,8 +138,43 @@ class Canvas_api:
         except Exception as e:
             print(str(e), file=sys.stderr)
 
+    def get_course_catalog_table(self):
+        """Add logic to export the columns of course catalog."""
+        """Columns:
+            id,name,subject,catalog_number,course_title,course_level"""
+        result = {}
+        words = self.course["name"].split()
+
+        result["id"] = int(self.__course_id)
+        result["name"] = self.course["name"]
+        result["subject"] = words[0]
+        result["catalog_number"] = int(words[1])
+        result["course_title"] = words[3] + " " + words[4] + " " + words[5]
+        if int(result["catalog_number"]) < 500:
+            result["course_level"] = "Undergraduate"
+        else:
+            result["course_level"] = "Graduate"
+        return result
+
+    def get_courseinstances_table(self):
+        """Retrun a dictionary with keys as table columns."""
+        """Columns: id, section_Number,canvas_course_id,
+        course_catalog_id,professor_id,semester_id,Ta_id"""
+        result = {}
+        result["canvas_course_id"] = int(self.__course_id)
+        result["semester_id"] = self.find_tailend_id(self.course["enrollment_term_id"])
+        result["professor_id"] = []
+        for prof in self.__prof:
+            result["professor_id"].append(self.find_tailend_id(prof["id"]))
+
+        result["Ta_id"] = []
+        for user in self.__users:
+            if user["enrollments"][0]["type"] in "TaEnrollment":
+                result["Ta_id"].append(self.find_tailend_id(user["id"]))
+        return result
+
     def get_course(self):
-        """Print the course json."""
+        """Return the course json of API."""
         return self.course
 
     def set_course_data(self):
@@ -156,6 +214,17 @@ class Canvas_api:
             print(str(e), file=sys.stderr)
             return None
 
+    def get_courses_professor(self):
+        """Add logic to export the columns of courses_professors/courses_professorenrollments."""
+        """Columns:
+            User_id, course_instance_id"""
+        result = {}
+        result["course_instance_id"] = self.__course_id
+        result["user_id"] = []
+        for prof in self.__prof:
+            result["user_id"].append(self.find_tailend_id(prof["id"]))
+        return result
+
     def get_prof(self):
         """Print professor json."""
         print(self.__prof)
@@ -176,6 +245,38 @@ class Canvas_api:
         except Exception as e:
             print(str(e), file=sys.stderr)
 
+    def get_courses_stud_tables(self):
+        """Add logic to export the columns of courses_students/enrollments."""
+        """Columns:
+            email,codegrade_id, ace_id, fn, ln
+            course_id, stud_id"""
+        result = {}
+        result["course_id"] = self.__course_id
+        result["student_ids"] = []
+        client = codegrade.login(
+            username=os.getenv("CG_USER"),
+            password=os.getenv("CG_PASS"),
+            tenant="University of Nevada, Las Vegas",
+        )
+        apidata = API_Data(client)
+        apidata.course = apidata.get_course(client)
+        users = apidata.get_users(apidata.course)
+        stud_dict = {}
+        for user in users:
+            if user.course_role.name == "Student":
+                stud_dict[user.user.name] = user.user.id
+
+        for stud in self.__stud:
+            result["student_ids"].append(int(stud["id"]))
+            result[stud["id"]] = {}
+            result[stud["id"]]["email"] = stud["email"]
+            names = stud["name"].split()
+            result[stud["id"]]["fn"] = names[0]
+            result[stud["id"]]["ln"] = names[-1]
+            result[stud["id"]]["ace_id"] = stud["ace_id"]
+            result[stud["id"]]["codegrade_id"] = stud_dict[stud["name"]]
+        return result
+
     def get_stud(self):
         """Print student json."""
         print(self.__stud)
@@ -184,9 +285,9 @@ class Canvas_api:
         """Set the users json as a class attribute."""
         try:
             PARAMS = {
+                "include[]": "enrollments",
                 "per_page": 150,
             }
-            # 33430000000171032
             url = self.__COURSE_URL + "/users"
             response = requests.get(url, headers=self.__HEADERS, params=PARAMS)
             self.__users = response.json()
@@ -195,6 +296,17 @@ class Canvas_api:
                 user["ace_id"] = ace
         except Exception as e:
             print(str(e), file=sys.stderr)
+
+    def get_ta_tables(self):
+        """Add logic to export the columns of courses_teaching_assistents/enrollments."""
+        """columns: course_id,ta_ID"""
+        result = {}
+        result["course_id"] = self.__course_id
+        result["Ta_ids"] = []
+        for user in self.__users:
+            if user["enrollments"][0]["type"] in "TaEnrollment":
+                result["Ta_ids"].append(self.find_tailend_id(user["id"]))
+        return result
 
     def get_users(self):
         """Print users json."""
@@ -211,13 +323,33 @@ class Canvas_api:
             url = self.__COURSE_URL + "/assignments"
             response = requests.get(url, headers=self.__HEADERS, params=PARAMS)
             self.__assi = response.json()
-            return response.json()
         except Exception as e:
             print(str(e), file=sys.stderr)
 
+    def get_assi_tables(self):
+        """Add logic to export the columns of courses_students/enrollments."""
+        """Columns:
+            title, number, provided files (pdfs),
+            due date, lock date (Null), file_path, lang,
+            course_id, sem_id"""
+
     def get_assi(self):
         """Print all assignments."""
-        print("assi", self.__assi)
+        return self.__assi
+
+    def set_dates(self):
+        """Set the lock date and due date of class attribute."""
+        for assi in self.__assi:
+            if assi["lock_at"] is not None:
+                lockdate = datetime.fromisoformat(f'{assi["lock_at"]}'[:-1])
+                # Populate the class attribute.
+                self.lockdate[f"{assi["id"]}"] = lockdate
+            elif assi["due_at"] is not None:
+                duedate = datetime.fromisoformat(f'{assi["due_at"]}'[:-1])
+                # Populate the class attribute.
+                self.duedate[f"{assi["id"]}"] = duedate
+            else:
+                self.lockdate[f"{assi["id"]}"] = self.duedate[f"{assi["id"]}"] = None
 
     def find_lockdate_duedate(self, assi):
         """Find the lockdate of a given assi, and populate the class attr."""
@@ -273,29 +405,42 @@ class Canvas_api:
         except Exception as e:
             print(str(e), file=sys.stderr)
 
-    def download_files(self, ids, path):
+    def download_files(self):
         """Download the files from the extracted link urls."""
         try:
-            for id in ids:
-                file = self.get_file_via_id(id)
-                name = file["filename"]
-                url = file["url"]
-                filepath = os.path.join(path, name)
+            assis = self.get_assi()
+            now = datetime.now()
+            for assi in assis:
+                date = self.find_lockdate_duedate(assi)
+                if date < now:
+                    if not assi.get("attachment"):
+                        assi_path = os.path.join(
+                            os.getcwd(), "canvas_attachments", f"{assi["name"]}"
+                        )
+                        # If there are no attachment attributes in given assignment
+                        # then that means the links are in the description.
+                        ids = self.extract_file_ids(assi["description"])
+                        print(f"Downloading files for assignment: {assi["name"]}")
+                        for id in ids:
+                            file = self.get_file_via_id(id)
+                            name = file["filename"]
+                            url = file["url"]
+                            filepath = os.path.join(assi_path, name)
 
-                # Make the request with your Canvas token
-                response = requests.get(url, headers=self.__HEADERS)
+                            # Make the request with your Canvas token
+                            response = requests.get(url, headers=self.__HEADERS)
 
-                if not self.mkdir(path):
-                    return
+                            if not self.mkdir(assi_path):
+                                return
 
-                if response.status_code == 200:
-                    with open(filepath, "wb") as f:
-                        f.write(response.content)
-                    print(f"\tDownloaded file with file name: {name}")
-                else:
-                    print(
-                        f"\tFailed to download: {url} (Status {response.status_code})"
-                    )
+                            if response.status_code == 200:
+                                with open(filepath, "wb") as f:
+                                    f.write(response.content)
+                                print(f"\tDownloaded file with file name: {name}")
+                            else:
+                                print(
+                                    f"\tFailed to download: {url} (Status {response.status_code})"
+                                )
         except Exception as e:
             print(str(e), file=sys.stderr)
 
@@ -303,33 +448,18 @@ class Canvas_api:
 def main():
     """Set the object and call the references for testing."""
     canvas_data = Canvas_api()
+    canvas_data.download_files()
 
-    # Set all the Class attributes
-    canvas_data.set_headers()
-    canvas_data.set_prof()
-    canvas_data.set_stud()
-    canvas_data.set_users()
-    canvas_data.set_course()
-    canvas_data.set_course_data()
-    canvas_data.set_files()
-
-    # Get the assigments files
-    assis = canvas_data.set_assi()
-    # Export all assignment pdfs embedded in description
-    # Export only if lockdate has been passed
-    now = datetime.now()
-    for assi in assis:
-        date = canvas_data.find_lockdate_duedate(assi)
-        if date < now:
-            if not assi.get("attachment"):
-                filepath = os.path.join(
-                    os.getcwd(), "canvas_attachments", f"{assi["name"]}"
-                )
-                # If there are no attachment attributes in given assignment
-                # then that means the links are in the description.
-                ids = canvas_data.extract_file_ids(assi["description"])
-                print(f"Downloading files for assignment: {assi["name"]}")
-                canvas_data.download_files(ids, filepath)
+    catalog = canvas_data.get_course_catalog_table()
+    instance = canvas_data.get_courseinstances_table()
+    prof = canvas_data.get_courses_professor()
+    stud = canvas_data.get_courses_stud_tables()
+    ta = canvas_data.get_ta_tables()
+    print(catalog)
+    print(instance)
+    print(prof)
+    print(stud)
+    print(ta)
 
 
 if __name__ == "__main__":
