@@ -92,15 +92,16 @@ class Canvas_api:
             return False
         return True
 
-    def find_head_id(self,id):
-        """Given the end of an id, find the resulting 17 char id"""
+    def find_head_id(self, id):
+        """Given the end of an id, find the resulting 17 char id."""
         complement = 17 - (len(str(id)) + 4)
-        head = self.id_head 
+        head = self.id_head
         # Eg: 3433{0+}id
         i = 0
         for i in range(complement):
             head += '0'
-        return head  
+        head += id
+        return head
 
     def set_course(self):
         """Set the attribute .course to the json course for easy access."""
@@ -231,8 +232,6 @@ class Canvas_api:
             self.duedate[f"{assi["id"]}"] = duedate
             return duedate
         return None
-        
-
 
     def set_files(self):
         """Set the __files class attribute to be ALL course files in file tab."""
