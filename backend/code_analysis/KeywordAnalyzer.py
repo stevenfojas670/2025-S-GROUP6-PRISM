@@ -17,14 +17,17 @@ from code_analysis.asm.AsmAnalyzer import AsmAnalyzer
 from code_analysis.cpp.CppAnalyzer import CppAnalyzer
 
 class KeywordAnalyzer:
+    """Create object to perform keyword analysis."""
 
-    __words:set = None
-    __course:str = None
-    __assignment:str = None
+
+    __words: set = None
+    __course: str = None
+    __assignment: str = None
     __jsonFile = None
     __sections = None
 
     def __init__(self):
+        """Construct KeywordAnalyzer object."""
         self.__sections = dict(dict())
         self.__openAndValidateFile()
         self.__createOutputFile()
@@ -58,8 +61,8 @@ class KeywordAnalyzer:
 
         with open(sys.argv[1], 'r') as iFile:
             self.__words = set()
-            for l in iFile.readlines():
-                self.__words.add(l.strip('\n'))
+            for line in iFile.readlines():
+                self.__words.add(line.strip('\n'))
 
     def __createOutputFile(self):
         self.__jsonFile = open(f"{self.__course}_{self.__assignment}_Found_Words.json", "w")
@@ -93,11 +96,12 @@ class KeywordAnalyzer:
                         totalCount += students[w]["wordsFound"][c]["count"]
                     students[w]["totalFound"] = totalCount
 
-        json.dump(self.__sections, self.__jsonFile,indent=4)
+        json.dump(self.__sections, self.__jsonFile, indent=4)
 
 
 def main():
     KeywordAnalyzer()
+
 
 if __name__ == "__main__":
     main()
