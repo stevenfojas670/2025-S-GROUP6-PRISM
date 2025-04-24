@@ -1,23 +1,35 @@
+"""
+Created by Daniel Levy, 4/21/2025.
 
+This is a Lexer class responsible for the tokenization of both
+x86 and MIPS assembly files based on how assembly is taught to
+CS218 students.
+"""
 from code_analysis.asm.asm_token.Position import Position
 from code_analysis.asm.asm_token.Token import Token
 from code_analysis.asm.asm_token.TokenType import TokenType
 
 class Lexer:
-    __EOF:str = '\0'
-    __program:str = None
-    __currPos:int = None
-    __lookahead:str = None
-    __currLine:int = None
-    __currCol:int = None
+    """Create object to perform tokenization."""
+    __EOF: str = '\0'
+    __program: str = None
+    __currPos: int = None
+    __lookahead: str = None
+    __currLine: int = None
+    __currCol: int = None
 
     def __init__(self, program):
+        """Construct Lexer object."""
         self.__program = program
         self.__currPos = 0
         self.__lookahead = program[0]
         self.__currLine = 1
         self.__currCol = 1
 
+    '''
+        This is a helper method to consume the current
+        lookahead character and move on to the next character.
+    '''
     def __consume(self):
         self.__currPos += 1
         self.__currCol += 1
@@ -27,32 +39,55 @@ class Lexer:
         else:
             self.__lookahead = self.__EOF
 
+    '''
+        This is a helper method responsible for checking if 
+        the current lookahead character matches a character
+        we expect to see next.
+    '''
     def __match(self,currChar):
         if(self.__lookahead  == currChar):
             self.__consume()
             return True
         return False
 
+    '''
+        This is a helper method responsible for consuming a 
+        comment, so it can be ignored and not added to the 
+        token array.
+    '''
     def __consumeComment(self):
         self.__consume()
         while self.__lookahead != '\n':
             self.__consume()
         self.__consumeNewLine()
 
+    '''
+        This is a helper method that will consume a new line 
+        character for us and increment the current file position.
+    '''
     def __consumeNewLine(self):
         self.__consume()
         self.__currLine += 1
         self.__currCol = 1
 
+    '''
+        This is a helper method that will ignore all whitespace.
+    '''
     def __consumeWhiteSpace(self):
         while self.__lookahead == ' ' \
            or self.__lookahead == '\t' \
            or self.__lookahead == '\r':
             self.__consume()
 
+    '''
+        This creates a new Position to be saved into a token.
+    '''
     def __createPosition(self):
         return Position(self.__currLine,self.__currCol)
 
+    '''
+        This method is responisble for tokenizing a String literal.
+    '''
     def __tokenizeString(self):
         startPos = self.__createPosition()
         string = "\""
@@ -65,6 +100,9 @@ class Lexer:
         string += "\""
         return Token(TokenType.STR,string,startPos,self.__createPosition())
 
+    '''
+        This method is responsible for tokenizing an Integer/Float literal.
+    '''
     def __tokenizeNumber(self):
         startPos = self.__createPosition()
         number = ""
@@ -77,6 +115,10 @@ class Lexer:
 
         return Token(TokenType.NUM,number,startPos,self.__createPosition())
 
+    '''
+        This is a method responsible for tokenizing all IDs and
+        assembly keywords.
+    '''
     def __tokenizeName(self):
         startPos = self.__createPosition()
         id = ""
@@ -463,7 +505,11 @@ class Lexer:
             case 'nop': return Token(TokenType.NOP, id, startPos, self.__createPosition())
             case _: return Token(TokenType.ID,id,startPos,self.__createPosition())
 
-
+    '''
+        nextToken is the main method that a user will interface with this class, and 
+        it is responsible for generating the next token from the input file. If there 
+        is an error, then an error token will be generated instead.
+    '''
     def nextToken(self):
         while self.__lookahead != self.__EOF:
             startPos = self.__createPosition()
