@@ -12,13 +12,14 @@ import { useCourseContext } from "@/context/CourseContext"
 export default function Courses() {
 	const router = useRouter()
 	const { user } = useAuth()
-	const { setCourseInstanceId } = useCourseContext()
+	const { setCourseInstanceId, setSemesterId } = useCourseContext()
 	const searchParams = useSearchParams()
 	const semesterId = searchParams.get("semester")
 	const [courses, setCourses] = useState<Course[]>([])
 
 	const courseClick = (courseInstanceId: number, catalogId: number) => {
 		setCourseInstanceId(courseInstanceId)
+		setSemesterId(semesterId ? Number(semesterId) : null)
 		router.push(`/courses/${catalogId}/assignments`)
 	}
 

@@ -51,7 +51,7 @@ export default function AppLayoutWrapper({ children }: Props) {
 					<Box
 						sx={{
 							flexGrow: 1,
-							overflowY: "auto",
+							overflow: "auto",
 							p: 2,
 						}}
 					>

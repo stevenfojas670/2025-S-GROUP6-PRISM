@@ -10,6 +10,8 @@ import {
 interface CourseContextType {
 	courseInstanceId: number | null
 	setCourseInstanceId: (id: number | null) => void
+	semesterId: number | null
+	setSemesterId: (id: number | null) => void
 }
 
 const CourseContext = createContext<CourseContextType | undefined>(undefined)
@@ -18,16 +20,21 @@ export function CourseProvider({ children }: { children: ReactNode }) {
 	const [courseInstanceId, setCourseInstanceIdState] = useState<number | null>(
 		null
 	)
+	const [semesterId, setSemesterIdState] = useState<number | null>(null)
 
 	// Load from localStorage on mount
 	useEffect(() => {
-		const storedId = localStorage.getItem("course_instance_id")
-		if (storedId) {
-			setCourseInstanceIdState(Number(storedId))
+		const storedCourseInstanceId = localStorage.getItem("course_instance_id")
+		if (storedCourseInstanceId) {
+			setCourseInstanceIdState(Number(storedCourseInstanceId))
+		}
+		const storedSemesterId = localStorage.getItem("semester_id")
+		if (storedSemesterId) {
+			setSemesterIdState(Number(storedSemesterId))
 		}
 	}, [])
 
-	// Sync to localStorage when value changes
+	// Sync courseInstanceId
 	const setCourseInstanceId = (id: number | null) => {
 		setCourseInstanceIdState(id)
 		if (id !== null) {
@@ -37,8 +44,25 @@ export function CourseProvider({ children }: { children: ReactNode }) {
 		}
 	}
 
+	// Sync semesterId
+	const setSemesterId = (id: number | null) => {
+		setSemesterIdState(id)
+		if (id !== null) {
+			localStorage.setItem("semester_id", id.toString())
+		} else {
+			localStorage.removeItem("semester_id")
+		}
+	}
+
 	return (
-		<CourseContext.Provider value={{ courseInstanceId, setCourseInstanceId }}>
+		<CourseContext.Provider
+			value={{
+				courseInstanceId,
+				setCourseInstanceId,
+				semesterId,
+				setSemesterId,
+			}}
+		>
 			{children}
 		</CourseContext.Provider>
 	)
@@ -46,7 +70,8 @@ export function CourseProvider({ children }: { children: ReactNode }) {
 
 export function useCourseContext() {
 	const context = useContext(CourseContext)
-	if (!context)
+	if (!context) {
 		throw new Error("useCourseContext must be used within CourseProvider")
+	}
 	return context
 }

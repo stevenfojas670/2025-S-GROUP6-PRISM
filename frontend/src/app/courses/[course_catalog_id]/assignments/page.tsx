@@ -12,7 +12,6 @@ import {
 import { useRouter } from "next/navigation"
 import { easyFetch } from "@/utils/fetchWrapper"
 import { useParams } from "next/navigation"
-import OpenInFullIcon from "@mui/icons-material/OpenInFull"
 import { useCourseContext } from "@/context/CourseContext"
 import { GetStudents } from "@/controllers/students"
 import { StudentEnrollments } from "@/types/studentTypes"
@@ -42,13 +41,13 @@ interface AssignmentItem {
 }
 
 export default function Assignments() {
-	const { router } = useRouter()
+	const router = useRouter()
 	const [assignments, setAssignments] = useState<AssignmentItem[]>([])
 	const [assignmentImages, setAssignmentImages] = useState<
 		Record<number, string>
 	>({})
 	const [students, setStudents] = useState<StudentEnrollments[]>([])
-	const { courseInstanceId } = useCourseContext()
+	const { courseInstanceId, semesterId } = useCourseContext()
 	const { course_catalog_id } = useParams()
 
 	useEffect(() => {
@@ -168,7 +167,17 @@ export default function Assignments() {
 									},
 								}}
 							>
-								<Button variant="contained">Details</Button>
+								<Button
+									variant="contained"
+									disabled={!assignmentImages[assignment.id]}
+									onClick={() =>
+										router.push(
+											`/courses/${course_catalog_id}/assignments/graphs?assignment=${assignment.id}`
+										)
+									}
+								>
+									Details
+								</Button>
 							</Typography>
 							<Box>
 								<Typography>{assignment.title}</Typography>
@@ -208,12 +217,17 @@ export default function Assignments() {
 			<Box
 				sx={(theme) => ({
 					p: 2,
-					minWidth: 200, // make it wider
+					minWidth: 200,
 					maxWidth: 400,
-					flexShrink: 0, // prevent shrinking
-					flexGrow: 0, // prevent growing
+					flexShrink: 0,
+					flexGrow: 0,
 					backgroundColor: theme.palette.background.paper,
 					boxShadow: 2,
+					position: "sticky",
+					top: 0,
+					height: "100vh",
+					overflowY: "auto",
+					zIndex: 10,
 				})}
 			>
 				<Typography>Students</Typography>
@@ -223,7 +237,7 @@ export default function Assignments() {
 							<ListItemButton sx={{ width: "100%" }}>
 								<ListItemText
 									primary={`${student.student.first_name} ${student.student.last_name}`}
-									sx={{ width: "100%" }} // ensures ListItemText stretches
+									sx={{ width: "100%" }}
 								/>
 							</ListItemButton>
 						</React.Fragment>
