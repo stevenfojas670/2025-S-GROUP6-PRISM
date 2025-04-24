@@ -11,7 +11,6 @@ from enum import Enum
 class TokenType(Enum):
     """Enumerate token types."""
 
-
     EOF = "$"
     ERROR = "ERROR"
 
