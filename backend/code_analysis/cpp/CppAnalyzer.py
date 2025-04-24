@@ -37,7 +37,7 @@ class CppAnalyzer:
         into the JSON file.
     '''
     def generateAST(self):
-        """ Main method to interface with class. """
+        """Interface to the CppAnalyzer class."""
         for f in os.listdir(self.__subDir):
             if not f.endswith(".json"):
                 studentName = f"{f.split('_')[2]} {f.split('_')[3]}"
