@@ -26,20 +26,26 @@ class Token:
 
     ''' This is a getter method to retrieve the token's type. '''
     def getType(self):
+        """Get type."""
         return self.__type
 
     ''' This is a getter method to retrieve the token's lexeme. '''
     def getLexeme(self):
+        """Get lexeme."""
         return self.__lexeme
 
     ''' This is a getter method to retrieve the token's start position. '''
     def getStartPos(self):
+        """Get start position."""
         return self.__startPos
 
     ''' This is a getter method to retrieve the token's end position. '''
     def getEndPos(self):
+        """Get end position."""
         return self.__endPos
+
     ''' This is a helper method to print the token out for debugging. '''
     def toString(self):
+        """Get token as a string."""
         return (f"Type = {self.__type.name}, Lexeme = '{self.__lexeme}', "
                 f"Location = {self.__startPos.toString()} to {self.__endPos.toString()}")

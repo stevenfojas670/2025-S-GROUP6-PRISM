@@ -19,10 +19,12 @@ class Position:
 
     ''' This is a getter method to retrieve the line. '''
     def getLine(self):
+        """Get line."""
         return self.__line
 
     ''' This is a getter method to retrieve the column.'''
     def getCol(self):
+        """Get column."""
         return self.__col
 
     '''
@@ -30,4 +32,5 @@ class Position:
         position for debugging purposes.
     '''
     def toString(self):
+        """Turn position to string."""
         return f"<{self.__line}.{self.__col}>"

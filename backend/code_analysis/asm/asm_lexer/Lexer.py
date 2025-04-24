@@ -504,7 +504,7 @@ class Lexer:
         is an error, then an error token will be generated instead.
     '''
     def nextToken(self):
-        """Generates next token from student submission."""
+        """Generate next token from student submission."""
         while self.__lookahead != self.__EOF:
             startPos = self.__createPosition()
             match self.__lookahead:
@@ -566,7 +566,8 @@ class Lexer:
                 case '\"':
                     return self.__tokenizeString()
                 case _:
-                    if self.__lookahead.isdigit(): return self.__tokenizeNumber()
+                    if self.__lookahead.isdigit():
+                        return self.__tokenizeNumber()
                     elif (self.__lookahead.isalpha()
                           or self.__lookahead == "%"
                           or self.__lookahead == "_"
