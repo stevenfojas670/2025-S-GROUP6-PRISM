@@ -284,7 +284,6 @@ class TokenType(Enum):
     F30 = "$f30"
     F31 = "$f31"
 
-
     # MIPS Data Types
     HALF = "half"
     ASCII = ".ascii"
