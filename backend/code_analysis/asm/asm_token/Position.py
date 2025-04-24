@@ -17,15 +17,11 @@ class Position:
         self.__line = startLine
         self.__col = startCol
 
-    '''
-        This is a getter method to retrieve the line.
-    '''
+    ''' This is a getter method to retrieve the line. '''
     def getLine(self):
         return self.__line
 
-    '''
-        This is a getter method to retrieve the column.
-    '''
+    ''' This is a getter method to retrieve the column.'''
     def getCol(self):
         return self.__col
 
