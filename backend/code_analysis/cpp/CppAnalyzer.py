@@ -1,16 +1,14 @@
 """
 Created by Daniel Levy, 4/19/2025.
 
-This script is designed to analyze blacklisted keywords from
-student submissions. A user on the front end will manually
-input which keywords and/or libraries that students should not
-be using in their code. The file will then be sent to this script
-for processing all student submissions, and we will return an
-error json back to the front end to display the results to the user.
+This script is designed to analyze C++ blacklisted keywords from
+student submissions. The main central script will call this file and
+turn a student's submission into an AST that will then be analyzed for
+the use of unauthorized keywords. Once all submissions have been checked,
+the data will then be sent back to the central script for output file
+generation.
 """
-import sys
 import os
-import json
 
 from clang import cindex
 from clang.cindex import CursorKind
@@ -22,7 +20,7 @@ class CppAnalyzer:
     __words = None
     __subDir = None
     __assignment = None
-    __students:dict = None
+    __students: dict = None
 
     # Methods
     def __init__(self, words, subDir, assignment):
