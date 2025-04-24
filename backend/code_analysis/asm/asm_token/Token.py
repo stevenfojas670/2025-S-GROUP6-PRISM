@@ -17,24 +17,29 @@ class Token:
     __startPos = None
     __endPos = None
 
-    def __init__(self, type:TokenType,lex:str,start:Position,end:Position):
+    def __init__(self, type: TokenType, lex: str, start: Position, end: Position):
+        """Construct Token object."""
         self.__type = type
         self.__lexeme = lex
         self.__startPos = start
         self.__endPos = end
 
+    ''' This is a getter method to retrieve the token's type. '''
     def getType(self):
         return self.__type
 
+    ''' This is a getter method to retrieve the token's lexeme. '''
     def getLexeme(self):
         return self.__lexeme
 
+    ''' This is a getter method to retrieve the token's start position. '''
     def getStartPos(self):
         return self.__startPos
 
+    ''' This is a getter method to retrieve the token's end position. '''
     def getEndPos(self):
         return self.__endPos
-
+    ''' This is a helper method to print the token out for debugging. '''
     def toString(self):
         return (f"Type = {self.__type.name}, Lexeme = '{self.__lexeme}', "
                 f"Location = {self.__startPos.toString()} to {self.__endPos.toString()}")
