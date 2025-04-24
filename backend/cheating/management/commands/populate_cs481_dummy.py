@@ -1,4 +1,9 @@
-# backend/cheating/management/commands/populate_cs481_dummy.py
+"""
+This module defines a Django management command to populate dummy data.
+
+for CS481 (Capstone in Cybersecurity) with 5 sections, a total of 4 cheaters,
+and symmetric similarity scores across submissions.
+"""
 
 import random
 from datetime import date, timedelta
@@ -19,14 +24,35 @@ from cheating.models import SubmissionSimilarityPairs
 
 
 class Command(BaseCommand):
-    help = "Populate dummy data for CS481 with 5 sections, 4 cheaters total, symmetric similarities"
+    """
+    Populate dummy data for CS481.
+
+    - 5 sections
+    - 4 cheaters total
+    - symmetric similarity scores among submissions
+    """
+
+    help = (
+        "Populate dummy data for CS481 with 5 sections, 4 cheaters total, "
+        "symmetric similarities"
+    )
 
     def handle(self, *args, **options):
-        with transaction.atomic():
-            # clear old similarity data
-            # SubmissionSimilarityPairs.objects.all().delete()
+        """
+        1) Ensure Spring 2025 – Regular semester exists.
 
-            # make sure semester exists
+        2) Create or fetch CS481 course entry.
+        3) Loop over 5 sections:
+           a) Create a dummy professor and course instance.
+           b) Create 30 students per section with unique IDs.
+           c) Create 8 weekly assignments starting Jan 20, 2025.
+           d) Generate one submission per student per assignment.
+           e) Randomly assign up to 4 total cheaters (across sections),
+              relabel them, and seed high-similarity pairs on 2 assignments.
+           f) Seed all other submission pairs with lower similarities.
+        """
+        with transaction.atomic():
+            # 1) Semester setup
             semester, _ = Semester.objects.get_or_create(
                 year=2025,
                 term="Spring",
@@ -39,15 +65,18 @@ class Command(BaseCommand):
             base_codegd = 800_000
 
             def create_prof(section):
-                uname = f"prof_cs481_{section}"
-                email = f"{uname}@example.edu"
+                """Create or fetch a dummy professor for the given section."""
+                username = f"prof_cs481_{section}"
+                email = f"{username}@example.edu"
                 user, _ = User.objects.get_or_create(
-                    username=uname,
+                    username=username,
                     defaults={"email": email, "password": "pbkdf2_sha256$dummy"},
                 )
-                return Professors.objects.get_or_create(user=user)[0]
+                prof, _ = Professors.objects.get_or_create(user=user)
+                return prof
 
             def get_course():
+                """Fetch or create the CS481 catalog entry."""
                 course, _ = CourseCatalog.objects.get_or_create(
                     subject="CS",
                     catalog_number=481,
@@ -60,13 +89,14 @@ class Command(BaseCommand):
                 return course
 
             def create_students(start_index, count):
+                """Create or fetch `count` students starting at given index."""
                 students = []
                 for i in range(count):
                     idx = start_index + i
-                    ace = f"CS481{idx:03}"
+                    ace_id = f"CS481{idx:03}"
                     email = f"cs481_{idx}@example.edu"
                     student, _ = Students.objects.get_or_create(
-                        ace_id=ace,
+                        ace_id=ace_id,
                         defaults={
                             "email": email,
                             "nshe_id": base_nshe + idx,
@@ -78,25 +108,26 @@ class Command(BaseCommand):
                     students.append(student)
                 return students
 
-            def create_assignments(course, semester):
+            def create_assignments(course, sem):
+                """Create 8 weekly assignments starting Jan 20, 2025."""
                 assignments = []
                 start_due = date(2025, 1, 20)
-                for i in range(1, 9):  # 8 assignments
-                    due = start_due + timedelta(weeks=i - 1)
+                for num in range(1, 9):
+                    due = start_due + timedelta(weeks=num - 1)
                     lock = due + timedelta(hours=2)
                     a, _ = Assignments.objects.get_or_create(
                         course_catalog=course,
-                        semester=semester,
-                        assignment_number=i,
+                        semester=sem,
+                        assignment_number=num,
                         defaults={
-                            "title": f"Assignment {i}",
+                            "title": f"Assignment {num}",
                             "due_date": due,
                             "lock_date": lock,
                             "has_base_code": False,
                             "language": "python",
-                            "pdf_filepath": f"/tmp/pdfs/CS481_{i}.pdf",
-                            "moss_report_directory_path": f"/tmp/moss/CS481_{i}",
-                            "bulk_ai_directory_path": f"/tmp/ai/CS481_{i}",
+                            "pdf_filepath": f"/tmp/pdfs/CS481_{num}.pdf",
+                            "moss_report_directory_path": f"/tmp/moss/CS481_{num}",
+                            "bulk_ai_directory_path": f"/tmp/ai/CS481_{num}",
                             "has_policy": False,
                         },
                     )
@@ -104,6 +135,11 @@ class Command(BaseCommand):
                 return assignments
 
             def add_submissions(assignments, students, instance):
+                """
+                Create one submission per student per assignment.
+
+                Returns a mapping for seeding pairs.
+                """
                 submap = {}
                 for a in assignments:
                     for s in students:
@@ -115,17 +151,27 @@ class Command(BaseCommand):
                                 "grade": round(random.uniform(60, 100), 2),
                                 "created_at": a.due_date - timedelta(days=1),
                                 "flagged": False,
-                                "file_path": f"/submissions/{s.ace_id}/a{a.assignment_number}.py",
+                                "file_path": (
+                                    f"/submissions/{s.ace_id}/"
+                                    f"a{a.assignment_number}.py"
+                                ),
                             },
                         )
                         submap[(a.pk, s.pk)] = sub
                 return submap
 
             def create_symmetrical_pairs(assignments, students, submap, cheaters):
+                """
+                Seed SubmissionSimilarityPairs symmetrically.
+
+                - Cheaters get 40–55% on 2 random assignments.
+                - All other pairs get 5–35%.
+                """
+                # Select 2 assignments for high-sim among cheaters
                 cheat_assigns = set(random.sample(assignments, 2))
 
                 for a in assignments:
-                    # Cheaters get high similarity scores on 2 assignments
+                    # High similarity for cheater↔cheater on chosen assignments
                     if a in cheat_assigns:
                         for i in range(len(cheaters)):
                             for j in range(i + 1, len(cheaters)):
@@ -144,12 +190,12 @@ class Command(BaseCommand):
                                     },
                                 )
 
-                    # All other students (including cheaters on other assignments) get 5–35% similarities
-                    for i in range(len(students)):
-                        for j in range(i + 1, len(students)):
-                            sA, sB = students[i], students[j]
+                    # Lower similarity for all other pairs
+                    for i, sA in enumerate(students):
+                        for sB in students[i + 1:]:
                             if a in cheat_assigns and sA in cheaters and sB in cheaters:
-                                continue  # skip already created cheater pairs
+                                # Already created above
+                                continue
                             sub1 = submap[(a.pk, sA.pk)]
                             sub2 = submap[(a.pk, sB.pk)]
                             if sub1.pk > sub2.pk:
@@ -165,41 +211,45 @@ class Command(BaseCommand):
                                 },
                             )
 
-            # ────────────────────── START EXECUTION ──────────────────────
+            # ───────────────── EXECUTION START ─────────────────
             course = get_course()
-            section_count = 5
-            total_cheaters_needed = 4
-            cheaters_so_far = 0
-            global_index = 0
+            total_cheaters = 4
+            cheaters_remaining = total_cheaters
+            idx_offset = 0
 
-            for sec in range(1, section_count + 1):
-                prof = create_prof(sec)
+            for section in range(1, 6):
+                prof = create_prof(section)
                 instance, _ = CourseInstances.objects.get_or_create(
                     course_catalog=course,
                     semester=semester,
-                    section_number=sec,
-                    defaults={"professor": prof, "canvas_course_id": 9000 + sec},
+                    section_number=section,
+                    defaults={
+                        "professor": prof,
+                        "canvas_course_id": 9000 + section,
+                    },
                 )
 
-                students = create_students(global_index * 100, 30)
-                global_index += 1
+                # Create students and assignments
+                students = create_students(idx_offset * 100, 30)
+                idx_offset += 1
                 assignments = create_assignments(course, semester)
                 submap = add_submissions(assignments, students, instance)
 
-                # Only pick cheaters from current section if needed
-                local_cheaters = []
-                if cheaters_so_far < total_cheaters_needed:
-                    remaining = total_cheaters_needed - cheaters_so_far
-                    local_cheaters = random.sample(students, remaining)
-                    for c in local_cheaters:
+                # Pick up to remaining cheaters from this section
+                cheaters_here = []
+                if cheaters_remaining > 0:
+                    pick = min(cheaters_remaining, len(students))
+                    cheaters_here = random.sample(students, pick)
+                    for c in cheaters_here:
                         c.first_name = "Cheater"
                         c.save(update_fields=["first_name"])
-                    cheaters_so_far += len(local_cheaters)
+                    cheaters_remaining -= pick
 
-                create_symmetrical_pairs(assignments, students, submap, local_cheaters)
+                create_symmetrical_pairs(assignments, students, submap, cheaters_here)
 
             self.stdout.write(
                 self.style.SUCCESS(
-                    "✅ Dummy CS481 data created for 5 sections — 4 cheaters total, symmetric sim scores"
+                    "✅ Dummy CS481 data created for 5 sections — "
+                    "4 cheaters total, symmetric sim scores"
                 )
             )

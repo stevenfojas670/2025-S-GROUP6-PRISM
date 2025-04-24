@@ -40,9 +40,7 @@ def get_all_scores_by_student(assignment: Assignments) -> Dict[int, List[float]]
     pairs = SubmissionSimilarityPairs.objects.filter(assignment=assignment)
 
     # 2) Filter out reverse duplicates (keep only id1 < id2)
-    pairs = pairs.filter(
-        submission_id_1_id__lt=models.F("submission_id_2_id")
-    )
+    pairs = pairs.filter(submission_id_1_id__lt=models.F("submission_id_2_id"))
 
     # 3) Accumulate scores per submission into a dict of lists
     scores = defaultdict(list)
@@ -57,7 +55,7 @@ def get_all_scores_by_student(assignment: Assignments) -> Dict[int, List[float]]
 
 
 def compute_population_stats(
-    scores_by_student: Dict[int, List[float]]
+    scores_by_student: Dict[int, List[float]],
 ) -> Tuple[float, float]:
     """
     Compute population mean (mu) and std deviation (sigma) of all scores.
@@ -187,13 +185,15 @@ def update_all_pair_stats(
         "percentage",
     )
 
-    stats = defaultdict(lambda: {
-        "assignments_shared": 0,
-        "total_similarity": 0.0,
-        "flagged_count": 0,
-        "total_z_score": 0.0,
-        "max_z_score": 0.0,
-    })
+    stats = defaultdict(
+        lambda: {
+            "assignments_shared": 0,
+            "total_similarity": 0.0,
+            "flagged_count": 0,
+            "total_z_score": 0.0,
+            "max_z_score": 0.0,
+        }
+    )
 
     # 2a) Accumulate assignment counts and similarity sums
     for row in qs:
@@ -216,17 +216,19 @@ def update_all_pair_stats(
     # 3) Build model instances
     to_create = []
     for (a, b), rec in stats.items():
-        to_create.append(PairFlagStat(
-            course_catalog_id=course_id,
-            semester_id=semester_id,
-            student_a_id=a,
-            student_b_id=b,
-            assignments_shared=rec["assignments_shared"],
-            total_similarity=rec["total_similarity"],
-            flagged_count=rec["flagged_count"],
-            total_z_score=rec["total_z_score"],
-            max_z_score=rec["max_z_score"],
-        ))
+        to_create.append(
+            PairFlagStat(
+                course_catalog_id=course_id,
+                semester_id=semester_id,
+                student_a_id=a,
+                student_b_id=b,
+                assignments_shared=rec["assignments_shared"],
+                total_similarity=rec["total_similarity"],
+                flagged_count=rec["flagged_count"],
+                total_z_score=rec["total_z_score"],
+                max_z_score=rec["max_z_score"],
+            )
+        )
 
     # 4) Bulk-create in one transaction
     with transaction.atomic():
@@ -285,14 +287,16 @@ def generate_report(assignment_id: int) -> Tuple[AssignmentReport, List[dict]]:
                 use_fpc=True,
                 population_size=total_pairs,
             )
-            sr_objs.append(StudentReport(
-                report=report,
-                submission_id=sub_id,
-                mean_similarity=mean_sim,
-                z_score=z_val,
-                ci_lower=lo,
-                ci_upper=hi,
-            ))
+            sr_objs.append(
+                StudentReport(
+                    report=report,
+                    submission_id=sub_id,
+                    mean_similarity=mean_sim,
+                    z_score=z_val,
+                    ci_lower=lo,
+                    ci_upper=hi,
+                )
+            )
         StudentReport.objects.bulk_create(sr_objs)
         print(f"    ✔️ Bulk-created {len(sr_objs)} StudentReport rows")
 
@@ -303,14 +307,10 @@ def generate_report(assignment_id: int) -> Tuple[AssignmentReport, List[dict]]:
 
         if sub_ids:
             # Fetch all pairs involving any suspect in one query
-            all_pairs = SubmissionSimilarityPairs.objects.filter(
-                assignment=assignment
-            ).filter(
-                Q(submission_id_1__in=sub_ids) |
-                Q(submission_id_2__in=sub_ids)
-            ).select_related(
-                "submission_id_1__student",
-                "submission_id_2__student"
+            all_pairs = (
+                SubmissionSimilarityPairs.objects.filter(assignment=assignment)
+                .filter(Q(submission_id_1__in=sub_ids) | Q(submission_id_2__in=sub_ids))
+                .select_related("submission_id_1__student", "submission_id_2__student")
             )
 
             # Group and flag in memory
@@ -320,14 +320,12 @@ def generate_report(assignment_id: int) -> Tuple[AssignmentReport, List[dict]]:
                 by_sub[p.submission_id_2_id].append(p)
 
             # Determine professor to assign flags
-            first_sub = Submissions.objects.filter(
-                assignment=assignment
-            ).select_related("course_instance__professor"
-            ).first()
-            prof = (
-                first_sub.course_instance.professor
-                if first_sub else None
+            first_sub = (
+                Submissions.objects.filter(assignment=assignment)
+                .select_related("course_instance__professor")
+                .first()
             )
+            prof = first_sub.course_instance.professor if first_sub else None
 
             flags = []
             for sr in suspects:
@@ -337,28 +335,30 @@ def generate_report(assignment_id: int) -> Tuple[AssignmentReport, List[dict]]:
                     z_val = (sim - mu) / sigma if sigma else 0.0
 
                     if prof:
-                        flags.append(FlaggedStudents(
-                            professor=prof,
-                            student=student,
-                            similarity=pair,
-                            generative_ai=False,
-                        ))
+                        flags.append(
+                            FlaggedStudents(
+                                professor=prof,
+                                student=student,
+                                similarity=pair,
+                                generative_ai=False,
+                            )
+                        )
 
                     a_id = pair.submission_id_1.student_id
                     b_id = pair.submission_id_2.student_id
                     if a_id > b_id:
                         a_id, b_id = b_id, a_id
-                    flagged_data.append({
-                        "student_a": a_id,
-                        "student_b": b_id,
-                        "sim": sim,
-                        "z": z_val,
-                    })
+                    flagged_data.append(
+                        {
+                            "student_a": a_id,
+                            "student_b": b_id,
+                            "sim": sim,
+                            "z": z_val,
+                        }
+                    )
 
             if flags:
-                FlaggedStudents.objects.bulk_create(
-                    flags, ignore_conflicts=True
-                )
+                FlaggedStudents.objects.bulk_create(flags, ignore_conflicts=True)
                 print(f"    🚩 Inserted {len(flags)} FlaggedStudents")
         else:
             print("    ⚠️ No students above cutoff; skipping flagging")

@@ -1,4 +1,15 @@
-# backend/cheating/management/commands/populate_dummy_courses.py
+"""
+Populate dummy data for multiple CS courses in Spring 2025 – Regular.
+
+This command handles CS202, CS135, CS302, CS326, CS372, and CS218.
+For each course it:
+  1. Ensures the semester exists.
+  2. Clears old submissions & similarity pairs.
+  3. Creates sections with professors and students.
+  4. Randomly selects 4–8 cheaters total per course.
+  5. Generates assignments and one submission per student.
+  6. Seeds symmetric similarity pairs with higher values for cheaters.
+"""
 
 import random
 from datetime import date, timedelta
@@ -19,23 +30,30 @@ from cheating.models import SubmissionSimilarityPairs
 
 
 class Command(BaseCommand):
+    """Django management command to bulk-populate dummy courses."""
+
     help = (
-        "Populate dummy data for CS202, CS135, CS302, "
-        "and now CS326, CS372, CS218 — each with 4–8 cheaters total."
+        "Populate dummy data for CS202, CS135, CS302, CS326, CS372, CS218 "
+        "— each with 4–8 cheaters total."
     )
 
     def handle(self, *args, **options):
+        """
+        Entry point for populate_dummy_courses.
+
+        Wrap everything in a single transaction to ensure atomicity.
+        """
         with transaction.atomic():
-            # 1) Ensure semester exists
+            # 1) Ensure our semester exists
             semester, _ = Semester.objects.get_or_create(
                 year=2025,
                 term="Spring",
                 session="Regular",
                 defaults={"name": "Spring 2025 – Regular"},
             )
-            User = get_user_model()
+            # User = get_user_model()
 
-            # 2) Configuration for each course
+            # 2) Define each course’s config
             configs = [
                 # existing courses
                 {
@@ -89,7 +107,7 @@ class Command(BaseCommand):
                 },
             ]
 
-            # 3) Populate each
+            # 3) Loop through each config and populate
             for cfg in configs:
                 subj, cat = cfg["subject"], cfg["catalog"]
                 self.stdout.write(f"\n📦 Populating {subj}{cat}…")
@@ -108,7 +126,8 @@ class Command(BaseCommand):
     # ─────────────────── Helper methods ───────────────────
 
     def _get_or_create_course(self, subject, catalog):
-        return CourseCatalog.objects.get_or_create(
+        """Fetch or create the CourseCatalog entry for a subject and catalog."""
+        course, _ = CourseCatalog.objects.get_or_create(
             subject=subject,
             catalog_number=catalog,
             defaults={
@@ -116,10 +135,12 @@ class Command(BaseCommand):
                 "course_title": f"Dummy {subject}{catalog} Title",
                 "course_level": str((catalog // 100) * 100),
             },
-        )[0]
+        )
+        return course
 
     def _create_professor(self, section):
-        uname = f"prof_{section}_{random.randint(1000,9999)}"
+        """Create a dummy Professor + User for a given section."""
+        uname = f"prof_{section}_{random.randint(1000, 9999)}"
         user, _ = get_user_model().objects.get_or_create(
             username=uname,
             defaults={
@@ -127,14 +148,16 @@ class Command(BaseCommand):
                 "password": "pbkdf2_sha256$dummy",
             },
         )
-        return Professors.objects.get_or_create(user=user)[0]
+        prof, _ = Professors.objects.get_or_create(user=user)
+        return prof
 
     def _create_students(self, start_idx, count):
+        """Create `count` Students starting at index `start_idx`."""
         students = []
         for i in range(count):
             idx = start_idx + i
             ace = f"X{idx:05}"
-            s, _ = Students.objects.get_or_create(
+            student, _ = Students.objects.get_or_create(
                 ace_id=ace,
                 defaults={
                     "email": f"{ace}@example.edu",
@@ -144,10 +167,11 @@ class Command(BaseCommand):
                     "last_name": str(idx),
                 },
             )
-            students.append(s)
+            students.append(student)
         return students
 
     def _create_assignments(self, course, semester, count):
+        """Create `count` weekly Assignments starting Jan 15 2025."""
         assignments = []
         due_start = date(2025, 1, 15)
         for num in range(1, count + 1):
@@ -163,9 +187,16 @@ class Command(BaseCommand):
                     "lock_date": lock,
                     "has_base_code": False,
                     "language": "python",
-                    "pdf_filepath": f"/tmp/pdfs/{course.subject}{course.catalog_number}_{num}.pdf",
-                    "moss_report_directory_path": f"/tmp/moss/{course.subject}{course.catalog_number}_{num}",
-                    "bulk_ai_directory_path": f"/tmp/ai/{course.subject}{course.catalog_number}_{num}",
+                    "pdf_filepath": (
+                        f"/tmp/pdfs/{course.subject}"
+                        f"{course.catalog_number}_{num}.pdf"
+                    ),
+                    "moss_report_directory_path": (
+                        f"/tmp/moss/{course.subject}" f"{course.catalog_number}_{num}"
+                    ),
+                    "bulk_ai_directory_path": (
+                        f"/tmp/ai/{course.subject}" f"{course.catalog_number}_{num}"
+                    ),
                     "has_policy": False,
                 },
             )
@@ -182,9 +213,21 @@ class Command(BaseCommand):
         num_assigns,
         total_cheaters,
     ):
+        """
+        Core logic to populate one course.
+
+          A) Clear old data
+          B) Create sections + students
+          C) Select & rename cheaters
+          D) Generate assignments
+          E) Bulk-create Submissions
+          F) Build lookup map
+          G) Bulk-create symmetric similarity pairs
+          H) Print summary
+        """
         course = self._get_or_create_course(subject, catalog)
 
-        # A) Clear old submissions & pairs
+        # A) Clear out any existing submissions & similarity pairs
         SubmissionSimilarityPairs.objects.filter(
             assignment__course_catalog=course,
             assignment__semester=semester,
@@ -195,7 +238,7 @@ class Command(BaseCommand):
         ).delete()
         self.stdout.write("  🔄 Cleared old data")
 
-        # B) Create sections + students
+        # B) Spin up sections, professors, and student groups
         section_groups = []
         for sec in range(1, num_sections + 1):
             prof = self._create_professor(sec)
@@ -208,29 +251,30 @@ class Command(BaseCommand):
                     "canvas_course_id": random.randint(20000, 29999),
                 },
             )
-            cnt = students_per_section_fn()
-            studs = self._create_students((sec - 1) * 1000, cnt)
+            count = students_per_section_fn()
+            studs = self._create_students((sec - 1) * 1000, count)
             section_groups.append((inst, studs))
 
-        all_students = [s for _, grp in section_groups for s in grp]
+        all_students = [s for _, group in section_groups for s in group]
 
-        # C) Pick cheaters (4–8 total), rename
+        # C) Pick total_cheaters randomly, rename them “Cheater”
         cheaters = random.sample(all_students, total_cheaters)
-        for s in cheaters:
-            s.first_name = "Cheater"
-            s.save(update_fields=["first_name"])
+        for student in cheaters:
+            student.first_name = "Cheater"
+            student.save(update_fields=["first_name"])
 
-        # D) Create assignments
+        # D) Create the specified assignments for this course
         assignments = self._create_assignments(course, semester, num_assigns)
 
-        # E) Bulk‐create Submissions
+        # E) Bulk-create one submission per student per assignment
         subs_to_create = []
         for inst, group in section_groups:
             for a in assignments:
                 for s in group:
                     path = (
                         f"/submissions/{subject}{catalog}"
-                        f"/sec{inst.section_number}/{s.ace_id}/a{a.assignment_number}.py"
+                        f"/sec{inst.section_number}/{s.ace_id}"
+                        f"/a{a.assignment_number}.py"
                     )
                     subs_to_create.append(
                         Submissions(
@@ -246,20 +290,20 @@ class Command(BaseCommand):
         Submissions.objects.bulk_create(subs_to_create, ignore_conflicts=True)
         self.stdout.write(f"  ✔️ Created {len(subs_to_create)} submissions")
 
-        # F) Build submap for lookups
+        # F) Build a lookup for assignment+student → submission
         subs = Submissions.objects.filter(
             assignment__course_catalog=course,
             assignment__semester=semester,
         ).only("id", "assignment_id", "student_id")
         submap = {(sub.assignment_id, sub.student_id): sub for sub in subs}
 
-        # G) Bulk‐create symmetric pairs
+        # G) Bulk-create symmetric similarity pairs
         pairs_to_create = []
         for a in assignments:
-            # choose exactly 2–4 assignments where cheaters will pair
+            # Choose 2–4 assignments where cheaters pair with high similarity
             cheat_on = set(random.sample(assignments, random.randint(2, 4)))
 
-            # 1) cheater↔cheater on cheat_on
+            # 1) Cheater↔Cheater with 40–60% similarity
             if a in cheat_on:
                 for i in range(len(cheaters)):
                     for j in range(i + 1, len(cheaters)):
@@ -278,12 +322,12 @@ class Command(BaseCommand):
                             )
                         )
 
-            # 2) everyone else
+            # 2) All other pairs with 5–35% similarity
             for i in range(len(all_students)):
                 for j in range(i + 1, len(all_students)):
                     si, sj = all_students[i], all_students[j]
                     if a in cheat_on and si in cheaters and sj in cheaters:
-                        continue  # skip, already added
+                        continue  # skip already added
                     s1 = submap[(a.pk, si.pk)]
                     s2 = submap[(a.pk, sj.pk)]
                     if s1.pk > s2.pk:
@@ -304,11 +348,13 @@ class Command(BaseCommand):
         )
         self.stdout.write(f"  ✔️ Created {len(pairs_to_create)} similarity pairs")
 
-        # H) Summary
+        # H) Final summary for this course
         self.stdout.write(
             self.style.SUCCESS(
-                f"  → {subject}{catalog}: {num_sections} sections, "
-                f"{len(all_students)} students, {num_assigns} assigns, "
+                f"  → {subject}{catalog}: "
+                f"{num_sections} sections, "
+                f"{len(all_students)} students, "
+                f"{num_assigns} assignments, "
                 f"{total_cheaters} cheaters total"
             )
         )

@@ -1,6 +1,21 @@
 """
-This module analyzes similarity scores between student submissions
-and clusters both students and submission pairs to detect anomalies.
+This module analyzes similarity scores between student submissions.
+
+It generates reports, flags students, and clusters them based on their
+similarity scores. The process involves:
+1. Generating a report for each assignment.
+2. Cleaning up old reports to avoid stale data.
+3. Flagging students based on their similarity scores.
+4. Bulk recomputing semester profiles for students.
+5. Running KMeans clustering on the semester profiles to identify
+    clusters of students with similar behavior.
+6. The clustering process uses the gap statistic to determine the
+    optimal number of clusters.
+7. It applies feature weights to the data and standardizes it before
+    clustering.
+8. The clustering algorithm is KMeans, which is used to group students
+    based on their similarity scores.
+9. The final clustering results are stored in the database.
 """
 
 import os
@@ -37,10 +52,9 @@ def cleanup_old_student_reports(assignment, keep_report_id):
     """
     # Gather obsolete report IDs in one query
     old_ids = (
-        AssignmentReport.objects
-        .filter(assignment=assignment)
+        AssignmentReport.objects.filter(assignment=assignment)
         .exclude(id=keep_report_id)
-        .values_list('id', flat=True)
+        .values_list("id", flat=True)
     )
 
     # Delete all StudentReport rows for those old reports
@@ -61,26 +75,20 @@ def flag_student_pairs(report, professor, cutoff=2.0):
     """
     # 1) Find suspect submission IDs
     suspects = report.student_reports.filter(z_score__gt=cutoff)
-    sub_ids = list(suspects.values_list('submission_id', flat=True))
+    sub_ids = list(suspects.values_list("submission_id", flat=True))
     if not sub_ids:
         return 0
 
     # 2) Clear previous flags in one go
     FlaggedStudents.objects.filter(
-        professor=professor,
-        similarity__assignment=report.assignment
+        professor=professor, similarity__assignment=report.assignment
     ).delete()
 
     # 3) Fetch all relevant similarity pairs in one query
     pairs = (
-        SubmissionSimilarityPairs.objects
-        .filter(assignment=report.assignment)
-        .filter(
-            Q(submission_id_1__in=sub_ids) |
-            Q(submission_id_2__in=sub_ids)
-        )
-        .select_related('submission_id_1__student',
-                        'submission_id_2__student')
+        SubmissionSimilarityPairs.objects.filter(assignment=report.assignment)
+        .filter(Q(submission_id_1__in=sub_ids) | Q(submission_id_2__in=sub_ids))
+        .select_related("submission_id_1__student", "submission_id_2__student")
     )
 
     # 4) Group pairs by submission for quick lookups
@@ -99,22 +107,18 @@ def flag_student_pairs(report, professor, cutoff=2.0):
                     professor=professor,
                     student=student,
                     similarity=pair,
-                    generative_ai=False
+                    generative_ai=False,
                 )
             )
 
     # 6) Bulk insert to minimize DB round-trips
     with transaction.atomic():
-        created = FlaggedStudents.objects.bulk_create(
-            flags, ignore_conflicts=True
-        )
+        created = FlaggedStudents.objects.bulk_create(flags, ignore_conflicts=True)
     return len(created)
 
 
 def generate_reports_for_course_semester(
-    course_id,
-    semester_id,
-    max_workers=min(32, os.cpu_count() * 5)
+    course_id, semester_id, max_workers=min(32, os.cpu_count() * 5)
 ):
     """
     Run generate_report in parallel for all assignments of a course+semester.
@@ -126,38 +130,33 @@ def generate_reports_for_course_semester(
     """
     # 1) Collect assignment IDs
     assignment_ids = list(
-        Assignments.objects
-        .filter(
-            course_catalog_id=course_id,
-            semester_id=semester_id
-        )
-        .values_list('id', flat=True)
+        Assignments.objects.filter(
+            course_catalog_id=course_id, semester_id=semester_id
+        ).values_list("id", flat=True)
     )
-    print(f'\n📦 Found {len(assignment_ids)} assignments '
-          f'for course={course_id}, semester={semester_id}')
+    print(
+        f"\n📦 Found {len(assignment_ids)} assignments "
+        f"for course={course_id}, semester={semester_id}"
+    )
     if not assignment_ids:
-        print('⚠️ No assignments to process.')
+        print("⚠️ No assignments to process.")
         return
 
     # 2) Parallel execution
-    print(f'🚀 Parallel report generation with '
-          f'max_workers={max_workers}')
+    print(f"🚀 Parallel report generation with " f"max_workers={max_workers}")
     start = time.time()
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         for aid in assignment_ids:
-            print(f'  🔄 Scheduling generate_report({aid})')
+            print(f"  🔄 Scheduling generate_report({aid})")
         # map returns as they complete; any exception bubbles out
         executor.map(generate_report, assignment_ids)
 
     elapsed = time.time() - start
-    print(f'\n✅ Finished in {elapsed:.2f}s')
+    print(f"\n✅ Finished in {elapsed:.2f}s")
 
 
 def bulk_recompute_semester_profiles(
-    course_id,
-    semester_id,
-    z_threshold: float = 2.0,
-    sim_threshold: float = 45.0
+    course_id, semester_id, z_threshold: float = 2.0, sim_threshold: float = 45.0
 ):
     """
     Recompute StudentSemesterProfile for every student in a course+semester.
@@ -168,30 +167,27 @@ def bulk_recompute_semester_profiles(
     3. Compute 7 features per student.
     4. Bulk-create all profiles in one transaction.
     """
-    print(f'[START] bulk_recompute_semester_profiles '
-          f'for {course_id}/{semester_id}')
+    print(f"[START] bulk_recompute_semester_profiles " f"for {course_id}/{semester_id}")
     t0 = time.time()
 
     # 1) Fetch data in one go
     rows = StudentReport.objects.filter(
         submission__assignment__course_catalog_id=course_id,
-        submission__assignment__semester_id=semester_id
-    ).values(
-        'submission__student_id', 'z_score', 'mean_similarity'
-    )
+        submission__assignment__semester_id=semester_id,
+    ).values("submission__student_id", "z_score", "mean_similarity")
 
     # 2) Group by student
-    buckets = defaultdict(lambda: {'zs': [], 'sims': []})
+    buckets = defaultdict(lambda: {"zs": [], "sims": []})
     for r in rows:
-        sid = r['submission__student_id']
-        buckets[sid]['zs'].append(r['z_score'])
-        buckets[sid]['sims'].append(r['mean_similarity'])
+        sid = r["submission__student_id"]
+        buckets[sid]["zs"].append(r["z_score"])
+        buckets[sid]["sims"].append(r["mean_similarity"])
 
     profiles = []
     # 3) Compute metrics and build model instances
     for sid, data in buckets.items():
-        zs = data['zs']
-        sims = data['sims']
+        zs = data["zs"]
+        sims = data["sims"]
         count = len(zs)
 
         if count == 0:
@@ -206,10 +202,7 @@ def bulk_recompute_semester_profiles(
             # new definition: fraction of flagged submissions
             high_frac = num_flag / count
 
-        vec = [
-            avg_z, max_z, num_flag,
-            sim_var, sim_sk, sim_kt, high_frac
-        ]
+        vec = [avg_z, max_z, num_flag, sim_var, sim_sk, sim_kt, high_frac]
 
         profiles.append(
             StudentSemesterProfile(
@@ -223,7 +216,7 @@ def bulk_recompute_semester_profiles(
                 mean_similarity_skewness=sim_sk,
                 mean_similarity_kurtosis=sim_kt,
                 high_similarity_fraction=high_frac,
-                feature_vector=vec
+                feature_vector=vec,
             )
         )
 
@@ -231,19 +224,14 @@ def bulk_recompute_semester_profiles(
     with transaction.atomic():
         StudentSemesterProfile.objects.bulk_create(profiles)
 
-    print(f'[DONE] in {time.time() - t0:.1f}s')
+    print(f"[DONE] in {time.time() - t0:.1f}s")
 
 
 def run_kmeans_for_course_semester(
-    course_id,
-    semester_id,
-    n_clusters=6,
-    random_state=0,
-    b_refs=10,
-    sim_threshold=45.0
+    course_id, semester_id, n_clusters=6, random_state=0, b_refs=10, sim_threshold=45.0
 ):
     """
-    Cluster students based on their semester profiles:
+    Cluster students based on their semester profiles.
 
     1. Load all StudentSemesterProfile entries.
     2. Stack their 7-dim vectors → X_raw.
@@ -255,8 +243,7 @@ def run_kmeans_for_course_semester(
     # 1) Fetch profiles in one query
     profiles = list(
         StudentSemesterProfile.objects.filter(
-            course_catalog_id=course_id,
-            semester_id=semester_id
+            course_catalog_id=course_id, semester_id=semester_id
         )
     )
     if not profiles:
@@ -268,20 +255,15 @@ def run_kmeans_for_course_semester(
     # 2) Stack into a matrix
     X_raw = np.vstack([p.feature_vector for p in profiles])
 
-    # 3) Apply weights and standardize
-    weights = np.array([
-        1.0, 1.5, 1.2, 0.5, 0.5, 0.5, 1.5
-    ], dtype=float)
+    # 3) Apply weights and standardize, we can play with these
+    weights = np.array([1.0, 1.5, 1.2, 0.5, 0.5, 0.5, 1.5], dtype=float)
     X_weighted = X_raw * weights
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X_weighted)
 
     # Gap statistic to find best_k
     def dispersion(data, labels, centers):
-        return sum(
-            np.sum((data[labels == i] - c) ** 2)
-            for i, c in enumerate(centers)
-        )
+        return sum(np.sum((data[labels == i] - c) ** 2) for i, c in enumerate(centers))
 
     mins, maxs = X_scaled.min(axis=0), X_scaled.max(axis=0)
     best_k, best_gap = None, -np.inf
@@ -314,9 +296,7 @@ def run_kmeans_for_course_semester(
     raw_centers = scaler.inverse_transform(centers) / weights
     # Composite: 2×avg_z + 1.5×max_z + 1.5×high_frac
     composite = (
-        2.0 * raw_centers[:, 0] +
-        1.5 * raw_centers[:, 1] +
-        1.5 * raw_centers[:, 6]
+        2.0 * raw_centers[:, 0] + 1.5 * raw_centers[:, 1] + 1.5 * raw_centers[:, 6]
     )
     order = np.argsort(composite)
     remap = {old: new for new, old in enumerate(order)}
@@ -327,8 +307,6 @@ def run_kmeans_for_course_semester(
 
     # 8) Bulk-update all profiles in one transaction
     with transaction.atomic():
-        StudentSemesterProfile.objects.bulk_update(
-            profiles, ['cluster_label']
-        )
+        StudentSemesterProfile.objects.bulk_update(profiles, ["cluster_label"])
 
     return final_km
