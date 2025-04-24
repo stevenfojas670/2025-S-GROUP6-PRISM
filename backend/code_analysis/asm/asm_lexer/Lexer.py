@@ -40,19 +40,19 @@ class Lexer:
             self.__lookahead = self.__EOF
 
     '''
-        This is a helper method responsible for checking if 
+        This is a helper method responsible for checking if
         the current lookahead character matches a character
         we expect to see next.
     '''
     def __match(self,currChar):
-        if(self.__lookahead  == currChar):
+        if self.__lookahead == currChar:
             self.__consume()
             return True
         return False
 
     '''
-        This is a helper method responsible for consuming a 
-        comment, so it can be ignored and not added to the 
+        This is a helper method responsible for consuming a
+        comment, so it can be ignored and not added to the
         token array.
     '''
     def __consumeComment(self):
@@ -62,7 +62,7 @@ class Lexer:
         self.__consumeNewLine()
 
     '''
-        This is a helper method that will consume a new line 
+        This is a helper method that will consume a new line
         character for us and increment the current file position.
     '''
     def __consumeNewLine(self):
@@ -74,9 +74,7 @@ class Lexer:
         This is a helper method that will ignore all whitespace.
     '''
     def __consumeWhiteSpace(self):
-        while self.__lookahead == ' ' \
-           or self.__lookahead == '\t' \
-           or self.__lookahead == '\r':
+        while self.__lookahead == ' ' or self.__lookahead == '\t' or self.__lookahead == '\r':
             self.__consume()
 
     '''
@@ -122,12 +120,7 @@ class Lexer:
     def __tokenizeName(self):
         startPos = self.__createPosition()
         id = ""
-        while (self.__lookahead.isalpha()
-            or self.__lookahead.isdigit()
-            or self.__lookahead == "%"
-            or self.__lookahead == "_"
-            or self.__lookahead == "."
-            or self.__lookahead == "$"):
+        while self.__lookahead.isalpha() or self.__lookahead.isdigit() or self.__lookahead in ["%", "_", ".", "$"]:
             id += self.__lookahead
             self.__consume()
 
@@ -506,11 +499,12 @@ class Lexer:
             case _: return Token(TokenType.ID,id,startPos,self.__createPosition())
 
     '''
-        nextToken is the main method that a user will interface with this class, and 
-        it is responsible for generating the next token from the input file. If there 
+        nextToken is the main method that a user will interface with this class, and
+        it is responsible for generating the next token from the input file. If there
         is an error, then an error token will be generated instead.
     '''
     def nextToken(self):
+        """Generates next token from student submission."""
         while self.__lookahead != self.__EOF:
             startPos = self.__createPosition()
             match self.__lookahead:
@@ -543,7 +537,7 @@ class Lexer:
                     return Token(TokenType.BAND, "&", startPos, self.__createPosition())
                 case '.':
                     self.__match('.')
-                    if(self.__lookahead.isalpha()):
+                    if self.__lookahead.isalpha():
                         self.__currPos -= 1
                         self.__lookahead = '.'
                         return self.__tokenizeName()
@@ -569,7 +563,8 @@ class Lexer:
                 case '\'':
                     self.__match('\'')
                     return Token(TokenType.SQUOTE, "\'", startPos, self.__createPosition())
-                case '\"': return self.__tokenizeString()
+                case '\"':
+                    return self.__tokenizeString()
                 case _:
                     if self.__lookahead.isdigit(): return self.__tokenizeNumber()
                     elif (self.__lookahead.isalpha()
