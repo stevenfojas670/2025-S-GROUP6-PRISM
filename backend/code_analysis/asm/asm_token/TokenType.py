@@ -1,5 +1,5 @@
 """
-Created by Daniel Levy, 4/21/2025
+Created by Daniel Levy, 4/21/2025.
 
 This is an enum representing all possible token types for
 the Lexer. This currently includes all possible keywords and
@@ -9,6 +9,9 @@ in CS 218.
 from enum import Enum
 
 class TokenType(Enum):
+    """Enumerate token types."""
+
+
     EOF = "$"
     ERROR = "ERROR"
 
@@ -204,7 +207,6 @@ class TokenType(Enum):
     UCOMISD = "ucomisd"
     SYSCALL = "syscall"
 
-
     # Additional x86 instruction Jonah told me to check for
     CMOVL = "cmovl"
     CMOVG = "cmovg"
@@ -212,7 +214,6 @@ class TokenType(Enum):
     JNZ = "jnz"
     REL = "rel"
     DEFINE = "%define"
-
 
     # MIPS Registers
     ZERO = "$zero"
@@ -416,7 +417,6 @@ class TokenType(Enum):
     BREAK = "break"
     NOP = "nop"
 
-
     # OPERATORS
     EQ = "="
     PLUS = "+"
@@ -426,7 +426,6 @@ class TokenType(Enum):
     MOD = "%"
     BOR = "|"
     BAND = "&"
-
 
     # DELIMITERS
     PERIOD = "."
