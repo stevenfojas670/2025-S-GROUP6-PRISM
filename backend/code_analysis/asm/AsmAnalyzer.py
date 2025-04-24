@@ -1,4 +1,13 @@
+"""
+Created by Daniel Levy, 4/21/2025.
 
+This script servers to analyze blacklisted keywords from
+student assembly file submissions. This script will simply
+interface with the assembly lexer to generate the tokens that
+will be used to figure out if a student used an instruction
+they wouldn't allow to use. Once the analysis is complete, we
+will send the data back to the central KeywordAnalyzer script
+"""
 import os
 from code_analysis.asm.asm_lexer.Lexer import Lexer
 from code_analysis.asm.asm_token.TokenType import TokenType
