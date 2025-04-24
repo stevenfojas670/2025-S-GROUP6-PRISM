@@ -1,4 +1,14 @@
+"""
+Created by Daniel Levy, 4/21/2025.
 
+This script serves as the central script to perform the manual
+checking of banned keywords inside of a student submission. This
+class will primarily handle the I/O setup for the keyword analysis,
+and it will interface with the correct script depending on the course
+and programming language being used. At the end of the script, a JSON
+file will be generated in this directory that can then be used by the
+front end.
+"""
 import json
 import os
 import sys
