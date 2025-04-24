@@ -1,27 +1,42 @@
-"""Assignments URLs."""
+"""Assignments URLs for the new viewsets.
 
-from django.urls import path, include
+This module registers API endpoints for:
+- Assignments
+- Submissions
+- BaseFiles
+- BulkSubmissions
+- Constraints
+- PolicyViolations
+- RequiredSubmissionFiles
+"""
+
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-# from rest_framework_nested.routers import NestedDefaultRouter
-from assignments.views import (
-    AssignmentVS,
-    SubmissionVS,
-    FlaggedSubmissionVS,
-    FlaggedStudentVS,
-    ConfirmedCheaterVS,
-    StudentVS,
+from .views import (
+    AssignmentsViewSet,
+    SubmissionsViewSet,
+    BaseFilesViewSet,
+    BulkSubmissionsViewSet,
+    ConstraintsViewSet,
+    PolicyViolationsViewSet,
+    RequiredSubmissionFilesViewSet,
 )
 
 router = DefaultRouter()
-router.register("assignments", AssignmentVS, basename="assignments")
-router.register("submissions", SubmissionVS, basename="submissions")
+router.register(r"assignments", AssignmentsViewSet, basename="assignments")
+router.register(r"submissions", SubmissionsViewSet, basename="submissions")
+router.register(r"basefiles", BaseFilesViewSet, basename="basefiles")
+router.register(r"bulksubmissions", BulkSubmissionsViewSet, basename="bulksubmissions")
+router.register(r"constraints", ConstraintsViewSet, basename="constraints")
 router.register(
-    "flagged-submission", FlaggedSubmissionVS, basename="flagged-submission"
+    r"policyviolations", PolicyViolationsViewSet, basename="policyviolations"
 )
-router.register("flagged-student", FlaggedStudentVS, basename="flagged-student")
-router.register("confirmed-cheater", ConfirmedCheaterVS, basename="confirmed-cheater")
-router.register("student", StudentVS, basename="student")
+router.register(
+    r"requiredsubmissionfiles",
+    RequiredSubmissionFilesViewSet,
+    basename="requiredsubmissionfiles",
+)
 
 urlpatterns = [
     path("", include(router.urls)),

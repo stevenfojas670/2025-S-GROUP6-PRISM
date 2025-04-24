@@ -1,25 +1,45 @@
-"""URL Configuration for the courses app."""
+"""Courses app URLs.
 
+This module registers API endpoints for the core Courses app models.
+"""
+
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-# from rest_framework_nested.routers import NestedDefaultRouter
-from courses.views import (
-    ProfessorVS,
-    ProfessorClassSectionVS,
-    SemesterVS,
-    ClassVS,
-    EnrollmentVS,
+from .views import (
+    CourseCatalogViewSet,
+    CourseInstancesViewSet,
+    SemesterViewSet,
+    StudentsViewSet,
+    StudentEnrollmentsViewSet,
+    ProfessorsViewSet,
+    ProfessorEnrollmentsViewSet,
+    TeachingAssistantsViewSet,
+    TeachingAssistantEnrollmentsViewSet,
 )
-from django.urls import path, include
 
 router = DefaultRouter()
-router.register("classes", ClassVS, basename="class")
-router.register("professors", ProfessorVS, basename="professor")
-router.register("semesters", SemesterVS, basename="semester")
+router.register(r"coursecatalog", CourseCatalogViewSet, basename="coursecatalog")
+router.register(r"courseinstances", CourseInstancesViewSet, basename="courseinstances")
+router.register(r"semester", SemesterViewSet, basename="semester")
+router.register(r"students", StudentsViewSet, basename="students")
 router.register(
-    "sectionclassprof", ProfessorClassSectionVS, basename="sectionclassprof"
+    r"studentenrollments", StudentEnrollmentsViewSet, basename="studentenrollments"
 )
-router.register("enrollments", EnrollmentVS, basename="enrollment")
+router.register(r"professors", ProfessorsViewSet, basename="professors")
+router.register(
+    r"professorenrollments",
+    ProfessorEnrollmentsViewSet,
+    basename="professorenrollments",
+)
+router.register(
+    r"teachingassistants", TeachingAssistantsViewSet, basename="teachingassistants"
+)
+router.register(
+    r"teachingassistantenrollments",
+    TeachingAssistantEnrollmentsViewSet,
+    basename="teachingassistantenrollments",
+)
 
 urlpatterns = [
     path("", include(router.urls)),

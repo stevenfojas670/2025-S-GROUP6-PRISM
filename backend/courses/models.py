@@ -6,130 +6,261 @@ classes, and semesters with constraints to ensure data integrity.
 """
 
 from django.db import models
-from users import models as user_model
-from assignments.models import Student
+from django.conf import settings
 
 
-class Professor(models.Model):
-    """Represent a professor in the system.
+class CourseCatalog(models.Model):
+    """
+    Represents a course entry in the university's course catalog.
 
-    Attributes:
-        user (OneToOneField): Link to the User model.
-
-    Methods:
-        __str__(): Return full name of the professor.
+    Includes subject, catalog number, course title, and level.
     """
 
-    user = models.OneToOneField(
-        user_model.User,
-        on_delete=models.CASCADE,
-        related_name="user_professor",
+    name = models.CharField(
+        unique=True,
+        max_length=50,
     )
+    subject = models.TextField()
+    catalog_number = models.SmallIntegerField()
+    course_title = models.CharField(max_length=255)
+    course_level = models.TextField()
+
+    class Meta:
+        """Model metadata configuration."""
+
+        unique_together = (("subject", "catalog_number"),)
 
     def __str__(self):
-        """Return full name of the professor."""
-        return f"{self.user.first_name} {self.user.last_name}"
+        """
+        Return a readable representation of the catalog entry.
+
+        Combines subject and catalog number with course title.
+        """
+        return f"{self.subject} {self.catalog_number} - {self.course_title}"
 
 
-class Class(models.Model):
-    """Represent a class or course in the system.
+class CourseInstances(models.Model):
+    """
+    Represents a specific offering of a course in a given semester.
 
-    Attributes:
-        name (CharField): Unique name of the class.
-        professors (ManyToManyField): Relationship to Professor via intermediate model.
-
-    Methods:
-        __str__(): Return the class name.
+    Includes section number, assigned professor, optional TA, and
+    Canvas course ID.
     """
 
-    name = models.CharField(max_length=50, unique=True)
-    professors = models.ManyToManyField(
-        "courses.Professor",
-        through="ProfessorClassSection",
+    semester = models.ForeignKey(
+        "Semester",
+        models.CASCADE,
     )
-
-    def __str__(self):
-        """Return the class name."""
-        return self.name
-
-
-class Semester(models.Model):
-    """Represent a semester in the system.
-
-    Attributes:
-        name (CharField): Unique name of the semester.
-
-    Methods:
-        __str__(): Return the semester name.
-    """
-
-    name = models.CharField(max_length=50, unique=True)
-
-    def __str__(self):
-        """Return the semester name."""
-        return self.name
-
-
-class ProfessorClassSection(models.Model):
-    """Map a professor to a class section in a specific semester.
-
-    Attributes:
-        professor (ForeignKey): Link to Professor.
-        class_instance (ForeignKey): Link to Class.
-        semester (ForeignKey): Link to Semester.
-        section_number (IntegerField): Optional section number.
-
-    Methods:
-        __str__(): Return formatted section details.
-    """
-
+    course_catalog = models.ForeignKey(
+        CourseCatalog,
+        models.CASCADE,
+    )
+    section_number = models.IntegerField()
     professor = models.ForeignKey(
-        "courses.Professor",
-        on_delete=models.CASCADE,
-        related_name="profclassect",
+        "Professors",
+        models.CASCADE,
     )
-    class_instance = models.ForeignKey(Class, on_delete=models.CASCADE)
-    semester = models.ForeignKey(Semester, on_delete=models.CASCADE)
-    section_number = models.IntegerField(blank=True, null=True)
+    teaching_assistant = models.ForeignKey(
+        "TeachingAssistants",
+        models.CASCADE,
+        blank=True,
+        null=True,
+    )
+    canvas_course_id = models.BigIntegerField(unique=True)
+
+    class Meta:
+        """Model metadata configuration."""
+
+        unique_together = (
+            ("semester", "course_catalog", "section_number", "professor"),
+        )
 
     def __str__(self):
-        """Return a formatted string for this section."""
+        """
+        Return a readable representation of the course instance.
+
+        Includes semester, course, and section number.
+        """
         return (
-            f"{self.professor} - {self.class_instance} - "
-            f"{self.semester} (Section {self.section_number})"
+            f"{self.course_catalog} - Section {self.section_number} "
+            f"({self.semester})"
         )
 
 
-class Enrollment(models.Model):
-    """Track student enrollment status in classes.
+class Semester(models.Model):
+    """
+    Represents a semester in which courses are offered.
 
-    Attributes:
-        student (ForeignKey): Link to Student.
-        class_instance (ForeignKey): Link to Class.
-        semester (ForeignKey): Link to Semester.
-        enrolled_date (DateField): Auto-set on creation.
-        dropped (BooleanField): Flag for drop status.
-        dropped_date (DateField): Optional timestamp of when they dropped.
-
-    Methods:
-        __str__(): Return enrollment summary.
+    Includes the academic year, term (e.g., Fall), and session type.
     """
 
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    class_instance = models.ForeignKey(Class, on_delete=models.CASCADE)
-    semester = models.ForeignKey(Semester, on_delete=models.CASCADE)
-    enrolled_date = models.DateField(auto_now_add=True)
-    dropped = models.BooleanField(default=False)
-    dropped_date = models.DateField(blank=True, null=True)
+    name = models.TextField()
+    year = models.SmallIntegerField()
+    term = models.TextField()
+    session = models.TextField()
 
     class Meta:
-        """Meta options for Enrollment model."""
+        """Model metadata configuration."""
 
-        unique_together = ("student", "class_instance", "semester")
+        unique_together = (("year", "term", "session"),)
 
     def __str__(self):
-        """Return formatted enrollment string."""
-        return f"{
-            self.student} enrolled in {
-            self.class_instance} ({
-            self.semester})"
+        """
+        Return a readable representation of the semester.
+
+        Includes term, year, and session.
+        """
+        return f"{self.term} {self.year} - {self.session}"
+
+
+class Students(models.Model):
+    """
+    Represents a student in the system.
+
+    Includes identifying information such as email, NSHE ID,
+    CodeGrade ID, ACE ID, and full name.
+    """
+
+    email = models.TextField(unique=True)
+    nshe_id = models.BigIntegerField(unique=True)
+    codegrade_id = models.BigIntegerField(
+        db_column="codeGrade_id",
+        unique=True,
+    )
+    ace_id = models.TextField(unique=True)
+    first_name = models.TextField()
+    last_name = models.TextField()
+
+    def __str__(self):
+        """
+        Return a readable representation of the student.
+
+        Displays the student's full name and ACE ID.
+        """
+        return f"{self.first_name} {self.last_name} ({self.ace_id})"
+
+
+class StudentEnrollments(models.Model):
+    """
+    Represents a student's enrollment in a specific course instance.
+
+    Links a student to a course offering in a given semester.
+    """
+
+    student = models.ForeignKey(
+        "Students",
+        models.CASCADE,
+    )
+    course_instance = models.ForeignKey(
+        CourseInstances,
+        models.CASCADE,
+    )
+
+    class Meta:
+        """Model metadata configuration."""
+
+        unique_together = (("student", "course_instance"),)
+
+    def __str__(self):
+        """
+        Return a readable representation of the enrollment.
+
+        Displays the student and the course instance they are enrolled in.
+        """
+        return f"{self.student} enrolled in {self.course_instance}"
+
+
+class Professors(models.Model):
+    """
+    Model representing a professor.
+
+    Each professor is uniquely associated with a user account.
+    """
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        models.CASCADE,
+        help_text="User associated with the professor.",
+    )
+
+    def __str__(self):
+        """Return a string representation of the professor."""
+        return f"Professor ID {self.id} - {self.user}"
+
+
+class ProfessorEnrollments(models.Model):
+    """
+    Represents a professor's enrollment in a course instance.
+
+    Associates a professor with a specific course offering.
+    """
+
+    professor = models.ForeignKey(
+        "Professors",
+        models.CASCADE,
+    )
+    course_instance = models.ForeignKey(
+        CourseInstances,
+        models.CASCADE,
+    )
+
+    class Meta:
+        """Model metadata configuration."""
+
+        unique_together = (("professor", "course_instance"),)
+
+    def __str__(self):
+        """
+        Return a readable representation of the professor's enrollment.
+
+        Displays the professor and the course instance they are assigned to.
+        """
+        return f"{self.professor} assigned to {self.course_instance}"
+
+
+class TeachingAssistants(models.Model):
+    """
+    Model representing a teaching assistant.
+
+    Each teaching assistant is associated with one user account.
+    """
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        models.CASCADE,
+        help_text="User associated with the teaching assistant.",
+    )
+
+    def __str__(self):
+        """Return a string representation of the teaching assistant."""
+        return f"TeachingAssistant ID {self.id} - {self.user}"
+
+
+class TeachingAssistantEnrollments(models.Model):
+    """
+    Represents a TA's enrollment in a course instance.
+
+    Associates a teaching assistant with a specific course offering.
+    """
+
+    teaching_assistant = models.ForeignKey(
+        "TeachingAssistants",
+        models.CASCADE,
+    )
+    course_instance = models.ForeignKey(
+        CourseInstances,
+        models.CASCADE,
+    )
+
+    class Meta:
+        """Model metadata configuration."""
+
+        unique_together = (("teaching_assistant", "course_instance"),)
+
+    def __str__(self):
+        """
+        Return a readable representation of the TA enrollment.
+
+        Displays the teaching assistant and the course instance.
+        """
+        return f"{self.teaching_assistant} assigned to {self.course_instance}"
