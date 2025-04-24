@@ -3,9 +3,13 @@ Created by Eli Rosales, 4/7/2025.
 
 Extract data from the canvas API and store in a JSON dictionary.
 Data to extract:
+  - Course data
   - users
   - Professor
-  - assignment links
+  - Student
+  - Ta
+  - User Enrollments
+  - Assignment PDFs
   - ...
 
 NOTE: The resulting "Canvas_attachments" folder will be created in the current
@@ -23,11 +27,11 @@ import sys
 import os
 
 # dotenv: environment varibales
+# loads env var: WC_API_KEY
 from dotenv import load_dotenv
 
 # bs4: html parsing
 from bs4 import BeautifulSoup
-
 
 # datetime: lockdate and duedate
 from datetime import datetime
@@ -40,12 +44,12 @@ class Canvas_api:
         """Inizialize the class."""
         # Api data
         self.url = "https://canvas.instructure.com/api/v1/"
-        self.__course_id = "33430000000184699"
+        self.id_head = "3343"
+        self.__course_id = "184699"
         self.__COURSE_URL = (
             "https://canvas.instructure.com/api/v1/courses/33430000000184699/"
         )
         self.__HEADERS = {"Authorization": "Bearer "}
-        self.id_head = "334300000"
 
         # Course data
         self.course = {}
@@ -62,9 +66,14 @@ class Canvas_api:
 
         # Assignment Data
         # Make the due date = to lockdate if there is no lockdate.
+        self.duedate = {}
         self.lockdate = {}
-        return
+        # {
+        #       "assignment1_id" : {datetime.datetime lockdate},
+        #       ...
+        # }
 
+    # Populate the Class Attributes
     def set_headers(self):
         """Set the key from .env file."""
         try:
@@ -83,9 +92,20 @@ class Canvas_api:
             return False
         return True
 
+    def find_head_id(self,id):
+        """Given the end of an id, find the resulting 17 char id"""
+        complement = 17 - (len(str(id)) + 4)
+        head = self.id_head 
+        # Eg: 3433{0+}id
+        i = 0
+        for i in range(complement):
+            head += '0'
+        return head  
+
     def set_course(self):
         """Set the attribute .course to the json course for easy access."""
         try:
+            # request information from api
             url = self.__COURSE_URL
             response = requests.get(url, headers=self.__HEADERS)
             self.course = response.json()
@@ -96,7 +116,7 @@ class Canvas_api:
 
     def get_course(self):
         """Print the course json."""
-        print(self.course)
+        return self.course
 
     def set_course_data(self):
         """Set the course_name, course_code, course_term_id class attributes."""
@@ -149,6 +169,9 @@ class Canvas_api:
             url = self.__COURSE_URL + "/users"
             response = requests.get(url, headers=self.__HEADERS, params=PARAMS)
             self.__stud = response.json()
+            for user in self.__stud:
+                ace = user["email"].split("@")[0]
+                user["ace_id"] = ace
         except Exception as e:
             print(str(e), file=sys.stderr)
 
@@ -195,16 +218,21 @@ class Canvas_api:
         """Print all assignments."""
         print("assi", self.__assi)
 
-    def find_lockdate(self, assi):
+    def find_lockdate_duedate(self, assi):
         """Find the lockdate of a given assi, and populate the class attr."""
-        lockdate = None
-        if assi["lock_at"] is None:
-            lockdate = datetime.fromisoformat(f'{assi["due_at"]}'[:-1])
-        else:
+        if assi["lock_at"] is not None:
             lockdate = datetime.fromisoformat(f'{assi["lock_at"]}'[:-1])
-        # Populate the class attribute.
-        self.lockdate[f"{assi["id"]}"] = lockdate
-        return lockdate
+            # Populate the class attribute.
+            self.lockdate[f"{assi["id"]}"] = lockdate
+            return lockdate
+        elif assi["due_at"] is not None:
+            duedate = datetime.fromisoformat(f'{assi["due_at"]}'[:-1])
+            # Populate the class attribute.
+            self.duedate[f"{assi["id"]}"] = duedate
+            return duedate
+        return None
+        
+
 
     def set_files(self):
         """Set the __files class attribute to be ALL course files in file tab."""
@@ -230,7 +258,7 @@ class Canvas_api:
                 if "/files/" in href:
                     id = href.split("/")[-1].split("?")[0].split("~")[1]
                     # If link is stored in the files section of the canvas course page
-                    id = self.id_head + id
+                    id = self.find_head_id(id)
                     ids.append(id)
             return ids
         except Exception as e:
@@ -286,24 +314,14 @@ def main():
     canvas_data.set_course_data()
     canvas_data.set_files()
 
-    """
-    # Print all the attributes we set from the code above.
-    canvas_data.get_prof()
-    canvas_data.get_stud()
-    canvas_data.get_users()
-    canvas_data.get_course()
-    canvas_data.get_course_data()
-    """
-
     # Get the assigments files
     assis = canvas_data.set_assi()
-
     # Export all assignment pdfs embedded in description
     # Export only if lockdate has been passed
     now = datetime.now()
     for assi in assis:
-        lockdate = canvas_data.find_lockdate(assi)
-        if lockdate < now:
+        date = canvas_data.find_lockdate_duedate(assi)
+        if date < now:
             if not assi.get("attachment"):
                 filepath = os.path.join(
                     os.getcwd(), "canvas_attachments", f"{assi["name"]}"
