@@ -30,7 +30,6 @@ class CppAnalyzer:
         self.__assignment = assignment
         self.__students = dict(dict(dict()))
 
-
     '''
         This is a helper method for runAnalysis. The goal is to parse each
         student's input file and manually verify whether or not they used
@@ -41,22 +40,21 @@ class CppAnalyzer:
         for f in os.listdir(self.__subDir):
             if not f.endswith(".json"):
                 studentName = f"{f.split('_')[2]} {f.split('_')[3]}"
-                with open(f"{self.__subDir}/{f}/main.cpp",'r') as submission:
-                        headers = self.__checkHeaders(f"{self.__subDir}/{f}/main.cpp")
+                with open(f"{self.__subDir}/{f}/main.cpp", 'r'):
+                    headers = self.__checkHeaders(f"{self.__subDir}/{f}/main.cpp")
 
-                        program = cindex.Index.create()
-                        ast = program.parse(f"{self.__subDir}/{f}/main.cpp", args=['-std=c++11', '-nostdinc', '-nostdlibinc'])
-                        self.__checkAST(ast.cursor, studentName)
+                    program = cindex.Index.create()
+                    ast = program.parse(f"{self.__subDir}/{f}/main.cpp", args=['-std=c++11', '-nostdinc', '-nostdlibinc'])
+                    self.__checkAST(ast.cursor, studentName)
 
-                        if self.__students:
-                            if headers:
-                                if studentName not in self.__students:
-                                    self.__students[studentName] = {"totalFound": 0, "headers": list(),
-                                                                    "wordsFound": dict(dict())}
-                                self.__students[studentName]["headers"] = headers
+                    if self.__students:
+                        if headers:
+                            if studentName not in self.__students:
+                                self.__students[studentName] = {"totalFound": 0, "headers": list(),
+                                                                "wordsFound": dict(dict())}
+                            self.__students[studentName]["headers"] = headers
 
         return self.__students
-
 
     '''
         This method is designed to check all import statements at the start
@@ -92,20 +90,19 @@ class CppAnalyzer:
         from.
     '''
     def __checkAST(self, currNode, studentName):
-        for i,w in enumerate(self.__words):
+        for i, w in enumerate(self.__words):
             if w == currNode.spelling:
                 if currNode.kind == CursorKind.CALL_EXPR:
                     if currNode.location.file.name == "main.cpp":
                         continue
 
-                if not studentName in self.__students:
-                    self.__students[studentName] = {"totalFound":0, "headers":list(), "wordsFound":dict(dict())}
-                if not w in self.__students[studentName]["wordsFound"]:
+                if studentName not in self.__students:
+                    self.__students[studentName] = {"totalFound": 0, "headers": list(), "wordsFound": dict(dict())}
+                if w not in self.__students[studentName]["wordsFound"]:
                     self.__students[studentName]["wordsFound"][w] = {"count": 0, "positions": list()}
 
                 self.__students[studentName]["wordsFound"][w]["count"] += 1
-                self.__students[studentName]["wordsFound"][w]["positions"].append(f"<{currNode.location.line}."
-                                                                                        f"{currNode.location.column}>")
+                self.__students[studentName]["wordsFound"][w]["positions"].append(f"<{currNode.location.line}.{currNode.location.column}>")
 
         for c in currNode.get_children():
             self.__checkAST(c, studentName)
