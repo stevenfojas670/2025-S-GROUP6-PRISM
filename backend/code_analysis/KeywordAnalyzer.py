@@ -19,6 +19,7 @@ from code_analysis.cpp.CppAnalyzer import CppAnalyzer
 class KeywordAnalyzer:
     """Create object to perform keyword analysis."""
 
+
     __words: set = None
     __course: str = None
     __assignment: str = None
