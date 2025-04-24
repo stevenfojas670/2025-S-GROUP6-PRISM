@@ -17,7 +17,6 @@ from django.shortcuts import get_object_or_404
 from rest_framework import filters, viewsets
 from django_filters.rest_framework import DjangoFilterBackend
 from prism_backend.mixins import CachedViewMixin
-from django.views.decorators.http import require_POST
 from assignments.models import Assignments, Submissions
 from scipy.spatial import ConvexHull, QhullError
 from sklearn.decomposition import PCA
@@ -43,7 +42,6 @@ from .models import (
     StudentReport,
     StudentSemesterProfile,
 )
-from assignments.models import Assignments
 
 from .serializers import (
     CheatingGroupsSerializer,
@@ -62,6 +60,12 @@ from .utils.similarity_analysis import (
     get_all_scores_by_student,
     update_all_pair_stats,
 )
+
+# NOTE: The following import is commented out because it is not used in this file.
+# from django.views.decorators.http import require_POST
+# we may need this later because some of the views create new ojects
+# in the database and we may want to use POST instead of GET for those views.
+# right now all is get for easy of use without account creation
 
 # Set up non-interactive backend for matplotlib
 matplotlib.use("Agg")
@@ -494,8 +498,8 @@ def kmeans_clusters_plot(request, course_id, semester_id):
     avg_z = {lbl: centroids[lbl][0] for lbl in unique_labels}
 
     #    Determine which label is lowest vs highest risk.
-    low_lbl = min(unique_labels, key=lambda l: avg_z[l])
-    high_lbl = max(unique_labels, key=lambda l: avg_z[l])
+    low_lbl = min(unique_labels, key=lambda label: avg_z[label])
+    high_lbl = max(unique_labels, key=lambda label: avg_z[label])
 
     # 5) Define colors, markers, and legend entries per cluster.
     color_map = {}
@@ -533,7 +537,7 @@ def kmeans_clusters_plot(request, course_id, semester_id):
         )
 
         pts = list(zip(xs, ys))
-        # Draw a convex hull if >=3 points
+        # Draw a convex hull if ≥3 points
         if len(pts) >= 3:
             try:
                 hull = ConvexHull(pts)
@@ -593,17 +597,26 @@ def run_kmeans_for_pair_stats(
     max_multiplier=2,
 ):
     """
-    1) Optionally we can use student_km to get per-student labels.
-    2) Build and weight a 5-dim feature matrix for each pair.
-    3) Standardize, use gap statistic to pick best_k.
-    4) Fit KMeans(best_k), identify the “red” cluster;
-       if it’s too large, clear FlaggedStudentPair;
-       otherwise bulk-create new FlaggedStudentPair records.
-    5) Remap PairFlagStat.kmeans_label so 0 = lowest composite score.
+    1) Optionally use student_km for per-student labels.
+
+    2) Build an 8-dim feature matrix for each pair:
+       [ mean_z*|mean_z|,
+         max_z*|max_z|,
+         mean_similarity,
+         proportion*100,
+         sum_of_student_labels,
+         flagged_count²,
+         total_similarity,
+         total_z_score ]
+    3) Standardize + gap statistic → pick best_k.
+    4) Fit KMeans(best_k) → find “red” cluster;
+       if red_size > red_threshold: clear flags,
+       else bulk-create new FlaggedStudentPair rows.
+    5) Remap PairFlagStat.kmeans_label so 0 = lowest risk.
     """
     start_ts = time.time()
 
-    # 1) Load all PairFlagStat rows at once
+    # 1) load all pair stats at once
     pairs = list(
         PairFlagStat.objects.filter(
             course_catalog_id=course_id,
@@ -613,96 +626,86 @@ def run_kmeans_for_pair_stats(
     if not pairs:
         raise Http404("No pair statistics available")
 
-    # 1a) Build student_id → cluster_label map, either from the passed model
-    #     or from the database, defaulting to 0 if missing.
+    # 1a) build student_id → cluster_label map
     if student_km:
-        ids = student_km._fit_student_ids_
-        labs = student_km.labels_
-        student_lbl = dict(zip(ids, labs))
+        label_map = dict(zip(student_km._fit_student_ids_, student_km.labels_))
     else:
-        prof_qs = StudentSemesterProfile.objects.filter(
-            course_catalog_id=course_id,
-            semester_id=semester_id,
-        ).only("student_id", "cluster_label")
-        student_lbl = {p.student_id: (p.cluster_label or 0) for p in prof_qs}
+        label_map = {
+            p.student_id: (p.cluster_label or 0)
+            for p in StudentSemesterProfile.objects.filter(
+                course_catalog_id=course_id,
+                semester_id=semester_id,
+            ).only("student_id", "cluster_label")
+        }
 
-    # 2) Assemble raw feature matrix shape=(num_pairs, 5)
-    #    Features: mean_z^9, max_z^5, mean_sim^2, proportion*100, sum of student labels
-    X_raw = np.zeros((len(pairs), 5), dtype=float)
-    for idx, ps in enumerate(pairs):
-        X_raw[idx, 0] = ps.mean_z_score**9
-        X_raw[idx, 1] = ps.max_z_score**5
-        X_raw[idx, 2] = ps.mean_similarity**2
-        X_raw[idx, 3] = ps.proportion * 100.0
-        la = student_lbl.get(ps.student_a_id, 0)
-        lb = student_lbl.get(ps.student_b_id, 0)
-        X_raw[idx, 4] = la + lb
+    # 2) assemble raw 8-dim matrix
+    X_raw = np.zeros((len(pairs), 8), dtype=float)
+    for i, ps in enumerate(pairs):
+        # squared z-scores preserve sign and accentuate large values
+        X_raw[i, 0] = ps.mean_z_score * abs(ps.mean_z_score)
+        X_raw[i, 1] = ps.max_z_score * abs(ps.max_z_score)
+        # raw average similarity and percent of comparisons
+        X_raw[i, 2] = ps.mean_similarity
+        X_raw[i, 3] = ps.proportion * 100.0
+        # link to student-level risk clusters
+        X_raw[i, 4] = label_map.get(ps.student_a_id, 0) + label_map.get(
+            ps.student_b_id, 0
+        )
+        # cumulative indicators from PairFlagStat
+        X_raw[i, 5] = ps.flagged_count**2
+        X_raw[i, 6] = ps.total_similarity
+        X_raw[i, 7] = ps.total_z_score
 
-    # 3) Standardize each feature to mean=0, std=1 for fair clustering
+    # 3) standardize so each feature has mean=0, std=1
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X_raw)
 
-    # 3a) Define a helper to compute within-cluster dispersion
     def _dispersion(data, labels, centers):
+        """Compute within-cluster dispersion for gap statistic."""
         return sum(
-            np.sum((data[labels == i] - center) ** 2)
-            for i, center in enumerate(centers)
+            np.sum((data[labels == lbl] - ctr) ** 2) for lbl, ctr in enumerate(centers)
         )
 
-    # 3b) Gap statistic: compare our Wk to random reference distributions
+    # 3a) gap statistic to select best_k
     mins = X_scaled.min(axis=0)
     maxs = X_scaled.max(axis=0)
-    best_k = None
     best_gap = -np.inf
-
+    best_k = 2
     for k in range(2, n_clusters + 1):
-        km_ref = KMeans(n_clusters=k, random_state=random_state)
-        km_ref.fit(X_scaled)
+        km_ref = KMeans(n_clusters=k, random_state=random_state).fit(X_scaled)
         Wk = _dispersion(X_scaled, km_ref.labels_, km_ref.cluster_centers_)
         logWk = np.log(Wk)
-
         ref_logs = []
         for _ in range(b_refs):
-            Xb = np.random.uniform(mins, maxs, size=X_scaled.shape)
-            kmb = KMeans(n_clusters=k, random_state=random_state)
-            kmb.fit(Xb)
+            Xb = np.random.uniform(mins, maxs, X_scaled.shape)
+            kmb = KMeans(n_clusters=k, random_state=random_state).fit(Xb)
             Wkb = _dispersion(Xb, kmb.labels_, kmb.cluster_centers_)
             ref_logs.append(np.log(Wkb))
-
         gap_k = np.mean(ref_logs) - logWk
         if gap_k > best_gap:
             best_gap, best_k = gap_k, k
 
-    # 4) Fit final KMeans and possibly adjust if “red” cluster too large
-    current_k = best_k
-    max_k = n_clusters * max_multiplier
+    # 4) final KMeans fit and red-cluster logic
+    km_final = KMeans(n_clusters=best_k, random_state=random_state)
+    labels = km_final.fit_predict(X_scaled)
 
-    while True:
-        km = KMeans(n_clusters=current_k, random_state=random_state)
-        labels = km.fit_predict(X_scaled)
+    # recover raw centroids to score clusters
+    centers_raw = scaler.inverse_transform(km_final.cluster_centers_)
+    composites = centers_raw[:, 0] + centers_raw[:, 1] + centers_raw[:, 3]
+    red_label = int(np.argmax(composites))
+    red_size = int(np.bincount(labels, minlength=best_k)[red_label])
 
-        # Recover raw centroids to compute composite scores
-        centers_raw = scaler.inverse_transform(km.cluster_centers_)
-        # Composite = mean_z^9 + max_z^5 + proportion*100
-        composites = centers_raw[:, 0] + centers_raw[:, 1] + centers_raw[:, 3]
+    # clear any old flagged pairs first
+    FlaggedStudentPair.objects.filter(
+        course_catalog_id=course_id,
+        semester_id=semester_id,
+    ).delete()
 
-        # Identify which label is “red” (highest composite)
-        red_lbl = int(np.argmax(composites))
-        counts = np.bincount(labels, minlength=current_k)
-        red_size = int(counts[red_lbl])
-
-        # If too many in red, clear flags and stop
-        if red_size > red_threshold:
-            FlaggedStudentPair.objects.filter(
-                course_catalog_id=course_id,
-                semester_id=semester_id,
-            ).delete()
-            break
-
-        # Otherwise, collect and bulk-create new flagged pairs
+    # if red cluster is small enough, flag each member
+    if red_size <= red_threshold:
         flagged = []
         for ps, lbl in zip(pairs, labels):
-            if lbl == red_lbl:
+            if lbl == red_label:
                 max_sim = getattr(ps, "max_similarity", ps.mean_similarity)
                 flagged.append(
                     FlaggedStudentPair(
@@ -716,146 +719,152 @@ def run_kmeans_for_pair_stats(
                         max_z_score=ps.max_z_score,
                     )
                 )
-
         if flagged:
             with transaction.atomic():
                 FlaggedStudentPair.objects.bulk_create(flagged, ignore_conflicts=True)
-        break
 
-    # 5) Remap cluster labels so 0 always = lowest-risk centroid
+    # 5) remap labels so 0 = lowest-risk cluster
     order = np.argsort(composites)
     remap = {old: new for new, old in enumerate(order)}
     for ps, lbl in zip(pairs, labels):
         ps.kmeans_label = remap[int(lbl)]
-
     with transaction.atomic():
         PairFlagStat.objects.bulk_update(pairs, ["kmeans_label"])
 
-    # Log timing and return the fitted model
-    duration = time.time() - start_ts
     print(
-        f"✔️ run_kmeans_for_pair_stats completed in "
-        f"{duration:.2f}s; red_size={red_size}"
+        f"✔️ run_kmeans_for_pair_stats done in "
+        f"{time.time() - start_ts:.2f}s; red_size={red_size}"
     )
-    return km
+    return km_final
 
 
 @require_GET
 def kmeans_pairs_plot(request, course_id, semester_id):
     """
-    Generate a 2D PCA scatter plot of K-Means clusters for submission pairs.
+    Generate a 2D PCA scatter of submission-pair clusters using an 8-dim feature.
 
-    • Fetch all pair statistics for this course and semester in one go.
-    • Build a 5-dimensional feature matrix (z-scores, similarity, student labels).
-    • Standardize and reduce to 2D via PCA for plotting.
-    • Identify the “red” (highest-risk) cluster; if it’s too large, only
-      highlight the single worst pair, otherwise show low/medium/high clusters.
-    • Render convex hulls or circles around clusters and annotate as needed.
-    • Return the plot as a PNG HTTP response.
+    Feature vector. Steps:
+      1) Fetch all PairFlagStat rows (with students) in one query.
+      2) Build an 8-dim matrix per pair:
+         [ mean_z*|mean_z|,
+           max_z*|max_z|,
+           mean_similarity,
+           proportion*100,
+           student_label_sum,
+           flagged_count²,
+           total_similarity,
+           total_z_score ]
+      3) Standardize, then reduce to 2D via PCA.
+      4) Identify the “red” cluster by PC1 centroid. If too many points,
+         highlight only the single worst pair; otherwise show Low/Med/High.
+      5) Draw convex hulls or circles, annotate as needed.
+      6) Return the plot as a PNG HTTP response.
     """
-    # 1) Load all PairFlagStat rows at once, including related students
+    # 1) Load every pair stat with related students in one go
     pairs = list(
         PairFlagStat.objects.filter(
-            course_catalog_id=course_id, semester_id=semester_id
+            course_catalog_id=course_id,
+            semester_id=semester_id,
         ).select_related("student_a", "student_b")
     )
     if not pairs:
-        # No data to show, so return 404
         raise Http404("No pair statistics found.")
 
-    # 2) Build a quick lookup of student_id → student cluster label
-    profs = StudentSemesterProfile.objects.filter(
+    # 1a) Build a student_id → cluster_label lookup in one query
+    profiles = StudentSemesterProfile.objects.filter(
         course_catalog_id=course_id,
         semester_id=semester_id,
     ).only("student_id", "cluster_label")
-    student_lbl = {p.student_id: (p.cluster_label or 0) for p in profs}
+    label_map = {prof.student_id: (prof.cluster_label or 0) for prof in profiles}
 
-    # 3) Assemble the raw feature matrix for clustering:
-    #    [avg_z**9, max_z**5, mean_sim**2, proportion*100, label_sum]
-    X_raw = np.vstack(
-        [
-            [
-                ps.mean_z_score**9,
-                ps.max_z_score**5,
-                ps.mean_similarity**2,
-                ps.proportion * 100.0,
-                student_lbl.get(ps.student_a_id, 0)
-                + student_lbl.get(ps.student_b_id, 0),
-            ]
-            for ps in pairs
-        ]
-    )
-    labels = np.array([ps.kmeans_label for ps in pairs])
+    # 2) Assemble the raw 8-dim feature matrix
+    X_raw = np.zeros((len(pairs), 8), dtype=float)
+    for idx, ps in enumerate(pairs):
+        # amplify z-scores by squaring with sign
+        X_raw[idx, 0] = ps.mean_z_score * abs(ps.mean_z_score)
+        X_raw[idx, 1] = ps.max_z_score * abs(ps.max_z_score)
+        # raw mean similarity and proportion of flagged comparisons
+        X_raw[idx, 2] = ps.mean_similarity
+        X_raw[idx, 3] = ps.proportion * 100.0
+        # link pair to combined student risk labels
+        X_raw[idx, 4] = label_map.get(ps.student_a_id, 0) + label_map.get(
+            ps.student_b_id, 0
+        )
+        # cumulative stats from PairFlagStat
+        X_raw[idx, 5] = ps.flagged_count**2
+        X_raw[idx, 6] = ps.total_similarity
+        X_raw[idx, 7] = ps.total_z_score
 
-    # 4) Standardize features then project to 2D via PCA
-    X_scaled = StandardScaler().fit_transform(X_raw)
+    # 3) Standardize features to mean=0, std=1 for PCA
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X_raw)
+
+    # 3a) Reduce to 2D with PCA
     pca = PCA(n_components=2, random_state=42)
     coords = pca.fit_transform(X_scaled)
     dim1, dim2 = coords[:, 0], coords[:, 1]
     var1, var2 = pca.explained_variance_ratio_[:2] * 100
 
-    # 5) Determine which cluster is “red” by highest centroid on PC1
-    unique_lbls = sorted(set(labels))
-    centroids = {lbl: dim1[labels == lbl].mean() for lbl in unique_lbls}
-    red_lbl = max(centroids, key=centroids.get)
-    red_mask = labels == red_lbl
-    red_n = int(red_mask.sum())
+    # 4) Identify the “red” cluster by highest PC1 centroid
+    labels = np.array([ps.kmeans_label for ps in pairs])
+    unique_labels = sorted(set(labels))
+    centroids = {cluster: dim1[labels == cluster].mean() for cluster in unique_labels}
+    red_label = max(centroids, key=centroids.get)
+    red_mask = labels == red_label
+    red_count = int(red_mask.sum())
 
-    # 6) Decide plotting mode based on red cluster size
+    # 5) Decide whether to highlight one worst pair or show clusters
     red_threshold = 30
-    if red_n > red_threshold:
-        # Too many flagged pairs: highlight only the single worst one
+    if red_count > red_threshold:
+        # too many reds → mark only the single worst composite score
         composite_scores = X_raw[:, 0] + X_raw[:, 1] + X_raw[:, 3]
         worst_idx = int(np.argmax(composite_scores))
-        highlight = np.zeros_like(labels, dtype=bool)
-        highlight[worst_idx] = True
+        highlight_mask = np.zeros_like(labels, dtype=bool)
+        highlight_mask[worst_idx] = True
 
-        low_mask = ~highlight
-        med_mask = np.zeros_like(labels, bool)
-        high_mask = highlight
+        low_mask = ~highlight_mask
+        med_mask = np.zeros_like(labels, dtype=bool)
+        high_mask = highlight_mask
 
-        low_n, med_n, high_n = int(low_mask.sum()), 0, 1
+        low_count, med_count, high_count = (int(low_mask.sum()), 0, 1)
         highlight_color = "gold"
         highlight_label = "Outlier Candidate (n=1)"
         show_names = False
     else:
-        # Standard low/medium/high split
-        low_lbl = min(centroids, key=centroids.get)
-        med_lbls = [l for l in unique_lbls if l not in (low_lbl, red_lbl)]
+        # normal Low/Med/High split
+        low_label = min(centroids, key=centroids.get)
+        med_labels = [lbl for lbl in unique_labels if lbl not in (low_label, red_label)]
 
-        low_mask = labels == low_lbl
-        med_mask = np.isin(labels, med_lbls)
+        low_mask = labels == low_label
+        med_mask = np.isin(labels, med_labels)
         high_mask = red_mask
 
-        low_n = int(low_mask.sum())
-        med_n = int(med_mask.sum())
-        high_n = red_n
+        low_count = int(low_mask.sum())
+        med_count = int(med_mask.sum())
+        high_count = red_count
 
         highlight_color = "darkred"
-        highlight_label = f"High Intensity (n={high_n})"
+        highlight_label = f"High Intensity (n={high_count})"
         show_names = True
 
-    # 7) Begin plotting clusters
+    # 6) Prepare the figure and axes
     fig = plt.figure(figsize=(14, 9))
     ax = fig.add_axes([0.00, 0.04, 0.78, 0.96])
 
-    def plot_group(mask, color, marker, label):
-        """
-        Scatter and hull/circle for one cluster group.
-        """
-        xi, yi = dim1[mask], dim2[mask]
+    def plot_group(mask, color, marker, legend_text):
+        """Plot one cluster: scatter + hull or circle."""
+        xs, ys = dim1[mask], dim2[mask]
         ax.scatter(
-            xi,
-            yi,
+            xs,
+            ys,
             c=color,
             marker=marker,
             s=100,
             edgecolor="k",
             alpha=0.8,
-            label=label,
+            label=legend_text,
         )
-
-        points = list(zip(xi, yi))
+        points = list(zip(xs, ys))
         if len(points) >= 3:
             try:
                 hull = ConvexHull(points)
@@ -864,47 +873,44 @@ def kmeans_pairs_plot(request, course_id, semester_id):
             except QhullError:
                 pass
         elif points:
-            # For 1-2 points, draw a circle around center
-            cx, cy = np.mean(xi), np.mean(yi)
-            radius = (np.hypot(xi - cx, yi - cy).max() if len(xi) > 1 else 0.5) * 1.5
-            circ = Circle((cx, cy), radius=radius, color=color, alpha=0.2)
-            ax.add_patch(circ)
+            cx, cy = np.mean(xs), np.mean(ys)
+            radius = (np.hypot(xs - cx, ys - cy).max() if len(xs) > 1 else 0.5) * 1.5
+            ax.add_patch(Circle((cx, cy), radius=radius, color=color, alpha=0.2))
 
-    # 8) Plot each group: low always green, medium if any, then high/outlier
-    plot_group(low_mask, "green", "o", f"Low Intensity (n={low_n})")
+    # 7) Draw Low, Medium (if any), and High/outlier clusters
+    plot_group(low_mask, "green", "o", f"Low Intensity (n={low_count})")
     if med_mask.any():
-        plot_group(med_mask, "gold", "s", f"Medium Intensity (n={med_n})")
+        plot_group(med_mask, "gold", "s", f"Medium Intensity (n={med_count})")
     plot_group(high_mask, highlight_color, "^", highlight_label)
 
-    # 9) Annotate and list names only for true high cluster
-    if show_names and high_n:
+    # 8) Annotate high cluster members if required
+    if show_names and high_count:
         high_indices = np.where(high_mask)[0]
-        for idx_num, i in enumerate(high_indices, start=1):
+        for idx_num, idx in enumerate(high_indices, start=1):
             ax.annotate(
                 str(idx_num),
-                xy=(dim1[i], dim2[i]),
+                xy=(dim1[idx], dim2[idx]),
                 xytext=(4, 4),
                 textcoords="offset points",
                 fontsize=11,
                 fontweight="bold",
                 color=highlight_color,
             )
-
-        # Sidebar with student-pair names and max_z
-        names = [
-            f"{pairs[i].student_a.first_name} "
-            f"{pairs[i].student_a.last_name} & "
-            f"{pairs[i].student_b.first_name} "
-            f"{pairs[i].student_b.last_name}"
-            for i in high_indices
+        sidebar_names = [
+            f"{pairs[idx].student_a.first_name} "
+            f"{pairs[idx].student_a.last_name} & "
+            f"{pairs[idx].student_b.first_name} "
+            f"{pairs[idx].student_b.last_name}"
+            for idx in high_indices
         ]
-        y_top, y_bottom = 0.98, 0.04
-        y_step = (y_top - y_bottom) / (len(names) + 1)
-        for j, text in enumerate(names, start=1):
+        y_start, y_end = 0.98, 0.04
+        step = (y_start - y_end) / (len(sidebar_names) + 1)
+        for line_num, text in enumerate(sidebar_names, start=1):
             fig.text(
                 0.79,
-                y_top - j * y_step,
-                f"{j}: {text} " f"(max_z={pairs[high_indices[j-1]].max_z_score:.2f})",
+                y_start - line_num * step,
+                f"{line_num}: {text} "
+                f"(max_z={pairs[high_indices[line_num - 1]].max_z_score:.2f})",
                 transform=fig.transFigure,
                 va="top",
                 ha="left",
@@ -914,7 +920,6 @@ def kmeans_pairs_plot(request, course_id, semester_id):
                 family="monospace",
             )
     elif not show_names:
-        # If we’re in outlier mode, show a simple info message
         fig.text(
             0.79,
             0.5,
@@ -926,38 +931,37 @@ def kmeans_pairs_plot(request, course_id, semester_id):
             fontstyle="italic",
         )
 
-    # 10) Final axes labels, title, grid, and legend
+    # 9) Final styling: axes labels, title, grid, legend
     ax.set_xlabel(f"Dimension 1 ({var1:.1f}% var)", fontsize=12)
     ax.set_ylabel(f"Dimension 2 ({var2:.1f}% var)", fontsize=12)
-
     course = get_object_or_404(CourseCatalog, pk=course_id)
     sem = get_object_or_404(Semester, pk=semester_id)
     ax.set_title(f"K-Means Clusters → {course} Pairs → {sem}", fontsize=16, pad=15)
     ax.grid(True, linestyle=":", linewidth=0.5, alpha=0.7)
-
     fig.subplots_adjust(bottom=0.06)
-    ncols = 2 if not med_mask.any() else 3
+    legend_cols = 2 if not med_mask.any() else 3
     ax.legend(
         loc="upper center",
         bbox_to_anchor=(0.50, -0.18),
-        ncol=ncols,
+        ncol=legend_cols,
         title="Pair Groups",
         frameon=True,
         fontsize=11,
         title_fontsize=13,
     )
 
-    # 11) Render to PNG and return in HTTP response
-    buf = io.BytesIO()
-    fig.savefig(buf, format="png", dpi=150, bbox_inches="tight")
+    # 10) Render to PNG and return HTTP response
+    buffer = io.BytesIO()
+    fig.savefig(buffer, format="png", dpi=150, bbox_inches="tight")
     plt.close(fig)
-    buf.seek(0)
-    return HttpResponse(buf.read(), content_type="image/png")
+    buffer.seek(0)
+    return HttpResponse(buffer.read(), content_type="image/png")
 
 
 def _generate_one(assignment_id):
     """
-    Helper for ThreadPoolExecutor: close the old DB connection
+    Help for ThreadPoolExecutor: close the old DB connection.
+
     then run the report service in a fresh one.
     """
     connection.close()
@@ -968,6 +972,7 @@ def _generate_one(assignment_id):
 def run_full_pipeline(request, course_id, semester_id):
     """
     0) Clear old AssignmentReport rows for this course+semester.
+
     1) Clear old PairFlagStat rows.
     2) Parallel-generate each assignment report and collect flagged pairs.
     3) Bulk-upsert PairFlagStat entries.

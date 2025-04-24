@@ -1,5 +1,6 @@
 """
-This module defines a Django management command to populate dummy data
+This module defines a Django management command to populate dummy data.
+
 for CS472 (Capstone Project) with 3 sections, 6 cheaters per section,
 and symmetric similarity scores among submissions.
 """
@@ -24,7 +25,8 @@ from cheating.models import SubmissionSimilarityPairs
 
 class Command(BaseCommand):
     """
-    Populate dummy data for CS472: 3 sections, 6 cheaters per section,
+    Populate dummy data for CS472: 3 sections, 6 cheaters per section.
+
     symmetric similarity scores.
     """
 
@@ -207,11 +209,7 @@ class Command(BaseCommand):
                             seen.add(key)
 
                             # Determine similarity percentage and file name
-                            if (
-                                a in cheat_assigns
-                                and s1 in cheaters
-                                and s2 in cheaters
-                            ):
+                            if a in cheat_assigns and s1 in cheaters and s2 in cheaters:
                                 pct = random.randint(40, 55)
                                 fname = "__all__"
                             else:
@@ -249,7 +247,9 @@ class Command(BaseCommand):
                 submap = add_submissions(assignments, students, inst)
                 seed_symmetric_pairs(assignments, students, submap, num_cheaters=6)
 
-            self.stdout.write(self.style.SUCCESS(
-                "✅ Dummy CS472 data loaded with 3 sections — "
-                "Cheaters: 40–55%, Non-Cheaters: 5–35%, Symmetric!"
-            ))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    "✅ Dummy CS472 data loaded with 3 sections — "
+                    "Cheaters: 40–55%, Non-Cheaters: 5–35%, Symmetric!"
+                )
+            )

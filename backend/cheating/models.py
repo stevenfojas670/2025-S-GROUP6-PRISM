@@ -387,10 +387,13 @@ class StudentSemesterProfile(models.Model):
     )
 
     class Meta:
+        """Model metadata configuration."""
+
         unique_together = (("student", "course_catalog", "semester"),)
         ordering = ["-last_updated"]
 
     def __str__(self):
+        """Return a human‑readable summary of this student’s profile."""
         return (
             f"{self.student} | {self.course_catalog} @ {self.semester}: "
             f"avg_z={self.avg_z_score:.2f}, max_z={self.max_z_score:.2f}, "
@@ -399,6 +402,21 @@ class StudentSemesterProfile(models.Model):
 
 
 class PairFlagStat(models.Model):
+    """
+    Represents a pair of students and their similarity statistics.
+
+    This model is used to track the similarity scores and
+    z-scores between two students over time.
+    It is used to identify potential cheating behavior
+    and to analyze the relationships between students.
+    It includes fields for the course catalog, semester,
+    students involved, and various statistics related to
+    their submissions.
+    It also includes methods to calculate the proportion
+    of flagged assignments and the mean similarity
+    and z-scores for the pair.
+    """
+
     course_catalog = models.ForeignKey(
         "courses.CourseCatalog", on_delete=models.CASCADE
     )
@@ -414,7 +432,7 @@ class PairFlagStat(models.Model):
     assignments_shared = models.PositiveIntegerField(default=0)
     # how many times they landed in the high‑z / red zone
     flagged_count = models.PositiveIntegerField(default=0)
-    # cumulative sum of their raw similarity %s (or whatever your score metric is)
+    # cumulative sum of their raw similarity %s
     total_similarity = models.FloatField(default=0.0)
     # cumulative sum of their z‑scores
     total_z_score = models.FloatField(default=0.0)
@@ -427,6 +445,8 @@ class PairFlagStat(models.Model):
     )
 
     class Meta:
+        """Model metadata configuration."""
+
         unique_together = (
             "course_catalog",
             "semester",
@@ -436,6 +456,7 @@ class PairFlagStat(models.Model):
 
     @property
     def proportion(self) -> float:
+        """Calculate the proportion of flagged assignments."""
         return (
             (self.flagged_count / self.assignments_shared)
             if self.assignments_shared
@@ -444,6 +465,7 @@ class PairFlagStat(models.Model):
 
     @property
     def mean_similarity(self) -> float:
+        """Calculate the mean similarity score."""
         return (
             (self.total_similarity / self.assignments_shared)
             if self.assignments_shared
@@ -452,6 +474,7 @@ class PairFlagStat(models.Model):
 
     @property
     def mean_z_score(self) -> float:
+        """Calculate the mean z-score."""
         return (
             (self.total_z_score / self.assignments_shared)
             if self.assignments_shared
@@ -461,7 +484,13 @@ class PairFlagStat(models.Model):
 
 class FlaggedStudentPair(models.Model):
     """
-    Represents a pair of students flagged for potential misconduct."""
+    Represents a pair of students flagged for potential misconduct.
+
+    This model captures the similarity scores and z-scores
+    between two students over time.
+    It is used to identify potential cheating behavior
+    and to analyze the relationships between students.
+    """
 
     course_catalog = models.ForeignKey(
         "courses.CourseCatalog", on_delete=models.CASCADE
@@ -480,4 +509,6 @@ class FlaggedStudentPair(models.Model):
     flagged_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        """Model metadata configuration."""
+
         unique_together = ("course_catalog", "semester", "student_a", "student_b")

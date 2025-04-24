@@ -51,7 +51,7 @@ class Command(BaseCommand):
                 session="Regular",
                 defaults={"name": "Spring 2025 – Regular"},
             )
-            User = get_user_model()
+            # User = get_user_model()
 
             # 2) Define each course’s config
             configs = [
@@ -121,16 +121,12 @@ class Command(BaseCommand):
                     total_cheaters=cfg["cheaters"],
                 )
 
-            self.stdout.write(
-                self.style.SUCCESS("\n✅ All dummy courses complete!")
-            )
+            self.stdout.write(self.style.SUCCESS("\n✅ All dummy courses complete!"))
 
     # ─────────────────── Helper methods ───────────────────
 
     def _get_or_create_course(self, subject, catalog):
-        """
-        Fetch or create the CourseCatalog entry for a subject and catalog.
-        """
+        """Fetch or create the CourseCatalog entry for a subject and catalog."""
         course, _ = CourseCatalog.objects.get_or_create(
             subject=subject,
             catalog_number=catalog,
@@ -143,9 +139,7 @@ class Command(BaseCommand):
         return course
 
     def _create_professor(self, section):
-        """
-        Create a dummy Professor + User for a given section.
-        """
+        """Create a dummy Professor + User for a given section."""
         uname = f"prof_{section}_{random.randint(1000, 9999)}"
         user, _ = get_user_model().objects.get_or_create(
             username=uname,
@@ -158,9 +152,7 @@ class Command(BaseCommand):
         return prof
 
     def _create_students(self, start_idx, count):
-        """
-        Create `count` Students starting at index `start_idx`.
-        """
+        """Create `count` Students starting at index `start_idx`."""
         students = []
         for i in range(count):
             idx = start_idx + i
@@ -179,9 +171,7 @@ class Command(BaseCommand):
         return students
 
     def _create_assignments(self, course, semester, count):
-        """
-        Create `count` weekly Assignments starting Jan 15 2025.
-        """
+        """Create `count` weekly Assignments starting Jan 15 2025."""
         assignments = []
         due_start = date(2025, 1, 15)
         for num in range(1, count + 1):
@@ -202,12 +192,10 @@ class Command(BaseCommand):
                         f"{course.catalog_number}_{num}.pdf"
                     ),
                     "moss_report_directory_path": (
-                        f"/tmp/moss/{course.subject}"
-                        f"{course.catalog_number}_{num}"
+                        f"/tmp/moss/{course.subject}" f"{course.catalog_number}_{num}"
                     ),
                     "bulk_ai_directory_path": (
-                        f"/tmp/ai/{course.subject}"
-                        f"{course.catalog_number}_{num}"
+                        f"/tmp/ai/{course.subject}" f"{course.catalog_number}_{num}"
                     ),
                     "has_policy": False,
                 },
@@ -226,7 +214,8 @@ class Command(BaseCommand):
         total_cheaters,
     ):
         """
-        Core logic to populate one course:
+        Core logic to populate one course.
+
           A) Clear old data
           B) Create sections + students
           C) Select & rename cheaters
@@ -298,29 +287,21 @@ class Command(BaseCommand):
                             file_path=path,
                         )
                     )
-        Submissions.objects.bulk_create(
-            subs_to_create, ignore_conflicts=True
-        )
-        self.stdout.write(
-            f"  ✔️ Created {len(subs_to_create)} submissions"
-        )
+        Submissions.objects.bulk_create(subs_to_create, ignore_conflicts=True)
+        self.stdout.write(f"  ✔️ Created {len(subs_to_create)} submissions")
 
         # F) Build a lookup for assignment+student → submission
         subs = Submissions.objects.filter(
             assignment__course_catalog=course,
             assignment__semester=semester,
         ).only("id", "assignment_id", "student_id")
-        submap = {
-            (sub.assignment_id, sub.student_id): sub for sub in subs
-        }
+        submap = {(sub.assignment_id, sub.student_id): sub for sub in subs}
 
         # G) Bulk-create symmetric similarity pairs
         pairs_to_create = []
         for a in assignments:
             # Choose 2–4 assignments where cheaters pair with high similarity
-            cheat_on = set(
-                random.sample(assignments, random.randint(2, 4))
-            )
+            cheat_on = set(random.sample(assignments, random.randint(2, 4)))
 
             # 1) Cheater↔Cheater with 40–60% similarity
             if a in cheat_on:
@@ -345,11 +326,7 @@ class Command(BaseCommand):
             for i in range(len(all_students)):
                 for j in range(i + 1, len(all_students)):
                     si, sj = all_students[i], all_students[j]
-                    if (
-                        a in cheat_on
-                        and si in cheaters
-                        and sj in cheaters
-                    ):
+                    if a in cheat_on and si in cheaters and sj in cheaters:
                         continue  # skip already added
                     s1 = submap[(a.pk, si.pk)]
                     s2 = submap[(a.pk, sj.pk)]
@@ -369,9 +346,7 @@ class Command(BaseCommand):
         SubmissionSimilarityPairs.objects.bulk_create(
             pairs_to_create, ignore_conflicts=True
         )
-        self.stdout.write(
-            f"  ✔️ Created {len(pairs_to_create)} similarity pairs"
-        )
+        self.stdout.write(f"  ✔️ Created {len(pairs_to_create)} similarity pairs")
 
         # H) Final summary for this course
         self.stdout.write(

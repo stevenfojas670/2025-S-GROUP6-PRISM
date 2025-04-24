@@ -1,14 +1,10 @@
 """Populate dummy data for courses, students, and similarity pairs."""
 
 import random
-import os
 from datetime import date, timedelta
-from collections import defaultdict
-
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from django.db.models import Q
 
 from courses.models import (
     CourseCatalog,
@@ -39,7 +35,7 @@ class Command(BaseCommand):
                 session="Regular",
                 defaults={"name": "Spring 2025 – Regular"},
             )
-            User = get_user_model()
+            # User = get_user_model()
 
             # 2) Configuration for each dummy course
             configs = [
@@ -84,9 +80,9 @@ class Command(BaseCommand):
                     total_cheaters=cfg["cheaters"],
                 )
 
-            self.stdout.write(self.style.SUCCESS(
-                "✅ Dummy data populated for all courses!"
-            ))
+            self.stdout.write(
+                self.style.SUCCESS("✅ Dummy data populated for all courses!")
+            )
 
     # ──────────────────────── Helpers ────────────────────────
 
@@ -164,8 +160,7 @@ class Command(BaseCommand):
                         f"{num}.pdf"
                     ),
                     "moss_report_directory_path": (
-                        f"/tmp/moss/{course.subject}{course.catalog_number}_"
-                        f"{num}"
+                        f"/tmp/moss/{course.subject}{course.catalog_number}_" f"{num}"
                     ),
                     "bulk_ai_directory_path": (
                         f"/tmp/ai/{course.subject}{course.catalog_number}_{num}"
@@ -186,13 +181,13 @@ class Command(BaseCommand):
         num_assigns,
         total_cheaters,
     ):
-        """
-        Core routine that:
-          1) clears old data,
-          2) creates sections with professors + students,
-          3) marks random subset as “Cheater”,
-          4) bulk-creates submissions,
-          5) bulk-creates similarity pairs.
+        """Core routine that.
+
+        1) clears old data,
+        2) creates sections with professors + students,
+        3) marks random subset as “Cheater”,
+        4) bulk-creates submissions,
+        5) bulk-creates similarity pairs.
         """
         course = self._get_or_create_course(subject, catalog)
 
@@ -205,9 +200,7 @@ class Command(BaseCommand):
             assignment__course_catalog=course,
             assignment__semester=semester,
         ).delete()
-        self.stdout.write(
-            "  🔄 Cleared old submissions & similarity for this course"
-        )
+        self.stdout.write("  🔄 Cleared old submissions & similarity for this course")
 
         # 1) Build one CourseInstance + its students for each section
         section_groups = []
@@ -262,9 +255,7 @@ class Command(BaseCommand):
 
         # 4b) Bulk-insert all submissions at once
         Submissions.objects.bulk_create(submission_objs, ignore_conflicts=True)
-        self.stdout.write(
-            f"  ✔️ Bulk‐created {len(submission_objs)} submissions"
-        )
+        self.stdout.write(f"  ✔️ Bulk‐created {len(submission_objs)} submissions")
 
         # 4c) Re-fetch submissions to build a lookup map
         subs = Submissions.objects.filter(
@@ -303,11 +294,7 @@ class Command(BaseCommand):
                 for j in range(i + 1, len(all_students)):
                     si, sj = all_students[i], all_students[j]
                     # skip cheater↔cheater combos if already done above
-                    if (
-                        a in cheat_on and
-                        si in cheaters and
-                        sj in cheaters
-                    ):
+                    if a in cheat_on and si in cheaters and sj in cheaters:
                         continue
 
                     s1 = submap[(a.pk, si.pk)]
@@ -331,15 +318,15 @@ class Command(BaseCommand):
             pair_objs,
             ignore_conflicts=True,
         )
-        self.stdout.write(
-            f"  ✔️ Bulk‐created {len(pair_objs)} similarity pairs"
-        )
+        self.stdout.write(f"  ✔️ Bulk‐created {len(pair_objs)} similarity pairs")
 
         # Final summary status
-        self.stdout.write(self.style.SUCCESS(
-            f"  ✔️ {subject}{catalog}: "
-            f"{num_sections} sections, "
-            f"{len(all_students)} students, "
-            f"{num_assigns} assignments, "
-            f"{total_cheaters} cheaters"
-        ))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"  ✔️ {subject}{catalog}: "
+                f"{num_sections} sections, "
+                f"{len(all_students)} students, "
+                f"{num_assigns} assignments, "
+                f"{total_cheaters} cheaters"
+            )
+        )

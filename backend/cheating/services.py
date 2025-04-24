@@ -1,6 +1,21 @@
 """
-This module analyzes similarity scores between student submissions
-and clusters both students and submission pairs to detect anomalies.
+This module analyzes similarity scores between student submissions.
+
+It generates reports, flags students, and clusters them based on their
+similarity scores. The process involves:
+1. Generating a report for each assignment.
+2. Cleaning up old reports to avoid stale data.
+3. Flagging students based on their similarity scores.
+4. Bulk recomputing semester profiles for students.
+5. Running KMeans clustering on the semester profiles to identify
+    clusters of students with similar behavior.
+6. The clustering process uses the gap statistic to determine the
+    optimal number of clusters.
+7. It applies feature weights to the data and standardizes it before
+    clustering.
+8. The clustering algorithm is KMeans, which is used to group students
+    based on their similarity scores.
+9. The final clustering results are stored in the database.
 """
 
 import os
@@ -216,7 +231,7 @@ def run_kmeans_for_course_semester(
     course_id, semester_id, n_clusters=6, random_state=0, b_refs=10, sim_threshold=45.0
 ):
     """
-    Cluster students based on their semester profiles:
+    Cluster students based on their semester profiles.
 
     1. Load all StudentSemesterProfile entries.
     2. Stack their 7-dim vectors → X_raw.
@@ -240,7 +255,7 @@ def run_kmeans_for_course_semester(
     # 2) Stack into a matrix
     X_raw = np.vstack([p.feature_vector for p in profiles])
 
-    # 3) Apply weights and standardize
+    # 3) Apply weights and standardize, we can play with these
     weights = np.array([1.0, 1.5, 1.2, 0.5, 0.5, 0.5, 1.5], dtype=float)
     X_weighted = X_raw * weights
     scaler = StandardScaler()

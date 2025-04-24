@@ -1,5 +1,6 @@
 """
-This module defines a Django management command to populate dummy data
+This module defines a Django management command to populate dummy data.
+
 for CS481 (Capstone in Cybersecurity) with 5 sections, a total of 4 cheaters,
 and symmetric similarity scores across submissions.
 """
@@ -24,7 +25,8 @@ from cheating.models import SubmissionSimilarityPairs
 
 class Command(BaseCommand):
     """
-    Populate dummy data for CS481:
+    Populate dummy data for CS481.
+
     - 5 sections
     - 4 cheaters total
     - symmetric similarity scores among submissions
@@ -38,6 +40,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """
         1) Ensure Spring 2025 – Regular semester exists.
+
         2) Create or fetch CS481 course entry.
         3) Loop over 5 sections:
            a) Create a dummy professor and course instance.
@@ -62,9 +65,7 @@ class Command(BaseCommand):
             base_codegd = 800_000
 
             def create_prof(section):
-                """
-                Create or fetch a dummy professor for the given section.
-                """
+                """Create or fetch a dummy professor for the given section."""
                 username = f"prof_cs481_{section}"
                 email = f"{username}@example.edu"
                 user, _ = User.objects.get_or_create(
@@ -75,9 +76,7 @@ class Command(BaseCommand):
                 return prof
 
             def get_course():
-                """
-                Fetch or create the CS481 catalog entry.
-                """
+                """Fetch or create the CS481 catalog entry."""
                 course, _ = CourseCatalog.objects.get_or_create(
                     subject="CS",
                     catalog_number=481,
@@ -90,9 +89,7 @@ class Command(BaseCommand):
                 return course
 
             def create_students(start_index, count):
-                """
-                Create or fetch `count` students starting at given index.
-                """
+                """Create or fetch `count` students starting at given index."""
                 students = []
                 for i in range(count):
                     idx = start_index + i
@@ -112,9 +109,7 @@ class Command(BaseCommand):
                 return students
 
             def create_assignments(course, sem):
-                """
-                Create 8 weekly assignments starting Jan 20, 2025.
-                """
+                """Create 8 weekly assignments starting Jan 20, 2025."""
                 assignments = []
                 start_due = date(2025, 1, 20)
                 for num in range(1, 9):
@@ -142,6 +137,7 @@ class Command(BaseCommand):
             def add_submissions(assignments, students, instance):
                 """
                 Create one submission per student per assignment.
+
                 Returns a mapping for seeding pairs.
                 """
                 submap = {}
@@ -164,11 +160,10 @@ class Command(BaseCommand):
                         submap[(a.pk, s.pk)] = sub
                 return submap
 
-            def create_symmetrical_pairs(
-                assignments, students, submap, cheaters
-            ):
+            def create_symmetrical_pairs(assignments, students, submap, cheaters):
                 """
-                Seed SubmissionSimilarityPairs symmetrically:
+                Seed SubmissionSimilarityPairs symmetrically.
+
                 - Cheaters get 40–55% on 2 random assignments.
                 - All other pairs get 5–35%.
                 """
@@ -197,12 +192,8 @@ class Command(BaseCommand):
 
                     # Lower similarity for all other pairs
                     for i, sA in enumerate(students):
-                        for sB in students[i + 1 :]:
-                            if (
-                                a in cheat_assigns
-                                and sA in cheaters
-                                and sB in cheaters
-                            ):
+                        for sB in students[i + 1:]:
+                            if a in cheat_assigns and sA in cheaters and sB in cheaters:
                                 # Already created above
                                 continue
                             sub1 = submap[(a.pk, sA.pk)]
@@ -254,9 +245,7 @@ class Command(BaseCommand):
                         c.save(update_fields=["first_name"])
                     cheaters_remaining -= pick
 
-                create_symmetrical_pairs(
-                    assignments, students, submap, cheaters_here
-                )
+                create_symmetrical_pairs(assignments, students, submap, cheaters_here)
 
             self.stdout.write(
                 self.style.SUCCESS(
