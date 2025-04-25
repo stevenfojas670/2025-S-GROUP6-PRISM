@@ -36,8 +36,10 @@ from bs4 import BeautifulSoup
 # datetime: lockdate and duedate
 from datetime import datetime
 
+# API_Data: allows access to codegrade API
 from extract_student_data_from_API import API_Data
 
+# codegrade: allow above import to work
 import codegrade
 
 
@@ -93,12 +95,14 @@ class Canvas_api:
         self.populate_file_dictionary()
 
         """
-        Useful funcitons for data extraction:
+        Useful functions for data extraction:
+            - download_files():
             - get_course_catalog_table():
             - get_courseinstances_table():
-            - get_courses_professor():
+            - get_courses_professor_tables():
             - get_courses_stud_tables():
             - get_ta_tables():
+            - get_assi_tables():
         """
 
     # Populate the Class Attributes
@@ -254,7 +258,7 @@ class Canvas_api:
             print(str(e), file=sys.stderr)
             return None
 
-    def get_courses_professor(self):
+    def get_courses_professor_tables(self):
         """
         Add logic to export the columns of courses_professors/courses_professorenrollments.
 
@@ -573,17 +577,18 @@ def main():
 
     catalog = canvas_data.get_course_catalog_table()
     instance = canvas_data.get_courseinstances_table()
-    prof = canvas_data.get_courses_professor()
+    prof = canvas_data.get_courses_professor_tables()
     stud = canvas_data.get_courses_stud_tables()
     ta = canvas_data.get_ta_tables()
     assis = canvas_data.get_assi_tables()
 
-    print(catalog)
-    print(instance)
-    print(prof)
-    print(stud)
-    print(ta)
-    print(assis)
+    print("\n\n", canvas_data.file_dictionary, "\n\n")
+    print(catalog, "\n\n")
+    print(instance, "\n\n")
+    print(prof, "\n\n")
+    print(stud, "\n\n")
+    print(ta, "\n\n")
+    print(assis, "\n\n")
 
 
 if __name__ == "__main__":
