@@ -33,7 +33,26 @@ class Parser:
             return False
 
     def __isRegister(self):
-
+        return self.__lookahead in [TokenType.RAX, TokenType.EAX, TokenType.AX, TokenType.AL,
+                                    TokenType.RBX, TokenType.EBX, TokenType.BX, TokenType.BL,
+                                    TokenType.RCX, TokenType.ECX, TokenType.CX, TokenType.CL,
+                                    TokenType.RDX, TokenType.EDX, TokenType.DX, TokenType.DL,
+                                    TokenType.RSI, TokenType.ESI, TokenType.SI, TokenType.SIL,
+                                    TokenType.RDI, TokenType.EDI, TokenType.DI, TokenType.DIL,
+                                    TokenType.RBP, TokenType.EBP, TokenType.BP, TokenType.BPL,
+                                    TokenType.RSP, TokenType.ESP, TokenType.SP, TokenType.SPL,
+                                    TokenType.R8, TokenType.R8D, TokenType.R8W, TokenType.R8B,
+                                    TokenType.R9, TokenType.R9D, TokenType.R9W, TokenType.R9B,
+                                    TokenType.R10, TokenType.R10D, TokenType.R10W, TokenType.R10B,
+                                    TokenType.R11, TokenType.R11D, TokenType.R11W, TokenType.R11B,
+                                    TokenType.R12, TokenType.R12D, TokenType.R12W, TokenType.R12B,
+                                    TokenType.R13, TokenType.R13D, TokenType.R13W, TokenType.R13B,
+                                    TokenType.R14, TokenType.R14D, TokenType.R14W, TokenType.R14B,
+                                    TokenType.R15, TokenType.R15D, TokenType.R15W, TokenType.R15B,
+                                    TokenType.XMM0, TokenType.XMM1, TokenType.XMM2, TokenType.XMM3,
+                                    TokenType.XMM4, TokenType.XMM5, TokenType.XMM6, TokenType.XMM7,
+                                    TokenType.XMM8, TokenType.XMM9, TokenType.XMM10, TokenType.XMM11,
+                                    TokenType.XMM12, TokenType.XMM13, TokenType.XMM14, TokenType.XMM15]
 
     # 1. <program> := <data>? <bss>? <text> ;
     def program(self):
