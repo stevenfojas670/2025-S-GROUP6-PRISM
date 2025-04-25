@@ -13,6 +13,7 @@ class Parser:
         self.__lookahead:Token = tokens[0]
 
     def __consume(self):
+        print(self.__lookahead.toString())
         self.__currPos += 1
         self.__lookahead = self.__tokens[self.__currPos]
 
@@ -33,7 +34,7 @@ class Parser:
             return False
 
     def __isRegister(self):
-        return self.__lookahead in [TokenType.RAX, TokenType.EAX, TokenType.AX, TokenType.AL,
+        return self.__lookahead.getType() in [TokenType.RAX, TokenType.EAX, TokenType.AX, TokenType.AL,
                                     TokenType.RBX, TokenType.EBX, TokenType.BX, TokenType.BL,
                                     TokenType.RCX, TokenType.ECX, TokenType.CX, TokenType.CL,
                                     TokenType.RDX, TokenType.EDX, TokenType.DX, TokenType.DL,
@@ -69,19 +70,31 @@ class Parser:
         while self.__peek(TokenType.ID):
             self.__decl()
 
-    # 3. <decl> := <ID> ('equ' | 'db' | 'dw' | 'dd' | 'dq') <number> ;
+    # 3. <decl> := <ID> ('equ' | 'db' | 'dw' | 'dd' | 'dq') <number> (',' <number>)* ;
     def __decl(self):
         self.__match(TokenType.ID)
         if self.__peek(TokenType.EQU):
             self.__match(TokenType.EQU)
+            self.__match(TokenType.NUM)
         else:
-            if self.__peek(TokenType.DB): self.__match(TokenType.DB)
-            elif self.__peek(TokenType.DW): self.__match(TokenType.DW)
-            elif self.__peek(TokenType.DD): self.__match(TokenType.DD)
-            elif self.__peek(TokenType.DQ): self.__match(TokenType.DQ)
-            else: print("Error!")
-
-        self.__match(TokenType.NUM)
+            while (self.__peek(TokenType.DB)
+                   or self.__peek(TokenType.DW)
+                   or self.__peek(TokenType.DD)
+                   or self.__peek(TokenType.DQ)):
+                if self.__peek(TokenType.DB):
+                    self.__match(TokenType.DB)
+                elif self.__peek(TokenType.DW):
+                    self.__match(TokenType.DW)
+                elif self.__peek(TokenType.DD):
+                    self.__match(TokenType.DD)
+                elif self.__peek(TokenType.DQ):
+                    self.__match(TokenType.DQ)
+                else:
+                    exit(1)
+                self.__match(TokenType.NUM)
+                while(self.__match(TokenType.COMMA)):
+                    self.__match(TokenType.COMMA)
+                    self.__match(TokenType.NUM)
 
     # 4. <bss> := 'section' '.bss' <unit_decl>* ;
     def __bss(self):
@@ -90,14 +103,15 @@ class Parser:
         while self.__peek(TokenType.ID):
             self.__unitDecl()
 
-    # 5. <unit_decl> := <ID> ('resb' | 'resw' | 'resd' | 'resq') <number> ;
+    # 5. <unit_decl> := <ID> ('resb' | 'resw' | 'resd' | 'resq') <number> ( ',' <number> )*;
     def __unitDecl(self):
         self.__match(TokenType.ID)
         if self.__peek(TokenType.RESB): self.__match(TokenType.RESB)
         elif self.__peek(TokenType.RESW): self.__match(TokenType.RESW)
         elif self.__peek(TokenType.RESD): self.__match(TokenType.RESD)
         elif self.__peek(TokenType.RESQ): self.__match(TokenType.RESQ)
-        else: print("Error!")
+        else:
+            exit(1)
         self.__match(TokenType.NUM)
 
     # 6. <text> := 'section' '.text' 'global' '_start' '_start:' <code> ;
@@ -150,23 +164,26 @@ class Parser:
         else:
             self.__consume()
 
-    # 12. <data_size> := <size_keyword> '[' ( '(' | ')' | '+' | '*' | <reg_keyword> | <number> )+ ']' ;
+    # 12. <data_size> := <size_keyword> '[' ( '(' | ')' | '+' | '*' | <reg_keyword> | <number> | <ID> )+ ']' ;
     def __dataSize(self):
         if self.__peek(TokenType.BYTE): self.__match(TokenType.BYTE)
         elif self.__peek(TokenType.WORD): self.__match(TokenType.WORD)
         elif self.__peek(TokenType.DWORD): self.__match(TokenType.DWORD)
         elif self.__peek(TokenType.QWORD): self.__match(TokenType.QWORD)
-        else: print("ERROR")
+        else:
+            exit(1)
 
         self.__match(TokenType.LBRACK)
         while not self.__peek(TokenType.RBRACK):
             if self.__peek(TokenType.LPAREN): self.__match(TokenType.LPAREN)
             elif self.__peek(TokenType.RPAREN): self.__match(TokenType.RPAREN)
             elif self.__peek(TokenType.PLUS): self.__match(TokenType.PLUS)
-            elif self.__peek(TokenType.MUL): self.__match(TokenType.MUL)
+            elif self.__peek(TokenType.MULTIPLY): self.__match(TokenType.MULTIPLY)
             elif self.__peek(TokenType.NUM): self.__match(TokenType.NUM)
+            elif self.__peek(TokenType.ID): self.__match(TokenType.ID)
             elif self.__isRegister(): self.__consume()
-            else: print("Error!")
+            else:
+                exit(1)
         self.__match(TokenType.RBRACK)
 
 
