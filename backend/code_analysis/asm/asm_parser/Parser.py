@@ -193,6 +193,8 @@ class Parser:
             else:
                 lst.append(self.__instr())
 
+        return lst
+
     # 8. <func_decl> := 'global' <ID> <label> ;
     def __funcDecl(self):
         self.__match(TokenType.GLOBAL)
@@ -216,11 +218,14 @@ class Parser:
                 or self.__peek(TokenType.WORD)
                 or self.__peek(TokenType.DWORD)
                 or self.__peek(TokenType.QWORD)):
-            info = self.__instrInfo()
-            endPos = info[len(info)-1].getEndPos()
+            info:Token = self.__instrInfo()
+            if info[len(info)-1] is DataSize:
+                endPos = info[len(info)-1].getEndPos()
+            else:
+                endPos = info[len(info)-1].getEndPos()
             return Instruction(startPos, endPos, instr, info)
 
-        return Instruction(startPos, endPos, instr)
+        return Instruction(startPos, endPos, instr, list())
 
     # 11. <instr_info> := <reg_keyword> | <data_size> ;
     def __instrInfo(self):
@@ -230,6 +235,7 @@ class Parser:
               or self.__peek(TokenType.WORD)
               or self.__peek(TokenType.DWORD)
               or self.__peek(TokenType.QWORD)):
+
             if (self.__peek(TokenType.BYTE)
                     or self.__peek(TokenType.WORD)
                     or self.__peek(TokenType.DWORD)
@@ -241,8 +247,12 @@ class Parser:
 
             if (self.__peek(TokenType.COMMA)):
                 self.__consume()
+                if(self.__peek(TokenType.NUM)):
+                    lst.append(self.__lookahead)
+                    self.__consume()
             else:
-                return lst 
+                return lst
+        return lst
 
     # 12. <data_size> := <size_keyword> '[' ( '(' | ')' | '+' | '-' | '*' | '%' | <reg_keyword> | <number> | <ID> )+ ']' ;
     def __dataSize(self):
