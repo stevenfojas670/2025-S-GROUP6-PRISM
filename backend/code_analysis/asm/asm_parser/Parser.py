@@ -1,5 +1,8 @@
 
 from code_analysis.asm.asm_asl.DataDeclaration import DataDeclaration
+from code_analysis.asm.asm_asl.DataSize import DataSize
+from code_analysis.asm.asm_asl.Instruction import Instruction
+from code_analysis.asm.asm_asl.Label import Label
 from code_analysis.asm.asm_asl.Program import Program
 from code_analysis.asm.asm_asl.UnitDeclaration import UnitDeclaration
 from code_analysis.asm.asm_token.Token import Token
@@ -169,25 +172,26 @@ class Parser:
 
         return UnitDeclaration(startPos, endPos, name, size, values)
 
-    # 6. <text> := 'section' '.text' 'global' '_start' '_start:' <code> ;
+    # 6. <text> := 'section' '.text' 'global' '_start' <ID> <code> ;
     def __text(self):
         self.__match(TokenType.SECTION)
         self.__match(TokenType.ID_TEXT)
         self.__match(TokenType.GLOBAL)
         self.__match(TokenType.START)
         self.__match(TokenType.ID)
-        self.__code()
+        return self.__code()
 
     # 7. <code> := ( <func_decl> (<label> | <instr>)* )* ;
     def __code(self):
         if self.__peek(TokenType.GLOBAL):
             self.__funcDecl()
 
+        lst = list()
         while not self.__peek(TokenType.EOF):
             if self.__peek(TokenType.ID):
-                self.__label()
+                lst.append(self.__label())
             else:
-                self.__instr()
+                lst.append(self.__instr())
 
     # 8. <func_decl> := 'global' <ID> <label> ;
     def __funcDecl(self):
@@ -197,30 +201,53 @@ class Parser:
 
     # 9. <label> := <ID> ;
     def __label(self):
+        label = self.__lookahead
         self.__match(TokenType.ID)
+        return Label(label)
 
     # 10. <instr> := <instr_keyword> (<instr_info>)? ;
     def __instr(self):
+        startPos = self.__lookahead.getStartPos()
+        endPos = self.__lookahead.getEndPos()
+        instr = self.__lookahead.getLexeme()
         self.__consume()
         if(self.__isRegister()
                 or self.__peek(TokenType.BYTE)
                 or self.__peek(TokenType.WORD)
                 or self.__peek(TokenType.DWORD)
                 or self.__peek(TokenType.QWORD)):
-            self.__instrInfo()
+            info = self.__instrInfo()
+            endPos = info[len(info)-1].getEndPos()
+            return Instruction(startPos, endPos, instr, info)
 
-    # 11. <instr_info> := (<reg_keyword> | <data_size>) *;
+        return Instruction(startPos, endPos, instr)
+
+    # 11. <instr_info> := <reg_keyword> | <data_size> ;
     def __instrInfo(self):
-        if (self.__peek(TokenType.BYTE)
-                or self.__peek(TokenType.WORD)
-                or self.__peek(TokenType.DWORD)
-                or self.__peek(TokenType.QWORD)):
-            self.__dataSize()
-        else:
-            self.__consume()
+        lst = list()
+        while(self.__isRegister()
+              or self.__peek(TokenType.BYTE)
+              or self.__peek(TokenType.WORD)
+              or self.__peek(TokenType.DWORD)
+              or self.__peek(TokenType.QWORD)):
+            if (self.__peek(TokenType.BYTE)
+                    or self.__peek(TokenType.WORD)
+                    or self.__peek(TokenType.DWORD)
+                    or self.__peek(TokenType.QWORD)):
+                lst.append(self.__dataSize())
+            else:
+                lst.append(self.__lookahead)
+                self.__consume()
+
+            if (self.__peek(TokenType.COMMA)):
+                self.__consume()
+            else:
+                return lst 
 
     # 12. <data_size> := <size_keyword> '[' ( '(' | ')' | '+' | '-' | '*' | '%' | <reg_keyword> | <number> | <ID> )+ ']' ;
     def __dataSize(self):
+        startPos = self.__lookahead.getStartPos()
+        size = self.__lookahead.getLexeme()
         if self.__peek(TokenType.BYTE): self.__match(TokenType.BYTE)
         elif self.__peek(TokenType.WORD): self.__match(TokenType.WORD)
         elif self.__peek(TokenType.DWORD): self.__match(TokenType.DWORD)
@@ -228,8 +255,10 @@ class Parser:
         else:
             exit(1)
 
+        lst = list()
         self.__match(TokenType.LBRACK)
         while not self.__peek(TokenType.RBRACK):
+            lst.append(self.__lookahead)
             if self.__peek(TokenType.LPAREN): self.__match(TokenType.LPAREN)
             elif self.__peek(TokenType.RPAREN): self.__match(TokenType.RPAREN)
             elif self.__peek(TokenType.PLUS): self.__match(TokenType.PLUS)
@@ -241,4 +270,7 @@ class Parser:
             elif self.__isRegister(): self.__consume()
             else:
                 exit(1)
+        endPos = self.__lookahead.getEndPos()
         self.__match(TokenType.RBRACK)
+
+        return DataSize(startPos, endPos, size, lst)
