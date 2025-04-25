@@ -1,4 +1,6 @@
 
+from code_analysis.asm.asm_asl.DataDeclaration import DataDeclaration
+from code_analysis.asm.asm_asl.Program import Program
 from code_analysis.asm.asm_token.Token import Token
 from code_analysis.asm.asm_token.TokenType import TokenType
 
@@ -57,30 +59,48 @@ class Parser:
 
     # 1. <program> := <data>? <bss>? <text> ;
     def program(self):
+        startPos = self.__lookahead.getStartPos()
+        dataLst = None
         if self.__peek(TokenType.SECTION) and self.__peekNext(TokenType.ID_DATA):
-            self.__data()
+            dataLst = self.__data()
         elif self.__peek(TokenType.SECTION) and self.__peekNext(TokenType.ID_BSS):
             self.__bss()
         self.__text()
 
+        program = Program(startPos, self.__lookahead.getEndPos(), dataLst)
+
     # 2. <data> := 'section' '.data' <decl>* ;
     def __data(self):
+        initList = list()
         self.__match(TokenType.SECTION)
         self.__match(TokenType.ID_DATA)
         while self.__peek(TokenType.ID):
-            self.__decl()
+            initList.append(self.__decl())
+
+        return initList
 
     # 3. <decl> := <ID> (('equ' | 'db' | 'dw' | 'dd' | 'dq') <number> (',' <number>)*)* ;
     def __decl(self):
+        name = self.__lookahead.getLexeme()
+        startPos = self.__lookahead.getStartPos()
+        isConstant = False
         self.__match(TokenType.ID)
         if self.__peek(TokenType.EQU):
             self.__match(TokenType.EQU)
+            value = self.__lookahead.getLexeme()
+            endPos = self.__lookahead.getEndPos()
             self.__match(TokenType.NUM)
+            isConstant = True
+            return DataDeclaration(startPos, endPos, name, None, value, isConstant)
         else:
+            value = list()
+            size = None
+            endPos = None
             while (self.__peek(TokenType.DB)
                    or self.__peek(TokenType.DW)
                    or self.__peek(TokenType.DD)
                    or self.__peek(TokenType.DQ)):
+                size = self.__lookahead.getLexeme()
                 if self.__peek(TokenType.DB):
                     self.__match(TokenType.DB)
                 elif self.__peek(TokenType.DW):
@@ -91,10 +111,16 @@ class Parser:
                     self.__match(TokenType.DQ)
                 else:
                     exit(1)
+                value.append(self.__lookahead.getLexeme())
+                endPos = self.__lookahead.getEndPos()
                 self.__match(TokenType.NUM)
                 while(self.__match(TokenType.COMMA)):
                     self.__match(TokenType.COMMA)
+                    value.append(self.__lookahead.getLexeme())
+                    endPos = self.__lookahead.getEndPos()
                     self.__match(TokenType.NUM)
+
+            return DataDeclaration(startPos, endPos, name, size, value, isConstant)
 
     # 4. <bss> := 'section' '.bss' <unit_decl>* ;
     def __bss(self):
