@@ -2,6 +2,7 @@
 
 from django.db import models
 from assignments.models import Assignments, Submissions
+from django.contrib.postgres.fields import ArrayField
 
 
 class CheatingGroups(models.Model):
@@ -254,3 +255,260 @@ class LongitudinalCheatingGroupInstances(models.Model):
         Displays the short-term and longitudinal group IDs.
         """
         return f"CheatingGroup {self.id} → " f"LongitudinalGroup {self.id}"
+
+
+class AssignmentReport(models.Model):
+    """Stores summary statistics for one Assignment’s similarity report."""
+
+    assignment = models.ForeignKey(
+        "assignments.Assignments",
+        on_delete=models.CASCADE,
+        related_name="reports",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    mu = models.FloatField(help_text="Population mean of all similarity scores")
+    sigma = models.FloatField(help_text="Population standard deviation")
+    variance = models.FloatField(help_text="Population variance (sigma^2)")
+
+    class Meta:
+        """Model metadata configuration."""
+
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        """Return a human‐readable summary of the report."""
+        return (
+            f"Report for Assignment {self.assignment_id} "
+            f"@ {self.created_at:%Y-%m-%d %H:%M} — "
+            f"μ={self.mu:.2f}, σ={self.sigma:.2f}"
+        )
+
+
+class StudentReport(models.Model):
+    """Stores per-student inference results for one AssignmentReport."""
+
+    report = models.ForeignKey(
+        AssignmentReport,
+        on_delete=models.CASCADE,
+        related_name="student_reports",
+    )
+    submission = models.ForeignKey(
+        "assignments.Submissions",
+        on_delete=models.CASCADE,
+        help_text="The student submission referenced",
+    )
+    mean_similarity = models.FloatField(help_text="Student’s sample mean similarity")
+    z_score = models.FloatField(help_text="The student’s z-score of mean similarity")
+    ci_lower = models.FloatField(help_text="Lower bound of 95% CI for mean similarity")
+    ci_upper = models.FloatField(help_text="Upper bound of 95% CI for mean similarity")
+
+    class Meta:
+        """Model metadata configuration."""
+
+        unique_together = ("report", "submission")
+        ordering = ["-z_score"]
+        indexes = [
+            models.Index(fields=["submission"]),
+            # index z_score and mean_similarity so filters are fast
+            models.Index(fields=["z_score"]),
+            models.Index(fields=["mean_similarity"]),
+        ]
+
+    def __str__(self):
+        """Return a human‐readable summary of this student’s inference."""
+        return (
+            f"StudentReport(sub={self.submission_id}, "
+            f"z={self.z_score:.2f}, "
+            f"CI=[{self.ci_lower:.1f},{self.ci_upper:.1f}])"
+        )
+
+
+class StudentSemesterProfile(models.Model):
+    """Pre‑computed semester‑level metrics for each student."""
+
+    student = models.ForeignKey(
+        "courses.Students",
+        on_delete=models.CASCADE,
+        help_text="Which student these features belong to",
+    )
+    course_catalog = models.ForeignKey(
+        "courses.CourseCatalog",
+        on_delete=models.CASCADE,
+        help_text="The course this profile belongs to",
+    )
+    semester = models.ForeignKey(
+        "courses.Semester",
+        on_delete=models.CASCADE,
+        help_text="The semester this profile covers",
+    )
+
+    # ─────────────── raw summary stats ───────────────
+    avg_z_score = models.FloatField(
+        help_text="Average of that student's z‑scores across assignments"
+    )
+    max_z_score = models.FloatField(help_text="Maximum single‑assignment z‑score")
+    num_flagged_assignments = models.PositiveIntegerField(
+        help_text="How many assignments where z > threshold"
+    )
+
+    mean_similarity_variance = models.FloatField(
+        help_text="Population variance of per‑assignment mean similarities"
+    )
+    mean_similarity_skewness = models.FloatField(
+        help_text="Skewness of per‑assignment mean similarities"
+    )
+    mean_similarity_kurtosis = models.FloatField(
+        help_text="Kurtosis of per‑assignment mean similarities"
+    )
+
+    high_similarity_fraction = models.FloatField(
+        help_text=(
+            "Fraction of *all* pairwise comparisons > threshold " "across the semester"
+        )
+    )
+
+    # ───────── full 7‑dim feature vector ─────────
+    feature_vector = ArrayField(
+        base_field=models.FloatField(),
+        size=7,
+        help_text="[avg_z, max_z, num_flagged, sim_var, sim_skew, sim_kurt, high_frac]",
+    )
+
+    # ───────── clustering output ─────────
+    cluster_label = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Cluster assignment from the latest KMeans run",
+    )
+
+    last_updated = models.DateTimeField(
+        auto_now=True,
+        help_text="When these features were last recomputed",
+    )
+
+    class Meta:
+        """Model metadata configuration."""
+
+        unique_together = (("student", "course_catalog", "semester"),)
+        ordering = ["-last_updated"]
+
+    def __str__(self):
+        """Return a human‑readable summary of this student’s profile."""
+        return (
+            f"{self.student} | {self.course_catalog} @ {self.semester}: "
+            f"avg_z={self.avg_z_score:.2f}, max_z={self.max_z_score:.2f}, "
+            f"cluster={self.cluster_label}"
+        )
+
+
+class PairFlagStat(models.Model):
+    """
+    Represents a pair of students and their similarity statistics.
+
+    This model is used to track the similarity scores and
+    z-scores between two students over time.
+    It is used to identify potential cheating behavior
+    and to analyze the relationships between students.
+    It includes fields for the course catalog, semester,
+    students involved, and various statistics related to
+    their submissions.
+    It also includes methods to calculate the proportion
+    of flagged assignments and the mean similarity
+    and z-scores for the pair.
+    """
+
+    course_catalog = models.ForeignKey(
+        "courses.CourseCatalog", on_delete=models.CASCADE
+    )
+    semester = models.ForeignKey("courses.Semester", on_delete=models.CASCADE)
+    student_a = models.ForeignKey(
+        "courses.Students", on_delete=models.CASCADE, related_name="+"
+    )
+    student_b = models.ForeignKey(
+        "courses.Students", on_delete=models.CASCADE, related_name="+"
+    )
+
+    # how many assignments both turned in
+    assignments_shared = models.PositiveIntegerField(default=0)
+    # how many times they landed in the high‑z / red zone
+    flagged_count = models.PositiveIntegerField(default=0)
+    # cumulative sum of their raw similarity %s
+    total_similarity = models.FloatField(default=0.0)
+    # cumulative sum of their z‑scores
+    total_z_score = models.FloatField(default=0.0)
+    max_z_score = models.FloatField(default=0.0)
+
+    kmeans_label = models.SmallIntegerField(
+        null=True,
+        blank=True,
+        help_text="Cluster ID from latest KMeans run",
+    )
+
+    class Meta:
+        """Model metadata configuration."""
+
+        unique_together = (
+            "course_catalog",
+            "semester",
+            "student_a",
+            "student_b",
+        )
+
+    @property
+    def proportion(self) -> float:
+        """Calculate the proportion of flagged assignments."""
+        return (
+            (self.flagged_count / self.assignments_shared)
+            if self.assignments_shared
+            else 0.0
+        )
+
+    @property
+    def mean_similarity(self) -> float:
+        """Calculate the mean similarity score."""
+        return (
+            (self.total_similarity / self.assignments_shared)
+            if self.assignments_shared
+            else 0.0
+        )
+
+    @property
+    def mean_z_score(self) -> float:
+        """Calculate the mean z-score."""
+        return (
+            (self.total_z_score / self.assignments_shared)
+            if self.assignments_shared
+            else 0.0
+        )
+
+
+class FlaggedStudentPair(models.Model):
+    """
+    Represents a pair of students flagged for potential misconduct.
+
+    This model captures the similarity scores and z-scores
+    between two students over time.
+    It is used to identify potential cheating behavior
+    and to analyze the relationships between students.
+    """
+
+    course_catalog = models.ForeignKey(
+        "courses.CourseCatalog", on_delete=models.CASCADE
+    )
+    semester = models.ForeignKey("courses.Semester", on_delete=models.CASCADE)
+    student_a = models.ForeignKey(
+        "courses.Students", related_name="+", on_delete=models.CASCADE
+    )
+    student_b = models.ForeignKey(
+        "courses.Students", related_name="+", on_delete=models.CASCADE
+    )
+    mean_similarity = models.FloatField()
+    max_similarity = models.FloatField()
+    mean_z_score = models.FloatField()
+    max_z_score = models.FloatField()
+    flagged_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        """Model metadata configuration."""
+
+        unique_together = ("course_catalog", "semester", "student_a", "student_b")
