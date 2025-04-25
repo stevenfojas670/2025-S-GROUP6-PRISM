@@ -9,8 +9,11 @@ class DataDeclaration(ASL):
     __isConstant:bool = None
 
     def __init__(self, startPos, endPos, name, size, value, constant):
-        super.__init__(startPos, endPos)
+        super().__init__(startPos, endPos)
         self.__name = name
         self.__size = size
         self.__value = value
         self.__isConstant = constant
+
+    def toString(self):
+        return f"{self.__name}"
