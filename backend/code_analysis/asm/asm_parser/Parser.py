@@ -133,13 +133,22 @@ class Parser:
     # 10. <instr> := <instr_keyword> (<instr_info>)? ;
     def __instr(self):
         self.__consume()
-        if(self.__peek(TokenType.BYTE)
+        if(self.__isRegister()
+                or self.__peek(TokenType.BYTE)
                 or self.__peek(TokenType.WORD)
                 or self.__peek(TokenType.DWORD)
-                or self.__peek(TokenType.QWORD))
+                or self.__peek(TokenType.QWORD)):
+            self.__instrInfo()
 
-    # 11. < instr_info > := (< reg_keyword > | < data_size >) *;
-    #
+    # 11. <instr_info> := (<reg_keyword> | <data_size>) *;
+    def __instrInfo(self):
+        if (self.__peek(TokenType.BYTE)
+                or self.__peek(TokenType.WORD)
+                or self.__peek(TokenType.DWORD)
+                or self.__peek(TokenType.QWORD)):
+            self.__dataSize()
+        else:
+            self.__consume()
 
     # 12. <data_size> := <size_keyword> '[' ( '(' | ')' | '+' | '*' | <reg_keyword> | <number> )+ ']' ;
     def __dataSize(self):
@@ -156,7 +165,8 @@ class Parser:
             elif self.__peek(TokenType.PLUS): self.__match(TokenType.PLUS)
             elif self.__peek(TokenType.MUL): self.__match(TokenType.MUL)
             elif self.__peek(TokenType.NUM): self.__match(TokenType.NUM)
-            else: self.__consume()
+            elif self.__isRegister(): self.__consume()
+            else: print("Error!")
         self.__match(TokenType.RBRACK)
 
 
