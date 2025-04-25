@@ -243,10 +243,10 @@ class Parser:
     def __instrInfo(self):
         lst = list()
         while (self.__isRegister()
-              or self.__peek(TokenType.BYTE)
-              or self.__peek(TokenType.WORD)
-              or self.__peek(TokenType.DWORD)
-              or self.__peek(TokenType.QWORD)):
+               or self.__peek(TokenType.BYTE)
+               or self.__peek(TokenType.WORD)
+               or self.__peek(TokenType.DWORD)
+               or self.__peek(TokenType.QWORD)):
 
             if (self.__peek(TokenType.BYTE)
                     or self.__peek(TokenType.WORD)
@@ -259,7 +259,7 @@ class Parser:
 
             if (self.__peek(TokenType.COMMA)):
                 self.__consume()
-                if(self.__peek(TokenType.NUM)):
+                if (self.__peek(TokenType.NUM)):
                     lst.append(self.__lookahead)
                     self.__consume()
             else:
