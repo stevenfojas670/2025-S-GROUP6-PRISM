@@ -70,7 +70,7 @@ class Parser:
         while self.__peek(TokenType.ID):
             self.__decl()
 
-    # 3. <decl> := <ID> ('equ' | 'db' | 'dw' | 'dd' | 'dq') <number> (',' <number>)* ;
+    # 3. <decl> := <ID> (('equ' | 'db' | 'dw' | 'dd' | 'dq') <number> (',' <number>)*)* ;
     def __decl(self):
         self.__match(TokenType.ID)
         if self.__peek(TokenType.EQU):
@@ -103,16 +103,27 @@ class Parser:
         while self.__peek(TokenType.ID):
             self.__unitDecl()
 
-    # 5. <unit_decl> := <ID> ('resb' | 'resw' | 'resd' | 'resq') <number> ( ',' <number> )*;
+    # 5. <unit_decl> := <ID> (('resb' | 'resw' | 'resd' | 'resq') <number> ( ',' <number> )*)*;
     def __unitDecl(self):
         self.__match(TokenType.ID)
-        if self.__peek(TokenType.RESB): self.__match(TokenType.RESB)
-        elif self.__peek(TokenType.RESW): self.__match(TokenType.RESW)
-        elif self.__peek(TokenType.RESD): self.__match(TokenType.RESD)
-        elif self.__peek(TokenType.RESQ): self.__match(TokenType.RESQ)
-        else:
-            exit(1)
-        self.__match(TokenType.NUM)
+        while (self.__peek(TokenType.RESB)
+               or self.__peek(TokenType.RESW)
+               or self.__peek(TokenType.RESD)
+               or self.__peek(TokenType.RESQ)):
+            if self.__peek(TokenType.RESB):
+                self.__match(TokenType.RESB)
+            elif self.__peek(TokenType.RESW):
+                self.__match(TokenType.RESW)
+            elif self.__peek(TokenType.RESD):
+                self.__match(TokenType.RESD)
+            elif self.__peek(TokenType.RESQ):
+                self.__match(TokenType.RESQ)
+            else:
+                exit(1)
+            self.__match(TokenType.NUM)
+            while (self.__match(TokenType.COMMA)):
+                self.__match(TokenType.COMMA)
+                self.__match(TokenType.NUM)
 
     # 6. <text> := 'section' '.text' 'global' '_start' '_start:' <code> ;
     def __text(self):
@@ -164,7 +175,7 @@ class Parser:
         else:
             self.__consume()
 
-    # 12. <data_size> := <size_keyword> '[' ( '(' | ')' | '+' | '*' | <reg_keyword> | <number> | <ID> )+ ']' ;
+    # 12. <data_size> := <size_keyword> '[' ( '(' | ')' | '+' | '-' | '*' | '%' | <reg_keyword> | <number> | <ID> )+ ']' ;
     def __dataSize(self):
         if self.__peek(TokenType.BYTE): self.__match(TokenType.BYTE)
         elif self.__peek(TokenType.WORD): self.__match(TokenType.WORD)
@@ -178,12 +189,12 @@ class Parser:
             if self.__peek(TokenType.LPAREN): self.__match(TokenType.LPAREN)
             elif self.__peek(TokenType.RPAREN): self.__match(TokenType.RPAREN)
             elif self.__peek(TokenType.PLUS): self.__match(TokenType.PLUS)
+            elif self.__peek(TokenType.MINUS): self.__match(TokenType.MINUS)
             elif self.__peek(TokenType.MULTIPLY): self.__match(TokenType.MULTIPLY)
+            elif self.__peek(TokenType.PERCENT): self.__match(TokenType.PERCENT)
             elif self.__peek(TokenType.NUM): self.__match(TokenType.NUM)
             elif self.__peek(TokenType.ID): self.__match(TokenType.ID)
             elif self.__isRegister(): self.__consume()
             else:
                 exit(1)
         self.__match(TokenType.RBRACK)
-
-
