@@ -16,37 +16,42 @@ class Parser:
         self.__currPos += 1
         self.__lookahead = self.__tokens[self.__currPos]
 
-    def __match(self,expected:TokenType):
+    def __match(self, expected:TokenType):
         if self.__lookahead.getType() == expected:
             self.__consume()
             return True
         else:
             return False
 
-    def __currentLA(self):
-        return self.__lookahead.getType()
+    def __peek(self, expected:TokenType):
+        return self.__lookahead.getType() == expected
 
-    def __nextLA(self):
+    def __peekNext(self, expected:TokenType):
         if self.__currPos < len(self.__tokens) - 1:
-            return self.__tokens[self.__currPos+1].getType()
+            return self.__tokens[self.__currPos + 1].getType() == expected
         else:
-            return None
+            return False
 
     # 1. <program> := <data>? <bss>? <text> ;
     def program(self):
-        if self.__currentLA() == TokenType.SECTION and self.__nextLA() == TokenType.ID_DATA:
+        if self.__peek(TokenType.SECTION) and self.__peekNext(TokenType.ID_DATA):
             self.__data()
 
     def __data(self):
         self.__match(TokenType.SECTION)
         self.__match(TokenType.ID_DATA)
-        while self.__currentLA() == TokenType.ID:
+        while self.__peek(TokenType.ID):
             self.__decl()
 
     def __decl(self):
         self.__match(TokenType.ID)
-        if self.__currentLA == TokenType.EQU:
+        if self.__peek(TokenType.EQU):
             self.__match(TokenType.EQU)
-            self.__match(TokenType.NUM)
         else:
-            # if self.__current
+            if self.__peek(TokenType.DB): self.__match(TokenType.DB)
+            elif self.__peek(TokenType.DW): self.__match(TokenType.DW)
+            elif self.__peek(TokenType.DD): self.__match(TokenType.DD)
+            elif self.__peek(TokenType.DQ): self.__match(TokenType.DQ)
+            else: print("Error!")
+
+        self.__match(TokenType.NUM)
