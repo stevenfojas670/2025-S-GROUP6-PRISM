@@ -228,6 +228,7 @@ class Lexer:
             case '.data': return Token(TokenType.ID_DATA, id, startPos, self.__createPosition())
             case '.bss': return Token(TokenType.ID_BSS, id, startPos, self.__createPosition())
             case '.text': return Token(TokenType.ID_TEXT, id, startPos, self.__createPosition())
+            case '_start': return Token(TokenType.START, id, startPos, self.__createPosition())
             case 'mov': return Token(TokenType.MOV, id, startPos, self.__createPosition())
             case 'lea': return Token(TokenType.LEA, id, startPos, self.__createPosition())
             case 'movzx': return Token(TokenType.MOVZX, id, startPos, self.__createPosition())
