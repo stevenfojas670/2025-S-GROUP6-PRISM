@@ -32,6 +32,9 @@ class Parser:
         else:
             return False
 
+    def __isRegister(self):
+
+
     # 1. <program> := <data>? <bss>? <text> ;
     def program(self):
         if self.__peek(TokenType.SECTION) and self.__peekNext(TokenType.ID_DATA):
@@ -89,4 +92,52 @@ class Parser:
 
     # 7. <code> := ( <func_decl> (<label> | <instr>)* )* ;
     def __code(self):
-        pass
+        if self.__peek(TokenType.GLOBAL):
+            self.__funcDecl()
+
+        while not self.__peek(TokenType.EOF):
+            if self.__peek(TokenType.ID):
+                self.__label()
+            else:
+                self.__instr()
+
+    # 8. <func_decl> := 'global' <ID> <label> ;
+    def __funcDecl(self):
+        self.__match(TokenType.GLOBAL)
+        self.__match(TokenType.ID)
+        self.__label()
+
+    # 9. <label> := <ID> ;
+    def __label(self):
+        self.__match(TokenType.ID)
+
+    # 10. <instr> := <instr_keyword> (<instr_info>)? ;
+    def __instr(self):
+        self.__consume()
+        if(self.__peek(TokenType.BYTE)
+                or self.__peek(TokenType.WORD)
+                or self.__peek(TokenType.DWORD)
+                or self.__peek(TokenType.QWORD))
+
+    # 11. < instr_info > := (< reg_keyword > | < data_size >) *;
+    #
+
+    # 12. <data_size> := <size_keyword> '[' ( '(' | ')' | '+' | '*' | <reg_keyword> | <number> )+ ']' ;
+    def __dataSize(self):
+        if self.__peek(TokenType.BYTE): self.__match(TokenType.BYTE)
+        elif self.__peek(TokenType.WORD): self.__match(TokenType.WORD)
+        elif self.__peek(TokenType.DWORD): self.__match(TokenType.DWORD)
+        elif self.__peek(TokenType.QWORD): self.__match(TokenType.QWORD)
+        else: print("ERROR")
+
+        self.__match(TokenType.LBRACK)
+        while not self.__peek(TokenType.RBRACK):
+            if self.__peek(TokenType.LPAREN): self.__match(TokenType.LPAREN)
+            elif self.__peek(TokenType.RPAREN): self.__match(TokenType.RPAREN)
+            elif self.__peek(TokenType.PLUS): self.__match(TokenType.PLUS)
+            elif self.__peek(TokenType.MUL): self.__match(TokenType.MUL)
+            elif self.__peek(TokenType.NUM): self.__match(TokenType.NUM)
+            else: self.__consume()
+        self.__match(TokenType.RBRACK)
+
+
