@@ -50,6 +50,7 @@ class Canvas_api:
     course_code = ""
     course_term_id = ""
     __files = {}
+    file_dictionary = {}
 
     # User data
     __users = {}
@@ -77,6 +78,8 @@ class Canvas_api:
         )
         self.__HEADERS = {"Authorization": "Bearer "}
 
+        self.file_dictionary = {}
+
         # Set all the Class attributes
         self.set_headers()
         self.set_prof()
@@ -87,6 +90,16 @@ class Canvas_api:
         self.set_files()
         self.set_assi()
         self.set_dates()
+        self.populate_file_dictionary()
+
+        """
+        Useful funcitons for data extraction:
+            - get_course_catalog_table():
+            - get_courseinstances_table():
+            - get_courses_professor():
+            - get_courses_stud_tables():
+            - get_ta_tables():
+        """
 
     # Populate the Class Attributes
     def set_headers(self):
@@ -139,9 +152,23 @@ class Canvas_api:
             print(str(e), file=sys.stderr)
 
     def get_course_catalog_table(self):
-        """Add logic to export the columns of course catalog."""
-        """Columns:
-            id,name,subject,catalog_number,course_title,course_level"""
+        """
+        Add logic to export the columns of course catalog.
+
+            Args:
+                NONE
+
+            Return value format:
+                JSON
+
+            Attributes:
+                id              (int)
+                name            (string)
+                subject         (string)
+                catalog_number  (int)
+                course_title    (string)
+                course_level    (string)
+        """
         result = {}
         words = self.course["name"].split()
 
@@ -157,9 +184,22 @@ class Canvas_api:
         return result
 
     def get_courseinstances_table(self):
-        """Retrun a dictionary with keys as table columns."""
-        """Columns: id, section_Number,canvas_course_id,
-        course_catalog_id,professor_id,semester_id,Ta_id"""
+        """
+        Return a dictionary with keys as table columns.
+
+            Args:
+                NONE
+
+            Return value format:
+                JSON
+
+            Attributes:
+                id                  (int)
+                canvas_course_id    (int)
+                professor_id        [(int)]
+                semester_id         (int)
+                Ta_id               [(int)]
+        """
         result = {}
         result["canvas_course_id"] = int(self.__course_id)
         result["semester_id"] = self.find_tailend_id(self.course["enrollment_term_id"])
@@ -215,9 +255,19 @@ class Canvas_api:
             return None
 
     def get_courses_professor(self):
-        """Add logic to export the columns of courses_professors/courses_professorenrollments."""
-        """Columns:
-            User_id, course_instance_id"""
+        """
+        Add logic to export the columns of courses_professors/courses_professorenrollments.
+
+            Args:
+                NONE
+
+            Return value format:
+                JSON
+
+            Attributes:
+                User_id                 (int)
+                course_instance_id      (int)
+        """
         result = {}
         result["course_instance_id"] = self.__course_id
         result["user_id"] = []
@@ -246,10 +296,23 @@ class Canvas_api:
             print(str(e), file=sys.stderr)
 
     def get_courses_stud_tables(self):
-        """Add logic to export the columns of courses_students/enrollments."""
-        """Columns:
-            email,codegrade_id, ace_id, fn, ln
-            course_id, stud_id"""
+        """
+        Add logic to export the columns of courses_students/enrollments.
+
+            Args:
+                NONE
+
+            Return value format:
+                JSON
+
+            Attributes:
+                course_id = stud_id[]       (list)
+                stud_id["email"]            (string)
+                stud_id["codegrade_id"]     (int)
+                stud_id["ace_id"]           (int)
+                stud_id["fn"]               (string)
+                stud_id["ln"]               (string)
+        """
         result = {}
         result["course_id"] = self.__course_id
         result["student_ids"] = []
@@ -298,8 +361,19 @@ class Canvas_api:
             print(str(e), file=sys.stderr)
 
     def get_ta_tables(self):
-        """Add logic to export the columns of courses_teaching_assistents/enrollments."""
-        """columns: course_id,ta_ID"""
+        """
+        Add logic to export the columns of courses_teaching_assistents/enrollments.
+
+            Args:
+                NONE
+
+            Return value format:
+                JSON
+
+            Attributes:
+                course_id   (int)
+                ta_ID       (int)
+        """
         result = {}
         result["course_id"] = self.__course_id
         result["Ta_ids"] = []
@@ -327,11 +401,38 @@ class Canvas_api:
             print(str(e), file=sys.stderr)
 
     def get_assi_tables(self):
-        """Add logic to export the columns of courses_students/enrollments."""
-        """Columns:
-            title, number, provided files (pdfs),
-            due date, lock date (Null), file_path, lang,
-            course_id, sem_id"""
+        """
+        Add logic to export the columns of courses_students/enrollments.
+
+            Args:
+                dictionary of {filename:path}
+
+            Return value format:
+                JSON
+
+            Attributes:
+                title                       (string)
+                number                      (int)
+                due date                    (date/null)
+                lock date (Null)            (date/null)
+                file_path (of pdfs)         [(string)]
+                course_id                   (int)
+                sem_id                      (int)
+        """
+        result = []
+        for assi in self.__assi:
+            curr_assi = {}
+            curr_assi["title"] = assi["name"]
+            curr_assi["number"] = assi["position"] - 1
+            curr_assi["due_at"] = assi["due_at"]
+            curr_assi["lock_at"] = assi["lock_at"]
+            curr_assi["file_path"] = self.file_dictionary[assi["name"]]
+            curr_assi["course_id"] = self.find_tailend_id(assi["course_id"])
+            curr_assi["sem_id"] = self.find_tailend_id(
+                self.course["enrollment_term_id"]
+            )
+            result.append(curr_assi)
+        return result
 
     def get_assi(self):
         """Print all assignments."""
@@ -414,6 +515,7 @@ class Canvas_api:
                 date = self.find_lockdate_duedate(assi)
                 if date < now:
                     if not assi.get("attachment"):
+                        self.file_dictionary[f"{assi["name"]}"] = []
                         assi_path = os.path.join(
                             os.getcwd(), "canvas_attachments", f"{assi["name"]}"
                         )
@@ -437,12 +539,31 @@ class Canvas_api:
                                 with open(filepath, "wb") as f:
                                     f.write(response.content)
                                 print(f"\tDownloaded file with file name: {name}")
+                                self.file_dictionary[f"{assi["name"]}"].append(filepath)
                             else:
                                 print(
                                     f"\tFailed to download: {url} (Status {response.status_code})"
                                 )
         except Exception as e:
             print(str(e), file=sys.stderr)
+
+    def populate_file_dictionary(self):
+        """Populate the file dictionary attribute in case user does not call download files."""
+        for assi in self.__assi:
+            self.file_dictionary[f"{assi["name"]}"] = []
+            if not assi.get("attachment"):
+                assi_path = os.path.join(
+                    os.getcwd(), "canvas_attachments", f"{assi["name"]}"
+                )
+                ids = self.extract_file_ids(assi["description"])
+                for id in ids:
+                    file = self.get_file_via_id(id)
+                    name = file["filename"]
+                    filepath = os.path.join(assi_path, name)
+                    if not self.mkdir(assi_path):
+                        return
+                    self.file_dictionary[f"{assi["name"]}"].append(filepath)
+        return self.file_dictionary
 
 
 def main():
@@ -455,11 +576,14 @@ def main():
     prof = canvas_data.get_courses_professor()
     stud = canvas_data.get_courses_stud_tables()
     ta = canvas_data.get_ta_tables()
+    assis = canvas_data.get_assi_tables()
+
     print(catalog)
     print(instance)
     print(prof)
     print(stud)
     print(ta)
+    print(assis)
 
 
 if __name__ == "__main__":
