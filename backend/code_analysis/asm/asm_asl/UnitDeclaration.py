@@ -12,3 +12,5 @@ class UnitDeclaration(ASL):
         self.__size = size
         self.__values = values
 
+    def toString(self):
+        return f"{self.__name}"
