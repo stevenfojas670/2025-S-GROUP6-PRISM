@@ -9,3 +9,8 @@ class ASL:
         self.__startPos = start
         self.__endPos = end
 
+    def getStartPos(self):
+        return self.__startPos
+
+    def getEndPos(self):
+        return self.__endPos
