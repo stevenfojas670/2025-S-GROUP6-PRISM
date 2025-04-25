@@ -1,6 +1,7 @@
 
 from code_analysis.asm.asm_asl.DataDeclaration import DataDeclaration
 from code_analysis.asm.asm_asl.Program import Program
+from code_analysis.asm.asm_asl.UnitDeclaration import UnitDeclaration
 from code_analysis.asm.asm_token.Token import Token
 from code_analysis.asm.asm_token.TokenType import TokenType
 
@@ -60,14 +61,15 @@ class Parser:
     # 1. <program> := <data>? <bss>? <text> ;
     def program(self):
         startPos = self.__lookahead.getStartPos()
-        dataLst = None
+        dataLst = uninitLst = text = None
         if self.__peek(TokenType.SECTION) and self.__peekNext(TokenType.ID_DATA):
             dataLst = self.__data()
-        elif self.__peek(TokenType.SECTION) and self.__peekNext(TokenType.ID_BSS):
-            self.__bss()
-        self.__text()
+        if self.__peek(TokenType.SECTION) and self.__peekNext(TokenType.ID_BSS):
+            uninitLst = self.__bss()
+        text = self.__text()
 
-        program = Program(startPos, self.__lookahead.getEndPos(), dataLst)
+        program = Program(startPos, self.__lookahead.getEndPos(), dataLst, uninitLst, text)
+        program.toString()
 
     # 2. <data> := 'section' '.data' <decl>* ;
     def __data(self):
@@ -124,18 +126,27 @@ class Parser:
 
     # 4. <bss> := 'section' '.bss' <unit_decl>* ;
     def __bss(self):
+        lst = list()
         self.__match(TokenType.SECTION)
         self.__match(TokenType.ID_BSS)
         while self.__peek(TokenType.ID):
-            self.__unitDecl()
+            lst.append(self.__unitDecl())
+
+        return lst
 
     # 5. <unit_decl> := <ID> (('resb' | 'resw' | 'resd' | 'resq') <number> ( ',' <number> )*)*;
     def __unitDecl(self):
+        name = self.__lookahead.getLexeme()
+        startPos = self.__lookahead.getStartPos()
+        values = list()
+        size = None
         self.__match(TokenType.ID)
+        endPos = None
         while (self.__peek(TokenType.RESB)
                or self.__peek(TokenType.RESW)
                or self.__peek(TokenType.RESD)
                or self.__peek(TokenType.RESQ)):
+            size = self.__lookahead.getLexeme()
             if self.__peek(TokenType.RESB):
                 self.__match(TokenType.RESB)
             elif self.__peek(TokenType.RESW):
@@ -146,10 +157,17 @@ class Parser:
                 self.__match(TokenType.RESQ)
             else:
                 exit(1)
+
+            values.append(self.__lookahead.getLexeme())
             self.__match(TokenType.NUM)
+            endPos = self.__lookahead.getEndPos()
             while (self.__match(TokenType.COMMA)):
                 self.__match(TokenType.COMMA)
+                values.append(self.__lookahead.getLexeme())
+                endPos = self.__lookahead.getEndPos()
                 self.__match(TokenType.NUM)
+
+        return UnitDeclaration(startPos, endPos, name, size, values)
 
     # 6. <text> := 'section' '.text' 'global' '_start' '_start:' <code> ;
     def __text(self):
