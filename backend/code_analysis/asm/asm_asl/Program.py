@@ -13,5 +13,14 @@ class Program(ASL):
         self.__code = code
 
     def toString(self):
+        print("Data Declarations: ")
         for v in self.__init_data:
+            print(v.toString())
+
+        print("\nUninit Declarations: ")
+        for v in self.__uninit_data:
+            print(v.toString())
+
+        print("\nInstructions: ")
+        for v in self.__code:
             print(v.toString())
