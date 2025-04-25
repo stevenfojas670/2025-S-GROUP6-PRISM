@@ -36,13 +36,18 @@ class Parser:
     def program(self):
         if self.__peek(TokenType.SECTION) and self.__peekNext(TokenType.ID_DATA):
             self.__data()
+        elif self.__peek(TokenType.SECTION) and self.__peekNext(TokenType.ID_BSS):
+            self.__bss()
+        self.__text()
 
+    # 2. <data> := 'section' '.data' <decl>* ;
     def __data(self):
         self.__match(TokenType.SECTION)
         self.__match(TokenType.ID_DATA)
         while self.__peek(TokenType.ID):
             self.__decl()
 
+    # 3. <decl> := <ID> ('equ' | 'db' | 'dw' | 'dd' | 'dq') <number> ;
     def __decl(self):
         self.__match(TokenType.ID)
         if self.__peek(TokenType.EQU):
@@ -55,3 +60,33 @@ class Parser:
             else: print("Error!")
 
         self.__match(TokenType.NUM)
+
+    # 4. <bss> := 'section' '.bss' <unit_decl>* ;
+    def __bss(self):
+        self.__match(TokenType.SECTION)
+        self.__match(TokenType.ID_BSS)
+        while self.__peek(TokenType.ID):
+            self.__unitDecl()
+
+    # 5. <unit_decl> := <ID> ('resb' | 'resw' | 'resd' | 'resq') <number> ;
+    def __unitDecl(self):
+        self.__match(TokenType.ID)
+        if self.__peek(TokenType.RESB): self.__match(TokenType.RESB)
+        elif self.__peek(TokenType.RESW): self.__match(TokenType.RESW)
+        elif self.__peek(TokenType.RESD): self.__match(TokenType.RESD)
+        elif self.__peek(TokenType.RESQ): self.__match(TokenType.RESQ)
+        else: print("Error!")
+        self.__match(TokenType.NUM)
+
+    # 6. <text> := 'section' '.text' 'global' '_start' '_start:' <code> ;
+    def __text(self):
+        self.__match(TokenType.SECTION)
+        self.__match(TokenType.ID_TEXT)
+        self.__match(TokenType.GLOBAL)
+        self.__match(TokenType.START)
+        self.__match(TokenType.ID)
+        self.__code()
+
+    # 7. <code> := ( <func_decl> (<label> | <instr>)* )* ;
+    def __code(self):
+        pass
