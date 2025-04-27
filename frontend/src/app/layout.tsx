@@ -20,9 +20,9 @@ export default function RootLayout({ children }: Props) {
 					{/* CssBaseline kickstart an elegant, consistent, and simple baseline to build upon. */}
 					<CssBaseline />
 					<Providers>
-						<AppLayoutWrapper>
-							<CourseProvider>{children}</CourseProvider>
-						</AppLayoutWrapper>
+						<CourseProvider>
+							<AppLayoutWrapper>{children}</AppLayoutWrapper>
+						</CourseProvider>
 					</Providers>
 				</ThemeProvider>
 			</body>

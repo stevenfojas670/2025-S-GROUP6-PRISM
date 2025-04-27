@@ -12,7 +12,7 @@ interface Props {
 export default function AppLayoutWrapper({ children }: Props) {
 	const { user } = useAuth()
 	console.log(user?.email)
-	if (user === null) {
+	if (!user?.isLoggedIn) {
 		return children
 	} else {
 		return (

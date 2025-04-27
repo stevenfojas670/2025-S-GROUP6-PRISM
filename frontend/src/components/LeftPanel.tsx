@@ -10,20 +10,22 @@ import {
 } from "@mui/material"
 import { ExpandLess, ExpandMore } from "@mui/icons-material"
 import { Semester } from "@/types/semesterTypes"
-import { dummySemesters } from "@/data/dummySemesters"
+import { useCourseContext } from "@/context/CourseContext"
 import { GetSemesters } from "@/controllers/semesters"
 import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 
 export default function LeftPanel() {
 	const router = useRouter()
+	const { setSemesterId } = useCourseContext()
 
 	const [semOpen, setSemOpen] = useState<boolean>(false)
 	const [semesters, setSemesters] = useState<Semester[]>([])
-	const [semesterId, setSemesterId] = useState<number | null>(null)
+	const [semId, setSemId] = useState<number | null>(null)
 
-	const handleSemesterClick = async (semesterId: number) => {
-		router.push(`/courses?semester=${semesterId}`)
+	const handleSemesterClick = async (semId: number) => {
+		setSemesterId(semId)
+		router.push(`/courses?semester=${semId}`)
 	}
 
 	useEffect(() => {
@@ -81,7 +83,9 @@ export default function LeftPanel() {
 				<ListItemButton onClick={() => router.push("/student_comparison")}>
 					<ListItemText>Student Comparison</ListItemText>
 				</ListItemButton>
-
+				<ListItemButton onClick={() => router.push("/assignment_creation/")}>
+					<ListItemText>Assignment Creation</ListItemText>
+				</ListItemButton>
 				<ListItemButton onClick={() => router.push("/plagiarism_report")}>
 					<ListItemText>Plagiarism Report</ListItemText>
 				</ListItemButton>

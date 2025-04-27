@@ -11,7 +11,6 @@ import {
 } from "@mui/material"
 import { useRouter } from "next/navigation"
 import { easyFetch } from "@/utils/fetchWrapper"
-import { useParams } from "next/navigation"
 import { useCourseContext } from "@/context/CourseContext"
 import { GetStudents } from "@/controllers/students"
 import { StudentEnrollments } from "@/types/studentTypes"
@@ -42,24 +41,24 @@ interface AssignmentItem {
 
 export default function Assignments() {
 	const router = useRouter()
+
 	const [assignments, setAssignments] = useState<AssignmentItem[]>([])
 	const [assignmentImages, setAssignmentImages] = useState<
 		Record<number, string>
 	>({})
 	const [students, setStudents] = useState<StudentEnrollments[]>([])
-	const { courseInstanceId, semesterId } = useCourseContext()
-	const { course_catalog_id } = useParams()
+	const { courseInstanceId } = useCourseContext()
 
 	useEffect(() => {
-		if (!course_catalog_id) return
+		if (!courseInstanceId) return
 		const fetchAssignments = async () => {
 			try {
 				const queryParams = new URLSearchParams({
-					course_catalog: String(course_catalog_id),
+					course_id: String(courseInstanceId),
 				})
 
 				const response = await easyFetch(
-					`http://localhost:8000/api/assignment/assignments?${queryParams}`,
+					`http://localhost:8000/api/assignment/assignments/?${queryParams}`,
 					{
 						method: "get",
 					}
@@ -68,7 +67,7 @@ export default function Assignments() {
 				const data = await response.json()
 
 				if (response.ok) {
-					setAssignments(data.results)
+					setAssignments(data)
 				}
 			} catch (error) {
 				console.error(error)
@@ -77,9 +76,9 @@ export default function Assignments() {
 
 		const fetchStudents = async () => {
 			if (!courseInstanceId) return
-			const data = await GetStudents(Number(courseInstanceId))
-			if ("results" in data) {
-				setStudents(data.results)
+			const data = await GetStudents(Number(courseInstanceId), true)
+			if (Array.isArray(data)) {
+				setStudents(data)
 			} else {
 				console.error("Error fetching students.", data)
 			}
@@ -87,29 +86,29 @@ export default function Assignments() {
 
 		fetchAssignments()
 		fetchStudents()
-	}, [course_catalog_id, courseInstanceId])
+	}, [courseInstanceId])
 
 	// Fetching plots for each assignment
-	useEffect(() => {
-		if (assignments.length === 0) return
+	// useEffect(() => {
+	// 	if (assignments.length === 0) return
 
-		const fetchImages = async () => {
-			const imageMap: Record<number, string> = {}
+	// 	const fetchImages = async () => {
+	// 		const imageMap: Record<number, string> = {}
 
-			for (const assignment of assignments) {
-				const imgUrl = await GetSimilarityPlot(assignment.id)
-				if (imgUrl) {
-					imageMap[assignment.id] = imgUrl
-				} else {
-					imageMap[assignment.id] = "" // explicit empty string to indicate missing image
-				}
-			}
+	// 		for (const assignment of assignments) {
+	// 			const imgUrl = await GetSimilarityPlot(assignment.id)
+	// 			if (imgUrl) {
+	// 				imageMap[assignment.id] = imgUrl
+	// 			} else {
+	// 				imageMap[assignment.id] = "" // explicit empty string to indicate missing image
+	// 			}
+	// 		}
 
-			setAssignmentImages(imageMap)
-		}
+	// 		setAssignmentImages(imageMap)
+	// 	}
 
-		fetchImages()
-	}, [assignments])
+	// 	fetchImages()
+	// }, [assignments])
 
 	return (
 		<Box sx={{ display: "flex", gap: 2 }}>
@@ -172,7 +171,7 @@ export default function Assignments() {
 									disabled={!assignmentImages[assignment.id]}
 									onClick={() =>
 										router.push(
-											`/courses/${course_catalog_id}/assignments/graphs?assignment=${assignment.id}`
+											`/courses/${courseInstanceId}/assignments/graphs?assignment=${assignment.id}`
 										)
 									}
 								>
@@ -183,7 +182,7 @@ export default function Assignments() {
 								<Typography>{assignment.title}</Typography>
 							</Box>
 							{/* Image Container */}
-							<Box
+							{/* <Box
 								sx={{
 									mt: 2,
 									height: "420px",
@@ -208,7 +207,7 @@ export default function Assignments() {
 										No plot available.
 									</Typography>
 								)}
-							</Box>
+							</Box> */}
 						</Box>
 					))}
 				</Box>
