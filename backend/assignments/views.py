@@ -186,7 +186,7 @@ class AggregatedAssignmentDataView(APIView):
         course_id = request.query_params.get("course")
 
         # Build a queryset that retrieves data along with similarity scores.
-        qs = SubmissionSimiliarityPairs.objects.select_related(
+        qs = SubmissionSimilarityPairs.objects.select_related(
             "assignment",
             "submission_id_1__student",
             "submission_id_2"  # add other stuff if we want to show different things
@@ -221,7 +221,7 @@ class AggregatedAssignmentDataView(APIView):
         '''
 
         # Highest sim score per student
-        response_data["student_max_similarity_score"] = list(SubmissionSimiliarityPairs.objects.values(
+        response_data["student_max_similarity_score"] = list(SubmissionSimilarityPairs.objects.values(
             "submission_id_1__student__id",
             "submission_id_1__student__first_name",
             "submission_id_1__student__last_name",
@@ -230,7 +230,7 @@ class AggregatedAssignmentDataView(APIView):
         ))
 
         # Average sim score per assignment
-        response_data["assignment_avg_similarity_score"] = list(SubmissionSimiliarityPairs.objects.values(
+        response_data["assignment_avg_similarity_score"] = list(SubmissionSimilarityPairs.objects.values(
             "assignment__id",
             "assignment__title"
         ).annotate(
@@ -239,7 +239,7 @@ class AggregatedAssignmentDataView(APIView):
 
         # Flagged submissions per assignment
         # the 'F' lets each sim score be compared against its assignments own threshold. (dynamic)
-        response_data["flagged_per_assignment"] = list(SubmissionSimiliarityPairs.objects.filter(
+        response_data["flagged_per_assignment"] = list(SubmissionSimilarityPairs.objects.filter(
             percentage__gte=F('assignment__requiredsubmissionfile_set__similarity_threshold')
         ).values(
             "assignment__title"
@@ -250,11 +250,11 @@ class AggregatedAssignmentDataView(APIView):
         # similarity score over time trend
         response_data["similarity_trends"] = list(
             Submissions.objects.values("created_at")
-            .annotate(avg_similarity=Avg("submission__submissionsimiliaritypairs__percentage"))
+            .annotate(avg_similarity=Avg("submission__submissionsimilaritypairs__percentage"))
         )
 
         # Flagged submissions per professor
-        response_data["flagged_by_professor"] = list(SubmissionSimiliarityPairs.objects.filter(
+        response_data["flagged_by_professor"] = list(SubmissionSimilarityPairs.objects.filter(
             percentage__gte=F('assignment__requiredsubmissionfiles__similarity_threshold'))
             .values("assignment__course_instance__professor__user__username")
             .annotate(flagged_count=Count("id"))
@@ -262,7 +262,7 @@ class AggregatedAssignmentDataView(APIView):
 
         # Professor-wise average similarity score. We probably want admins to see this for all professors
         response_data["professor_avg_similarity"] = list(
-            SubmissionSimiliarityPairs.objects.values("assignment__course_instance__professor__user__username")
+            SubmissionSimilarityPairs.objects.values("assignment__course_instance__professor__user__username")
             .annotate(avg_similarity=Avg("percentage"))
         )
 
