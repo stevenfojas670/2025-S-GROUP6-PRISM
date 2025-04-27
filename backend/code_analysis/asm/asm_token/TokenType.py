@@ -135,6 +135,10 @@ class TokenType(Enum):
     QWORD = "qword"
     SECTION = "section"
     GLOBAL = "global"
+    ID_DATA = ".data"
+    ID_BSS = ".bss"
+    ID_TEXT = ".text"
+    START = "_start"
 
     # X86 INSTRUCTIONS
     MOV = "mov"
