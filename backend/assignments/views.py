@@ -8,7 +8,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from prism_backend.mixins import CachedViewMixin
 from users.permissions import IsProfessorOrAdmin
 from django.db.models import Count, Max, Avg, F
-from cheating.models import SubmissionSimiliarityPairs
+from cheating.models import SubmissionSimilarityPairs
 
 from .models import (
     Assignments,
@@ -180,8 +180,7 @@ class AggregatedAssignmentDataView(APIView):
     permission_classes = [IsAuthenticated, IsProfessorOrAdmin]
 
     def get(self, request, format=None):
-        """Returns aggregated similarity statistics for submissions."""
-
+        """Return aggregated similarity statistics for submissions."""
         student_ids = request.query_params.getlist("students")
         assignment_ids = request.query_params.getlist("assignments")
         course_id = request.query_params.get("course")
