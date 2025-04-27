@@ -5,14 +5,13 @@ from rest_framework import serializers
 from .models import (
     CourseCatalog,
     CourseInstances,
-    CoursesSemester,
-    CourseAssignmentCollaboration,
+    Semester,
     Students,
     StudentEnrollments,
     Professors,
     ProfessorEnrollments,
     TeachingAssistants,
-    TeachingAssistantEnrollment,
+    TeachingAssistantEnrollments,
 )
 
 
@@ -46,33 +45,18 @@ class CourseInstancesSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class CoursesSemesterSerializer(serializers.ModelSerializer):
-    """Serializer for the CoursesSemester model."""
+class SemesterSerializer(serializers.ModelSerializer):
+    """Serializer for the Semester model."""
 
     class Meta:
-        """Meta options for CoursesSemesterSerializer.
+        """Meta options for SemesterSerializer.
 
         Attributes:
-            model: The CoursesSemester model.
+            model: The Semester model.
             fields: All model fields.
         """
 
-        model = CoursesSemester
-        fields = "__all__"
-
-
-class CourseAssignmentCollaborationSerializer(serializers.ModelSerializer):
-    """Serializer for the CourseAssignmentCollaboration model."""
-
-    class Meta:
-        """Meta options for CourseAssignmentCollaborationSerializer.
-
-        Attributes:
-            model: The CourseAssignmentCollaboration model.
-            fields: All model fields.
-        """
-
-        model = CourseAssignmentCollaboration
+        model = Semester
         fields = "__all__"
 
 
@@ -151,16 +135,16 @@ class TeachingAssistantsSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class TeachingAssistantEnrollmentSerializer(serializers.ModelSerializer):
-    """Serializer for the TeachingAssistantEnrollment model."""
+class TeachingAssistantEnrollmentsSerializer(serializers.ModelSerializer):
+    """Serializer for the TeachingAssistantEnrollments model."""
 
     class Meta:
-        """Meta options for TeachingAssistantEnrollmentSerializer.
+        """Meta options for TeachingAssistantEnrollmentsSerializer.
 
         Attributes:
-            model: The TeachingAssistantEnrollment model.
+            model: The TeachingAssistantEnrollments model.
             fields: All model fields.
         """
 
-        model = TeachingAssistantEnrollment
+        model = TeachingAssistantEnrollments
         fields = "__all__"

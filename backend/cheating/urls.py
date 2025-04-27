@@ -11,10 +11,16 @@ from .views import (
     CheatingGroupMembersViewSet,
     ConfirmedCheatersViewSet,
     FlaggedStudentsViewSet,
-    SubmissionSimiliarityPairsViewSet,
+    SubmissionSimilarityPairsViewSet,
     LongitudinalCheatingGroupsViewSet,
     LongitudinalCheatingGroupMembersViewSet,
     LongitudinalCheatingGroupInstancesViewSet,
+    similarity_plot,
+    distribution_plot,
+    similarity_interval_plot,
+    kmeans_clusters_plot,
+    run_full_pipeline,
+    kmeans_pairs_plot,
 )
 
 router = DefaultRouter()
@@ -32,7 +38,7 @@ router.register(
 )
 router.register(
     r"submission-similarity-pairs",
-    SubmissionSimiliarityPairsViewSet,
+    SubmissionSimilarityPairsViewSet,
     basename="submission-similarity-pairs",
 )
 router.register(
@@ -53,4 +59,32 @@ router.register(
 
 urlpatterns = [
     path("", include(router.urls)),
+    path(
+        "<int:assignment_id>/similarity-plot/", similarity_plot, name="similarity-plot"
+    ),
+    path(
+        "<int:assignment_id>/distribution-plot/",
+        distribution_plot,
+        name="distribution-plot",
+    ),
+    path(
+        "<int:assignment_id>/similarity-interval-plot/",
+        similarity_interval_plot,
+        name="similarity-interval-plot",
+    ),
+    path(
+        "kmeans-plot/<int:course_id>/<int:semester_id>/",
+        kmeans_clusters_plot,
+        name="kmeans-plot",
+    ),
+    path(
+        "full-pipeline/<int:course_id>/<int:semester_id>/",
+        run_full_pipeline,
+        name="full-pipeline",
+    ),
+    path(
+        "kmeans-pairs-plot/<int:course_id>/<int:semester_id>/",
+        kmeans_pairs_plot,
+        name="kmeans-pairs-plot",
+    ),
 ]
