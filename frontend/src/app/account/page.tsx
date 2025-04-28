@@ -28,16 +28,12 @@ export default function AccountPage() {
   
     const fetchUser = async () => {
       try {
-		console.log("Inside of the try.")
-        const res = await easyFetch(`http://localhost:8001/api/user/users`, {
+        const res = await easyFetch(`http://localhost:8000/api/user/users`, {
 			method: "GET"
 		})
         if (!res.ok) throw new Error("Failed to fetch user info")
   
-        console.log("Raw response:", res)
-  
         const data = await res.json()
-        console.log("Parsed data:", data)
   
         const matchedUser = data.find((u: any) => u.id === user.professor_id)
   

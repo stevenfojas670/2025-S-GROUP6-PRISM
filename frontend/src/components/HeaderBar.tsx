@@ -74,7 +74,7 @@ const HeaderBar = ({ title }: { title: string }) => {
             <MenuIcon />
           </IconButton>
 
-          <Link href="/" passHref>
+          <Link href="/dashboard" passHref>
             <IconButton edge="start" color="inherit" aria-label="home" sx={{ ml: 1 }}>
               <HomeIcon />
             </IconButton>
