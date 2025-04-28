@@ -28,6 +28,7 @@ from courses.models import (
     Students,
     TeachingAssistants,
 )
+from cheating.models import SubmissionSimilarityPairs
 
 User = get_user_model()
 
@@ -129,6 +130,40 @@ class BaseViewTest(APITestCase):
             assignment=cls.assignment,
             file_name="main.py",
             similarity_threshold=0.75,
+        )
+        cls.sub1 = Submissions.objects.create(
+            grade=85.0,
+            created_at=datetime.date.today(),
+            flagged=False,
+            assignment=cls.assignment,
+            student=cls.student,
+            course_instance=cls.course_instance,
+            file_path="path/to/sub1",
+        )
+        cls.sub2 = Submissions.objects.create(
+            grade=90.0,
+            created_at=datetime.date.today(),
+            flagged=False,
+            assignment=cls.assignment,
+            student=cls.student,
+            course_instance=cls.course_instance,
+            file_path="path/to/sub2",
+        )
+        cls.sim1 = SubmissionSimilarityPairs.objects.create(
+            assignment=cls.assignment,
+            file_name="f1.py",
+            submission_id_1=cls.sub1,
+            submission_id_2=cls.sub2,
+            match_id=1,
+            percentage=80,
+        )
+        cls.sim2 = SubmissionSimilarityPairs.objects.create(
+            assignment=cls.assignment,
+            file_name="f2.py",
+            submission_id_1=cls.sub2,
+            submission_id_2=cls.sub1,
+            match_id=2,
+            percentage=60,
         )
 
 
@@ -404,3 +439,60 @@ class RequiredSubmissionFilesViewSetTest(BaseViewTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for item in response.data["results"]:
             self.assertIn("main", item["file_name"])
+
+
+class AggregatedAssignmentDataViewTests(BaseViewTest):
+    """Tests for the new AggregatedAssignmentDataView endpoint."""
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.url = reverse("aggregated-assignment-data")  # make sure its in urls.py (PR 69)
+
+    def test_anonymous_cannot_access(self):
+        res = self.client.get(self.url)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_professor_sees_aggregations(self):
+        # add the professor to the Professor group
+        prof_group, _ = Group.objects.get_or_create(name="Professor")
+        self.professor_user.groups.add(prof_group)
+        self.client.login(email=self.professor_user.email, password="pass123")
+
+        res = self.client.get(self.url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        data = res.json()
+        # all the keys we expect
+        expected = {
+            "student_max_similarity_score",
+            "assignment_avg_similarity_score",
+            "flagged_per_assignment",
+            "similarity_trends",
+            "flagged_by_professor",
+            "professor_avg_similarity",
+        }
+        self.assertTrue(expected.issubset(data.keys()))
+        # check that Alice’s max (we only created one student) is 80
+        max_scores = {d["submission_id_1__student__first_name"]: d["max_score"]
+                      for d in data["student_max_similarity_score"]}
+        self.assertEqual(max_scores[self.student.first_name], 80)
+
+    def test_admin_sees_everything(self):
+        admin = User.objects.create_superuser(
+            email="admin@example.com", password="superpass"
+        )
+        self.client.login(email=admin.email, password="superpass")
+        res = self.client.get(self.url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_filter_by_assignment(self):
+        prof_group, _ = Group.objects.get_or_create(name="Professor")
+        self.professor_user.groups.add(prof_group)
+        self.client.login(email=self.professor_user.email, password="pass123")
+
+        # filter on a bogus assignment id
+        res = self.client.get(self.url, {"assignments": [9999]})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        data = res.json()
+        for lst in data.values():
+            self.assertEqual(lst, [])
