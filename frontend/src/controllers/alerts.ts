@@ -1,5 +1,4 @@
 import { easyFetch } from "@/utils/fetchWrapper"
-import { Course, CourseCatalog, CourseResponse } from "@/types/coursesTypes"
 import { APIError } from "@/types/APIError"
 import { Alert, AlertResponse } from "@/types/alertType"
 
@@ -7,6 +6,7 @@ export async function GetAlerts(
 ): Promise<AlertResponse | APIError> {
 
   try {
+    // Fetch the alerts data
     const response = await easyFetch(
       `http://localhost:8000/api/cheating/submission-similarity-pairs/`,
       { method: "GET" }
@@ -14,6 +14,7 @@ export async function GetAlerts(
 
     const data = await response.json()
 
+    // If Alert data was fetched, then format the data to be accepted by the alerts page
     if (response.ok) {
       let newAlerts: Alert[] = []
   

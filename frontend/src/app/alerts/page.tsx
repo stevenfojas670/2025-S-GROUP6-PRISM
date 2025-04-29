@@ -16,18 +16,20 @@ export default function Alerts() {
 	const [alerts, setAlerts] = useState<Alert[]>([]);
 
 	useEffect(() => {
-			const fetchAlerts = async () => {
-				const data = await GetAlerts()
-				
-				if ("alerts" in data){
-					setAlerts(data.alerts)
-				} else {
-					console.error("Error fetching alerts: ", data)
-				} 
-			}
+	
+		// Call the controller function to get alert data
+		const fetchAlerts = async () => {
+			const data = await GetAlerts()
 			
-			fetchAlerts()
-		}, [])
+			if ("alerts" in data){
+				setAlerts(data.alerts)
+			} else {
+				console.error("Error fetching alerts: ", data)
+			} 
+		}
+		
+		fetchAlerts()
+	}, [])
 
 	return (
 		<Box>
