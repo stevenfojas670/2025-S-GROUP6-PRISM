@@ -198,8 +198,8 @@ class GeminiFilter(logging.Filter):
         """
         filter: Filters log records to include only those related to the Gemini model.
 
-        This method is typically used in a custom logging filter to control which log 
-        entries are processed or displayed. It checks whether the message content contains 
+        This method is typically used in a custom logging filter to control which log
+        entries are processed or displayed. It checks whether the message content contains
         the string "Gemini".
 
         Parameters
@@ -306,8 +306,8 @@ class OllamaFilter(logging.Filter):
         """
         filter: Filters log records to include only those related to the Ollama model.
 
-        This method is typically used in a custom logging filter to control which log 
-        entries are processed or displayed. It checks whether the message content contains 
+        This method is typically used in a custom logging filter to control which log
+        entries are processed or displayed. It checks whether the message content contains
         the string "Ollama".
 
         Parameters
@@ -342,8 +342,8 @@ class GrokFilter(logging.Filter):
         """
         filter: Filters log records to include only those related to the Grok model.
 
-        This method is typically used in a custom logging filter to control which log 
-        entries are processed or displayed. It checks whether the message content contains 
+        This method is typically used in a custom logging filter to control which log
+        entries are processed or displayed. It checks whether the message content contains
         the string "Grok".
 
         Parameters
@@ -1686,7 +1686,7 @@ class genAI:
 
     def anthropic_process_assignment_pdf(self) -> None:
         """
-        Loads and preprocesses the assignment PDF to create a cleaned prompt for the Claude model.
+        anthropic_process_assignment_pdf: Loads and preprocesses the assignment PDF to create a cleaned prompt for the Claude model.
 
         This method:
         - Loads the assignment PDF and converts it into markdown format using `pymupdf4llm`.
