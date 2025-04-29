@@ -2,12 +2,18 @@
 import React, { useEffect, useState } from "react"
 import {
 	Typography,
-	ButtonBase,
 	Box,
 	Button,
 	List,
 	ListItemButton,
 	ListItemText,
+	Table,
+	TableBody,
+	TableCell,
+	TableContainer,
+	TableHead,
+	TableRow,
+	Paper,
 } from "@mui/material"
 import { useRouter } from "next/navigation"
 import { easyFetch } from "@/utils/fetchWrapper"
@@ -15,7 +21,6 @@ import { useCourseContext } from "@/context/CourseContext"
 import { GetStudents } from "@/controllers/students"
 import { StudentEnrollments } from "@/types/studentTypes"
 import { blueGrey, grey } from "@mui/material/colors"
-import { GetSimilarityPlot } from "@/controllers/graphs"
 /**
  * This will be used for pagination if necessary
  */
@@ -29,6 +34,7 @@ interface AssignmentItem {
 	id: number
 	assignment_number: number
 	title: string
+	due_date: string | null
 	lock_date: string | null
 	pdf_filepath: string | null
 	has_base_code: boolean | null
@@ -36,16 +42,22 @@ interface AssignmentItem {
 	bulk_ai_directory_path: string | null
 	language: string | null
 	has_policy: boolean | null
-	course_instance: number
+	course_catalog: number | null
+	semester: number | null
 }
+
+const assignmentFields = [
+	"Title",
+	"Assignment Number",
+	"Due Date",
+	"Lock Date",
+	"Details",
+]
 
 export default function Assignments() {
 	const router = useRouter()
 
 	const [assignments, setAssignments] = useState<AssignmentItem[]>([])
-	const [assignmentImages, setAssignmentImages] = useState<
-		Record<number, string>
-	>({})
 	const [students, setStudents] = useState<StudentEnrollments[]>([])
 	const { courseInstanceId } = useCourseContext()
 
@@ -88,28 +100,6 @@ export default function Assignments() {
 		fetchStudents()
 	}, [courseInstanceId])
 
-	// Fetching plots for each assignment
-	// useEffect(() => {
-	// 	if (assignments.length === 0) return
-
-	// 	const fetchImages = async () => {
-	// 		const imageMap: Record<number, string> = {}
-
-	// 		for (const assignment of assignments) {
-	// 			const imgUrl = await GetSimilarityPlot(assignment.id)
-	// 			if (imgUrl) {
-	// 				imageMap[assignment.id] = imgUrl
-	// 			} else {
-	// 				imageMap[assignment.id] = "" // explicit empty string to indicate missing image
-	// 			}
-	// 		}
-
-	// 		setAssignmentImages(imageMap)
-	// 	}
-
-	// 	fetchImages()
-	// }, [assignments])
-
 	return (
 		<Box sx={{ display: "flex", gap: 2 }}>
 			{/* Body Container */}
@@ -119,6 +109,8 @@ export default function Assignments() {
 					p: 2,
 					boxShadow: 2,
 					overflowX: "auto",
+					width: "100%",
+					height: "100%",
 				})}
 			>
 				{/* Page buttons */}
@@ -132,84 +124,41 @@ export default function Assignments() {
 					<Button variant="contained">Upload Assignment</Button>
 					<Button variant="contained">Export All</Button>
 				</Box>
-				{/* Assignments Container */}
-				<Box
-					sx={{
-						display: "flex",
-						flexWrap: "wrap",
-						gap: 2,
-					}}
-				>
-					{/* Assignments Cards */}
-					{assignments.map((assignment) => (
-						<Box
-							key={assignment.id}
-							sx={(theme) => ({
-								minWidth: 450,
-								height: assignmentImages[assignment.id] ? "auto" : "100px",
-								display: "block",
-								borderRadius: 2,
-								px: 2,
-								py: 2,
-								boxShadow: 2,
-								backgroundColor: blueGrey[100],
-								position: "relative",
-							})}
-						>
-							<Typography
-								sx={{
-									position: "absolute",
-									top: 12,
-									right: 15,
-									":hover": {
-										cursor: "pointer",
-									},
-								}}
-							>
-								<Button
-									variant="contained"
-									disabled={!assignmentImages[assignment.id]}
-									onClick={() =>
-										router.push(
-											`/courses/${courseInstanceId}/assignments/graphs?assignment=${assignment.id}`
-										)
-									}
-								>
-									Details
-								</Button>
-							</Typography>
-							<Box>
-								<Typography>{assignment.title}</Typography>
-							</Box>
-							{/* Image Container */}
-							{/* <Box
-								sx={{
-									mt: 2,
-									height: "420px",
-									width: "100%",
-									overflowX: "auto",
-									overflowY: "hidden",
-									borderRadius: "4px",
-									position: "relative",
-								}}
-							>
-								{assignmentImages[assignment.id] ? (
-									<Box
-										component="img"
-										src={assignmentImages[assignment.id]}
-										alt="Similarity Plot"
-										sx={{
-											height: "100%",
-										}}
-									/>
-								) : (
-									<Typography variant="caption" color="textSecondary">
-										No plot available.
-									</Typography>
-								)}
-							</Box> */}
-						</Box>
-					))}
+				<Box sx={{ overflowY: "auto", height: "100%" }}>
+					<TableContainer
+						sx={{ backgroundColor: grey[200], p: 1, borderRadius: 1 }}
+					>
+						<Table sx={{}}>
+							<TableHead>
+								<TableRow>
+									{assignmentFields.map((field, index) => (
+										<TableCell key={index}>{field}</TableCell>
+									))}
+								</TableRow>
+							</TableHead>
+							<TableBody>
+								{assignments.map((assignment) => (
+									<TableRow key={assignment.id}>
+										<TableCell>{assignment.title}</TableCell>
+										<TableCell>{assignment.assignment_number}</TableCell>
+										<TableCell>{assignment.due_date}</TableCell>
+										<TableCell>{assignment.lock_date}</TableCell>
+										<TableCell>
+											<Button
+												onClick={() =>
+													router.push(
+														`/courses/${courseInstanceId}/assignments/graphs?assignment=${assignment.id}`
+													)
+												}
+											>
+												View
+											</Button>
+										</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+					</TableContainer>
 				</Box>
 			</Box>
 			{/* Students List */}

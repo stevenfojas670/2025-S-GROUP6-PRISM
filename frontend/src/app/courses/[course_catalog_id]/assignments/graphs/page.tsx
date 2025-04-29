@@ -5,21 +5,22 @@ import {
 	GetDistributionPlot,
 	GetSimilarityPlot,
 } from "@/controllers/graphs"
-import { Box, Typography } from "@mui/material"
+import { Box, Typography, Tab, Tabs, Button } from "@mui/material"
 import { useSearchParams } from "next/navigation"
 import { useCourseContext } from "@/context/CourseContext"
 import { useEffect, useState } from "react"
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch"
 
 export default function Graphs() {
 	const searchParams = useSearchParams()
+	const { courseInstanceId, semesterId } = useCourseContext()
 	const assignmentIdParam = searchParams.get("assignment")
 	const assignmentId = assignmentIdParam ? Number(assignmentIdParam) : null
-
-	const { courseInstanceId, semesterId } = useCourseContext()
 
 	const [similarityPlot, setSimilarityPlot] = useState<string>("")
 	const [intervalPlot, setIntervalPlot] = useState<string>("")
 	const [distributionPlot, setDistributionPlot] = useState<string>("")
+	const [tabValue, setTabValue] = useState(0)
 
 	useEffect(() => {
 		if (!assignmentId) return
@@ -39,92 +40,203 @@ export default function Graphs() {
 		fetchAllPlots()
 	}, [assignmentId])
 
+	const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+		setTabValue(newValue)
+	}
+
 	return (
-		<Box>
-			<Box
-				sx={(theme) => ({
-					backgroundColor: theme.palette.background.paper,
-					p: 2,
-					boxShadow: 2,
-					overflowX: "auto",
-				})}
+		<Box
+			sx={(theme) => ({
+				width: "100%",
+				overflow: "hidden",
+				backgroundColor: theme.palette.background.paper,
+				p: 2,
+			})}
+		>
+			<Tabs
+				value={tabValue}
+				onChange={handleTabChange}
+				sx={{ borderBottom: "1px solid grey" }}
 			>
-				<Typography variant="h6">Similarity Plot</Typography>
-				<Box
-					sx={{
-						width: "100%",
-						overflowX: "auto",
-						mt: 1,
-						border: "1px solid #ccc", // optional visual cue
-						borderRadius: 2,
-					}}
-				>
-					{similarityPlot ? (
-						<Box
-							component="img"
-							src={similarityPlot}
-							alt="Similarity Plot"
-							sx={{
-								height: "auto",
-								width: "auto",
-								maxWidth: "none",
-							}}
-						/>
-					) : (
-						<Typography variant="caption" sx={{ p: 2 }}>
-							No Similarity Plot Available
-						</Typography>
-					)}
-				</Box>
+				<Tab label="Similarity Plot" />
+				<Tab label="Similarity Interval Plot" />
+				<Tab label="Distribution Plot" />
+			</Tabs>
 
-				<Typography variant="h6" sx={{ mt: 4 }}>
-					Similarity Interval Plot
-				</Typography>
-				<Box
-					sx={{
-						width: "100%",
-						mt: 1,
-						maxHeight: 900, // ✅ set vertical height limit
-						overflowY: "auto", // ✅ allow vertical scrolling
-						border: "1px solid #ccc", // optional visual cue
-						borderRadius: 2,
-					}}
-				>
-					{intervalPlot ? (
-						<Box
-							component="img"
-							src={intervalPlot}
-							alt="Interval Plot"
-							sx={{
-								maxWidth: "none",
-								objectFit: "contain",
-							}}
-						/>
-					) : (
-						<Typography variant="caption" sx={{ p: 2 }}>
-							No Interval Plot Available
-						</Typography>
-					)}
-				</Box>
-
-				<Typography variant="h6" sx={{ mt: 4 }}>
-					Distribution Plot
-				</Typography>
-				{distributionPlot ? (
+			{/* Content for each tab */}
+			<Box sx={{ mt: 2 }}>
+				{tabValue === 0 && (
 					<Box
-						component="img"
-						src={distributionPlot}
-						alt="Distribution Plot"
 						sx={{
-							height: 400,
-							border: "1px solid #ccc", // optional visual cue
+							width: "100%",
+							height: "100%",
+							overflow: "hidden",
+							mt: 1,
+							border: "1px solid #ccc",
 							borderRadius: 2,
+							position: "relative",
 						}}
-					/>
-				) : (
-					<Typography variant="caption">
-						No Distribution Plot Available
-					</Typography>
+					>
+						{similarityPlot ? (
+							<TransformWrapper
+								initialScale={1}
+								minScale={0.1}
+								maxScale={5}
+								limitToBounds={false}
+							>
+								{({ resetTransform }) => (
+									<>
+										<Box
+											sx={{ display: "flex", justifyContent: "flex-end", p: 1 }}
+										>
+											<Button
+												variant="outlined"
+												size="small"
+												onClick={() => resetTransform()}
+											>
+												Reset View
+											</Button>
+										</Box>
+										<TransformComponent>
+											<Box
+												component="img"
+												src={similarityPlot}
+												alt="Similarity Plot"
+												sx={{
+													width: "100%",
+													height: "100%",
+													objectFit: "contain",
+												}}
+											/>
+										</TransformComponent>
+									</>
+								)}
+							</TransformWrapper>
+						) : (
+							<Typography variant="caption" sx={{ p: 2 }}>
+								No Similarity Plot Available
+							</Typography>
+						)}
+					</Box>
+				)}
+
+				{tabValue === 1 && (
+					<Box
+						sx={{
+							width: "100%",
+							overflow: "hidden",
+							mt: 1,
+							border: "1px solid #ccc",
+							borderRadius: 2,
+							position: "relative",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+						}}
+					>
+						{intervalPlot ? (
+							<TransformWrapper
+								initialScale={0.4}
+								minScale={0.1}
+								maxScale={5}
+								limitToBounds={false}
+							>
+								{({ resetTransform }) => (
+									<>
+										<Box
+											sx={{
+												display: "flex",
+												justifyContent: "flex-end",
+												p: 1,
+												position: "absolute",
+												top: 0,
+												right: 0,
+												zIndex: 10,
+											}}
+										>
+											<Button
+												variant="outlined"
+												size="small"
+												onClick={() => resetTransform()}
+											>
+												Reset View
+											</Button>
+										</Box>
+										<TransformComponent>
+											<Box
+												component="img"
+												src={intervalPlot}
+												alt="Similarity Interval Plot"
+												sx={{
+													width: "100%",
+													height: "100%",
+													objectFit: "contain",
+												}}
+											/>
+										</TransformComponent>
+									</>
+								)}
+							</TransformWrapper>
+						) : (
+							<Typography variant="caption" sx={{ p: 2 }}>
+								No Similarity Interval Plot Available
+							</Typography>
+						)}
+					</Box>
+				)}
+
+				{tabValue === 2 && (
+					<Box
+						sx={{
+							width: "100%",
+							overflow: "hidden",
+							mt: 1,
+							border: "1px solid #ccc",
+							borderRadius: 2,
+							position: "relative",
+						}}
+					>
+						{distributionPlot ? (
+							<TransformWrapper
+								initialScale={1}
+								minScale={0.5}
+								maxScale={5}
+								limitToBounds={false}
+							>
+								{({ resetTransform }) => (
+									<>
+										<Box
+											sx={{ display: "flex", justifyContent: "flex-end", p: 1 }}
+										>
+											<Button
+												variant="outlined"
+												size="small"
+												onClick={() => resetTransform()}
+											>
+												Reset View
+											</Button>
+										</Box>
+										<TransformComponent>
+											<Box
+												component="img"
+												src={distributionPlot}
+												alt="Distribution Plot"
+												sx={{
+													width: "100%",
+													height: "100%",
+													objectFit: "contain",
+												}}
+											/>
+										</TransformComponent>
+									</>
+								)}
+							</TransformWrapper>
+						) : (
+							<Typography variant="caption" sx={{ p: 2 }}>
+								No Distribution Plot Available
+							</Typography>
+						)}
+					</Box>
 				)}
 			</Box>
 		</Box>
