@@ -1,6 +1,6 @@
-# Created by Jesse Ortega, Spring 2025.
-
 """
+Created by Jesse Ortega, Spring 2025.
+
 ================================================================================
  AI CODE GENERATION PIPELINE
 ================================================================================
@@ -190,6 +190,23 @@ file_handler_gemini.setFormatter(formatter)
 # Custom filter to allow only Gemini logs
 class GeminiFilter(logging.Filter):
     def filter(self, record):
+        """
+        filter: Filters log records to include only those related to the Gemini model.
+
+        This method is typically used in a custom logging filter to control which log 
+        entries are processed or displayed. It checks whether the message content contains 
+        the string "Gemini".
+
+        Parameters
+        ----------
+        record : logging.LogRecord
+            A log record object containing information about the event being logged.
+
+        Returns
+        -------
+        bool
+            True if the log message includes "Gemini", otherwise False.
+        """
         return "Gemini" in record.getMessage()
 
 
@@ -204,6 +221,23 @@ file_handler_openai.setFormatter(formatter)
 # Custom filter to allow only ChatGPT logs
 class OpenAIFilter(logging.Filter):
     def filter(self, record):
+        """
+        filter: Filters log records to include only those related to the ChatGPT model.
+
+        This method is typically used in a custom logging filter to control which log 
+        entries are processed or displayed. It checks whether the message content contains 
+        the string "ChatGPT".
+
+        Parameters
+        ----------
+        record : logging.LogRecord
+            A log record object containing information about the event being logged.
+
+        Returns
+        -------
+        bool
+            True if the log message includes "ChatGPT", otherwise False.
+        """
         return "ChatGPT" in record.getMessage()
 
 
@@ -218,6 +252,23 @@ file_handler_anthropic.setFormatter(formatter)
 # Custom filter to allow only Claude logs
 class AnthropicFilter(logging.Filter):
     def filter(self, record):
+        """
+        filter: Filters log records to include only those related to the Claude model.
+
+        This method is typically used in a custom logging filter to control which log 
+        entries are processed or displayed. It checks whether the message content contains 
+        the string "Claude".
+
+        Parameters
+        ----------
+        record : logging.LogRecord
+            A log record object containing information about the event being logged.
+
+        Returns
+        -------
+        bool
+            True if the log message includes "Claude", otherwise False.
+        """
         return "Claude" in record.getMessage()
 
 
@@ -232,6 +283,23 @@ file_handler_ollama.setFormatter(formatter)
 # Custom filter to allow only ollama logs
 class OllamaFilter(logging.Filter):
     def filter(self, record):
+        """
+        filter: Filters log records to include only those related to the Ollama model.
+
+        This method is typically used in a custom logging filter to control which log 
+        entries are processed or displayed. It checks whether the message content contains 
+        the string "Ollama".
+
+        Parameters
+        ----------
+        record : logging.LogRecord
+            A log record object containing information about the event being logged.
+
+        Returns
+        -------
+        bool
+            True if the log message includes "Ollama", otherwise False.
+        """
         return "Ollama" in record.getMessage()
 
 
@@ -246,6 +314,23 @@ file_handler_grok.setFormatter(formatter)
 # Custom filter to allow only ollama logs
 class GrokFilter(logging.Filter):
     def filter(self, record):
+        """
+        filter: Filters log records to include only those related to the Grok model.
+
+        This method is typically used in a custom logging filter to control which log 
+        entries are processed or displayed. It checks whether the message content contains 
+        the string "Grok".
+
+        Parameters
+        ----------
+        record : logging.LogRecord
+            A log record object containing information about the event being logged.
+
+        Returns
+        -------
+        bool
+            True if the log message includes "Grok", otherwise False.
+        """
         return "Grok" in record.getMessage()
 
 
