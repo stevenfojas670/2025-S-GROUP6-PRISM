@@ -38,12 +38,18 @@ export default function Courses() {
 	}, [semesterId, user?.professor_id])
 
 	return (
-		<Box>
-			<div>
-				<div>
-					<Typography>Welcome {user?.first_name}</Typography>
-				</div>
-				<div className="sections">
+		<Box
+			sx={(theme) => ({
+				backgroundColor: theme.palette.background.paper,
+				height: "100%",
+				p: 2,
+			})}
+		>
+			<Box>
+				<Box sx={{ mb: 2 }}>
+					<Typography variant="h4">Welcome {user?.first_name}</Typography>
+				</Box>
+				<Box className="sections">
 					{courses.map((course) => (
 						<CourseCards
 							key={course.id}
@@ -53,8 +59,8 @@ export default function Courses() {
 							<Typography>{course.section_number}</Typography>
 						</CourseCards>
 					))}
-				</div>
-			</div>
+				</Box>
+			</Box>
 		</Box>
 	)
 }

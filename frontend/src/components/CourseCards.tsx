@@ -22,7 +22,7 @@ export default function CourseCards({ children, onClick }: Props) {
 				py: 3,
 				boxShadow: 2,
 				transition: "background-color 0.3s ease",
-				backgroundColor: theme.palette.background.paper,
+				backgroundColor: theme.palette.background.default,
 				":hover": {
 					backgroundColor: darken(theme.palette.background.paper, 0.05),
 				},

@@ -79,9 +79,11 @@ export default function LeftPanel() {
 						))} */}
 					</List>
 				</Collapse>
-
 				<ListItemButton onClick={() => router.push("/student_comparison")}>
 					<ListItemText>Student Comparison</ListItemText>
+				</ListItemButton>
+				<ListItemButton onClick={() => router.push("/student_submissions")}>
+					<ListItemText>Student Submission</ListItemText>
 				</ListItemButton>
 				<ListItemButton onClick={() => router.push("/assignment_creation/")}>
 					<ListItemText>Assignment Creation</ListItemText>
