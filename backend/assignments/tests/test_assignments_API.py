@@ -82,6 +82,14 @@ class BaseViewTest(APITestCase):
             first_name="John",
             last_name="Doe",
         )
+        cls.student2 = Students.objects.create(
+            email="student2@example.com",
+            nshe_id=12121212,
+            codegrade_id=34345656,
+            ace_id="ACE124",
+            first_name="Jane",
+            last_name="Smith",
+        )
         cls.assignment = Assignments.objects.create(
             course_catalog=cls.catalog,
             semester=cls.semester,
@@ -145,7 +153,7 @@ class BaseViewTest(APITestCase):
             created_at=datetime.date.today(),
             flagged=False,
             assignment=cls.assignment,
-            student=cls.student,
+            student=cls.student2,
             course_instance=cls.course_instance,
             file_path="path/to/sub2",
         )
@@ -462,7 +470,7 @@ class AggregatedAssignmentDataViewTests(BaseViewTest):
         res = self.client.get(self.url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         data = res.json()
-        # all the keys we expect
+        # all the keys to expect
         expected = {
             "student_max_similarity_score",
             "assignment_avg_similarity_score",
@@ -472,7 +480,7 @@ class AggregatedAssignmentDataViewTests(BaseViewTest):
             "professor_avg_similarity",
         }
         self.assertTrue(expected.issubset(data.keys()))
-        # check that Alice’s max (we only created one student) is 80
+        # check that the max sim score is 80. Its the only subsimpair i made tbh
         max_scores = {d["submission_id_1__student__first_name"]: d["max_score"]
                       for d in data["student_max_similarity_score"]}
         self.assertEqual(max_scores[self.student.first_name], 80)
