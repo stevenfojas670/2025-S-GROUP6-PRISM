@@ -189,6 +189,11 @@ file_handler_gemini.setFormatter(formatter)
 
 # Custom filter to allow only Gemini logs
 class GeminiFilter(logging.Filter):
+    """
+    GeminiFilter logging stuff.
+
+    logging stuff.
+    """
     def filter(self, record):
         """
         filter: Filters log records to include only those related to the Gemini model.
@@ -220,12 +225,17 @@ file_handler_openai.setFormatter(formatter)
 
 # Custom filter to allow only ChatGPT logs
 class OpenAIFilter(logging.Filter):
+    """
+    OpenAIFilter logging stuff.
+
+    logging stuff.
+    """
     def filter(self, record):
         """
         filter: Filters log records to include only those related to the ChatGPT model.
 
-        This method is typically used in a custom logging filter to control which log 
-        entries are processed or displayed. It checks whether the message content contains 
+        This method is typically used in a custom logging filter to control which log
+        entries are processed or displayed. It checks whether the message content contains
         the string "ChatGPT".
 
         Parameters
@@ -251,12 +261,17 @@ file_handler_anthropic.setFormatter(formatter)
 
 # Custom filter to allow only Claude logs
 class AnthropicFilter(logging.Filter):
+    """
+    AnthropicFilter logging stuff.
+
+    logging stuff.
+    """
     def filter(self, record):
         """
         filter: Filters log records to include only those related to the Claude model.
 
-        This method is typically used in a custom logging filter to control which log 
-        entries are processed or displayed. It checks whether the message content contains 
+        This method is typically used in a custom logging filter to control which log
+        entries are processed or displayed. It checks whether the message content contains
         the string "Claude".
 
         Parameters
@@ -282,6 +297,11 @@ file_handler_ollama.setFormatter(formatter)
 
 # Custom filter to allow only ollama logs
 class OllamaFilter(logging.Filter):
+    """
+    OllamaFilter logging stuff.
+
+    logging stuff.
+    """
     def filter(self, record):
         """
         filter: Filters log records to include only those related to the Ollama model.
@@ -313,6 +333,11 @@ file_handler_grok.setFormatter(formatter)
 
 # Custom filter to allow only ollama logs
 class GrokFilter(logging.Filter):
+    """
+    GrokFilter logging stuff.
+
+    logging stuff.
+    """
     def filter(self, record):
         """
         filter: Filters log records to include only those related to the Grok model.
@@ -367,6 +392,11 @@ def main() -> None:
 
 
 class promptAI:
+    """
+     PromptAI: Prompt AI to generate code.
+
+    Prompt AI to generate code.
+    """
     GEMINI_FINISH_REASON = {
         0: "FINISH_REASON_UNSPECIFIED",
         1: "STOP",
@@ -1158,6 +1188,11 @@ class promptAI:
 
 
 class genAI:
+    """
+    GenAI: Gen the AI.
+
+    Gen the AI.
+    """
 
     BASE_PATH = Path(config("ASSIGNMENTS_BASE_PATH"))
 
