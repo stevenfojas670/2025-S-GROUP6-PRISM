@@ -8,40 +8,26 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { useEffect, useState } from "react";
-import { easyFetch } from "@/utils/fetchWrapper"
 import Box from "@mui/material/Box";
-
-type Alerts = {
-	studentOne: string,
-	studentTwo: string,
-	alertType: string
-}
+import { Alert }  from '@/types/alertType';
+import { GetAlerts } from "@/controllers/alerts";
 	
 export default function Alerts() {
-	const [alerts, setAlerts] = useState<Alerts[]>([{ studentOne:"John",studentTwo: "Tod", alertType:"Assignment"}]);
+	const [alerts, setAlerts] = useState<Alert[]>([]);
 
-	// useEffect(() => {
-	// 		const fetchSimiliarities = async () => {
-	// 			try {
-	// 				const response = await easyFetch(
-	// 					"http://localhost:8000/api/cheating/submission-similiarity-pairs/",
-	// 					{
-	// 						method: "get",
-	// 					}
-	// 				)
-	
-	// 				const data = await response.json()
-	
-	// 				if (response.ok) {
-	// 					setAlerts(data["results"])
-	// 				}
-	// 			} catch (error) {
-	// 				console.error(error)
-	// 			}
-	// 		}
-	
-	// 		fetchSimiliarities()
-	// 	}, [])
+	useEffect(() => {
+			const fetchAlerts = async () => {
+				const data = await GetAlerts()
+				
+				if ("alerts" in data){
+					setAlerts(data.alerts)
+				} else {
+					console.error("Error fetching alerts: ", data)
+				} 
+			}
+			
+			fetchAlerts()
+		}, [])
 
 	return (
 		<Box>
