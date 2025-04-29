@@ -6,6 +6,7 @@ This module tests the API endpoints for assignments and related models.
 import datetime
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.urls import reverse
 
 from rest_framework import status
@@ -454,14 +455,17 @@ class AggregatedAssignmentDataViewTests(BaseViewTest):
 
     @classmethod
     def setUpTestData(cls):
+        """Set up test data for AggregatedAssignmentDataView tests."""
         super().setUpTestData()
         cls.url = reverse("aggregated-assignment-data")  # make sure its in urls.py (PR 69)
 
     def test_anonymous_cannot_access(self):
+        """Test that anonymous users cannot access the aggregation endpoint."""
         res = self.client.get(self.url)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_professor_sees_aggregations(self):
+        """Test that a professor user can retrieve aggregated assignment data."""
         # add the professor to the Professor group
         prof_group, _ = Group.objects.get_or_create(name="Professor")
         self.professor_user.groups.add(prof_group)
@@ -486,14 +490,14 @@ class AggregatedAssignmentDataViewTests(BaseViewTest):
         self.assertEqual(max_scores[self.student.first_name], 80)
 
     def test_admin_sees_everything(self):
-        admin = User.objects.create_superuser(
-            email="admin@example.com", password="superpass"
-        )
+        """Test that an admin user can access all aggregated assignment data."""
+        admin = User.objects.create_superuser(email="admin@example.com", password="superpass")
         self.client.login(email=admin.email, password="superpass")
         res = self.client.get(self.url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
     def test_filter_by_assignment(self):
+        """Test filtering aggregated data by assignment ID."""
         prof_group, _ = Group.objects.get_or_create(name="Professor")
         self.professor_user.groups.add(prof_group)
         self.client.login(email=self.professor_user.email, password="pass123")
