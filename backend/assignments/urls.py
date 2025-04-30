@@ -21,6 +21,7 @@ from .views import (
     ConstraintsViewSet,
     PolicyViolationsViewSet,
     RequiredSubmissionFilesViewSet,
+    AggregatedAssignmentDataView,
 )
 
 router = DefaultRouter()
@@ -40,4 +41,9 @@ router.register(
 
 urlpatterns = [
     path("", include(router.urls)),
+    path(
+        "assignments/aggregated-data/",
+        AggregatedAssignmentDataView.as_view(),
+        name="aggregated-assignment-data"
+    ),
 ]
