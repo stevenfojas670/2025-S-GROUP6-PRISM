@@ -140,7 +140,7 @@ class BaseViewTest(APITestCase):
             file_name="main.py",
             similarity_threshold=0.75,
         )
-        cls.sub1 = Submissions.objects.create(
+        '''cls.sub1 = Submissions.objects.create(
             grade=85.0,
             created_at=datetime.date.today(),
             flagged=False,
@@ -148,7 +148,7 @@ class BaseViewTest(APITestCase):
             student=cls.student,
             course_instance=cls.course_instance,
             file_path="path/to/sub1",
-        )
+        )'''
         cls.sub2 = Submissions.objects.create(
             grade=90.0,
             created_at=datetime.date.today(),
@@ -161,7 +161,7 @@ class BaseViewTest(APITestCase):
         cls.sim1 = SubmissionSimilarityPairs.objects.create(
             assignment=cls.assignment,
             file_name="f1.py",
-            submission_id_1=cls.sub1,
+            submission_id_1=cls.submission,
             submission_id_2=cls.sub2,
             match_id=1,
             percentage=80,
@@ -170,7 +170,7 @@ class BaseViewTest(APITestCase):
             assignment=cls.assignment,
             file_name="f2.py",
             submission_id_1=cls.sub2,
-            submission_id_2=cls.sub1,
+            submission_id_2=cls.submission,
             match_id=2,
             percentage=60,
         )
