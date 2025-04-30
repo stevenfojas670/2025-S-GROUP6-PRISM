@@ -2,6 +2,8 @@
 
 from rest_framework import serializers
 
+from assignments import serializers as asSerializers
+
 from .models import (
     CheatingGroups,
     CheatingGroupMembers,
@@ -78,6 +80,10 @@ class FlaggedStudentsSerializer(serializers.ModelSerializer):
 
 class SubmissionSimilarityPairsSerializer(serializers.ModelSerializer):
     """Serializer for the SubmissionSimilarityPairs model."""
+
+    submissions = asSerializers.SubmissionsSerializer()
+
+    submissions = asSerializers.SubmissionsSerializer()
 
     class Meta:
         """Meta options for SubmissionSimilarityPairsSerializer.

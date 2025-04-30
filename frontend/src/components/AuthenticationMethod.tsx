@@ -2,6 +2,7 @@
 import { Button } from "@mui/material"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import Button from "@mui/material/Button"
 
 export function SignInButton() {
 	return (
@@ -20,9 +21,5 @@ export function SignInButton() {
 export function SignOutButton() {
 	const router = useRouter()
 
-	return (
-		<Button variant="outlined" onClick={() => router.push("/logout")}>
-			Sign Out
-		</Button>
-	)
+	return <Button onClick={() => router.push("/logout")}>Sign Out</Button>
 }
