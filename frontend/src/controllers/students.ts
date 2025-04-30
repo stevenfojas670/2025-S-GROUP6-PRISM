@@ -1,4 +1,5 @@
 import { easyFetch } from "@/utils/fetchWrapper"
+
 import { Student, Response, StudentResponse } from "@/types/studentTypes"
 import { APIError } from "@/types/APIError"
 //need to get all students from specific course by course ID

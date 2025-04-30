@@ -1,4 +1,3 @@
-// Define the interface for a single semester
 export interface Student {
 	id: number
 	email: string
@@ -9,12 +8,11 @@ export interface Student {
     last_name: string
 }
 
-// define response kek
-export interface Response {
-    id: number
-    students: Student
-    student: number
-    course_instance: number
+export interface StudentEnrollmentsResponse {
+	count: number
+	next: string | null
+	previous: string | null
+	results: StudentEnrollments[]
 }
 
 // Define the interface for the API response
@@ -24,3 +22,12 @@ export interface StudentResponse {
     previous: string | null
     results: Response[]
 }
+
+export interface StudentEnrollments {
+	id: number
+	student: Student
+	course_instance: number
+}
+
+
+

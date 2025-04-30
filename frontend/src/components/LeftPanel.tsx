@@ -10,20 +10,22 @@ import {
 } from "@mui/material"
 import { ExpandLess, ExpandMore } from "@mui/icons-material"
 import { Semester } from "@/types/semesterTypes"
-import { dummySemesters } from "@/data/dummySemesters"
+import { useCourseContext } from "@/context/CourseContext"
 import { GetSemesters } from "@/controllers/semesters"
 import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 
 export default function LeftPanel() {
 	const router = useRouter()
+	const { setSemesterId } = useCourseContext()
 
 	const [semOpen, setSemOpen] = useState<boolean>(false)
 	const [semesters, setSemesters] = useState<Semester[]>([])
-	const [semesterId, setSemesterId] = useState<number | null>(null)
+	const [semId, setSemId] = useState<number | null>(null)
 
-	const handleSemesterClick = async (semesterId: number) => {
-		router.push(`/courses?semester=${semesterId}`)
+	const handleSemesterClick = async (semId: number) => {
+		setSemesterId(semId)
+		router.push(`/courses?semester=${semId}`)
 	}
 
 	useEffect(() => {
@@ -41,13 +43,15 @@ export default function LeftPanel() {
 
 	return (
 		<Box
-			sx={{
-				width: 250,
+			sx={(theme) => ({
 				minWidth: 200,
-				borderRadius: 1,
-				border: "1px solid white",
+				maxWidth: 250,
+				minHeight: "100%",
+				position: "relative",
+				backgroundColor: theme.palette.primary.main,
+				color: theme.palette.primary.contrastText,
 				p: 2,
-			}}
+			})}
 		>
 			<List>
 				<ListItemButton onClick={() => setSemOpen(!semOpen)}>
@@ -63,40 +67,42 @@ export default function LeftPanel() {
 								>
 									<ListItemText>{semester.name}</ListItemText>
 								</ListItemButton>
-								<Divider />
 							</React.Fragment>
 						))}
-						{dummySemesters.map((ds) => (
+						{/* {dummySemesters.map((ds) => (
 							<React.Fragment key={ds.id}>
 								<ListItemButton>
 									<ListItemText>{ds.name}</ListItemText>
 								</ListItemButton>
-								<Divider />
+								 
 							</React.Fragment>
-						))}
+						))} */}
 					</List>
 				</Collapse>
-				<Divider />
 				<ListItemButton onClick={() => router.push("/student_comparison")}>
 					<ListItemText>Student Comparison</ListItemText>
 				</ListItemButton>
-				<Divider />
+				<ListItemButton onClick={() => router.push("/student_submissions")}>
+					<ListItemText>Student Submission</ListItemText>
+				</ListItemButton>
+				<ListItemButton onClick={() => router.push("/assignment_creation/")}>
+					<ListItemText>Assignment Creation</ListItemText>
+				</ListItemButton>
 				<ListItemButton onClick={() => router.push("/plagiarism_report")}>
 					<ListItemText>Plagiarism Report</ListItemText>
 				</ListItemButton>
-				<Divider />
+
 				<ListItemButton onClick={() => router.push("/alerts")}>
 					<ListItemText>Alerts</ListItemText>
 				</ListItemButton>
-				<Divider />
+
 				<ListItemButton onClick={() => router.push("/account")}>
 					<ListItemText>Account</ListItemText>
 				</ListItemButton>
-				<Divider />
+
 				<ListItemButton onClick={() => router.push("/alerts")}>
 					<ListItemText>Settings</ListItemText>
 				</ListItemButton>
-				<Divider />
 			</List>
 		</Box>
 	)

@@ -23,6 +23,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 	// Set user with login
 	const login = (userData: User) => {
+		userData.isLoggedIn = true
 		setUser(userData)
 		localStorage.setItem("user", JSON.stringify(userData))
 	}

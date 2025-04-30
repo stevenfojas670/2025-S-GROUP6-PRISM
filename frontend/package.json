@@ -32,7 +32,8 @@
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0",
 		"react-dropzone": "^14.3.8",
-		"react-plotly.js": "^2.6.0"
+		"react-plotly.js": "^2.6.0",
+		"react-zoom-pan-pinch": "^3.7.0"
 	},
 	"devDependencies": {
 		"@babel/preset-env": "^7.26.9",

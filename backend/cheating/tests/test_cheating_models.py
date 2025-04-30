@@ -1,251 +1,263 @@
-"""Tests for the Courses app models.
-
-Includes coverage for string representations and unique constraints.
-"""
+"""Unit tests for cheating detection models."""
 
 import datetime
 
+import pytest
+from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.test import TestCase
 
-from courses.models import (
-    CourseCatalog,
-    CourseInstances,
-    CoursesSemester,
-    CourseAssignmentCollaboration,
-    Students,
-    StudentEnrollments,
-    Professors,
-    ProfessorEnrollments,
-    TeachingAssistants,
-    TeachingAssistantEnrollment,
+from cheating.models import (
+    CheatingGroups,
+    CheatingGroupMembers,
+    ConfirmedCheaters,
+    FlaggedStudents,
+    SubmissionSimilarityPairs,
+    LongitudinalCheatingGroups,
+    LongitudinalCheatingGroupMembers,
+    LongitudinalCheatingGroupInstances,
 )
-from assignments.models import Assignments
 
 User = get_user_model()
+Semester = apps.get_model("courses", "Semester")
+CourseCatalog = apps.get_model("courses", "CourseCatalog")
+Professors = apps.get_model("courses", "Professors")
+TeachingAssistants = apps.get_model("courses", "TeachingAssistants")
+CourseInstances = apps.get_model("courses", "CourseInstances")
+Students = apps.get_model("courses", "Students")
+Assignments = apps.get_model("assignments", "Assignments")
+Submissions = apps.get_model("assignments", "Submissions")
 
 
-class BaseCoursesTest(TestCase):
-    """Base test case for the Courses app models.
-
-    Provides common test data for all tests.
-    """
+class CheatingModelsTest(TestCase):
+    """Full coverage for every cheating detection model."""
 
     def setUp(self):
-        """Set up common objects for Courses model tests."""
-        self.semester = CoursesSemester.objects.create(
-            name="Fall Semester",
-            year=2025,
-            term="Fall",
-            session="Regular",
+        """Create a course instance, students, and an assignment."""
+        self.sem = Semester.objects.create(
+            name="F23", year=2023, term="Fall", session="Regular"
         )
-        self.catalog = CourseCatalog.objects.create(
-            name="CS101",
+        self.cat = CourseCatalog.objects.create(
+            name="CS200",
             subject="CS",
-            catalog_number=101,
-            course_title="Introduction to Computer Science",
-            course_level="Undergraduate",
+            catalog_number=200,
+            course_title="Algo",
+            course_level="Undergrad",
         )
-        self.professor_user = User.objects.create_user(
-            username="prof1",
-            password="pass123",
-            email="professor@example.com",
+        prof_user = User.objects.create_user(
+            username="prof", password="p", email="p@x.com"
         )
-        self.ta_user = User.objects.create_user(
-            username="ta1",
-            password="pass123",
-            email="ta1@example.com",
+        self.prof = Professors.objects.create(user=prof_user)
+        ta_user = User.objects.create_user(
+            username="ta", password="p", email="ta@x.com"
         )
-        self.professor = Professors.objects.create(user=self.professor_user)
-        self.ta = TeachingAssistants.objects.create(user=self.ta_user)
-        self.course_instance = CourseInstances.objects.create(
-            semester=self.semester,
-            course_catalog=self.catalog,
+        self.ta = TeachingAssistants.objects.create(user=ta_user)
+        self.cinst = CourseInstances.objects.create(
+            semester=self.sem,
+            course_catalog=self.cat,
             section_number=1,
-            professor=self.professor,
+            professor=self.prof,
             teaching_assistant=self.ta,
-            canvas_course_id=123456,
+            canvas_course_id=42,
         )
-        self.student = Students.objects.create(
-            email="student@example.com",
-            nshe_id=12345678,
-            codegrade_id=87654321,
-            ace_id="ACE123",
-            first_name="John",
-            last_name="Doe",
+        self.st1 = Students.objects.create(
+            email="a@x.com",
+            nshe_id=1,
+            codegrade_id=11,
+            ace_id="A1",
+            first_name="A",
+            last_name="One",
         )
-        self.assignment = Assignments.objects.create(
-            course_instance=self.course_instance,
+        self.st2 = Students.objects.create(
+            email="b@x.com",
+            nshe_id=2,
+            codegrade_id=22,
+            ace_id="B2",
+            first_name="B",
+            last_name="Two",
+        )
+        self.asg = Assignments.objects.create(
+            course_catalog=self.cat,
+            semester=self.sem,
             assignment_number=1,
-            title="Test Assignment",
-            lock_date=datetime.date.today(),
-            pdf_filepath="path/to/pdf",
-            has_base_code=True,
-            moss_report_directory_path="path/to/moss",
-            bulk_ai_directory_path="path/to/bulk",
-            language="Python",
-            has_policy=True,
+            title="Test",
+            due_date=datetime.date.today(),
+            pdf_filepath="p.pdf",
+            has_base_code=False,
+            moss_report_directory_path="m/",
+            bulk_ai_directory_path="b/",
+            language="Py",
+            has_policy=False,
         )
-        self.assignment_collaboration = CourseAssignmentCollaboration.objects.create(
-            assignment=self.assignment,
-            course_instance=self.course_instance,
+        self.sub1 = Submissions.objects.create(
+            grade=1,
+            created_at=datetime.date.today(),
+            flagged=False,
+            assignment=self.asg,
+            student=self.st1,
+            course_instance=self.cinst,
+            file_path="s1.py",
         )
-        self.student_enrollment = StudentEnrollments.objects.create(
-            student=self.student,
-            course_instance=self.course_instance,
-        )
-        self.professor_enrollment = ProfessorEnrollments.objects.create(
-            professor=self.professor,
-            course_instance=self.course_instance,
-        )
-        self.ta_enrollment = TeachingAssistantEnrollment.objects.create(
-            teaching_assistant=self.ta,
-            course_instance=self.course_instance,
+        self.sub2 = Submissions.objects.create(
+            grade=2,
+            created_at=datetime.date.today(),
+            flagged=False,
+            assignment=self.asg,
+            student=self.st2,
+            course_instance=self.cinst,
+            file_path="s2.py",
         )
 
-
-class CoursesModelsStrTest(BaseCoursesTest):
-    """Test string representations of Courses app models."""
-
-    def test_course_catalog_str(self):
-        """Test the __str__ method of CourseCatalog."""
-        expected = (
-            f"{self.catalog.subject} {self.catalog.catalog_number} - "
-            f"{self.catalog.course_title}"
+    def test_cheating_groups_str_and_unique(self):
+        """Test __str__ for CheatingGroups."""
+        cg = CheatingGroups.objects.create(
+            assignment=self.asg,
+            cohesion_score=0.1234,
+            analysis_report_path="r1.html",
         )
-        self.assertEqual(str(self.catalog), expected)
-
-    def test_courses_semester_str(self):
-        """Test the __str__ method of CoursesSemester."""
-        expected = (
-            f"{self.semester.term} {self.semester.year} - {self.semester.session}"
-        )
-        self.assertEqual(str(self.semester), expected)
-
-    def test_course_instances_str(self):
-        """Test the __str__ method of CourseInstances."""
-        expected = (
-            f"{self.catalog} - Section {self.course_instance.section_number} "
-            f"({self.semester})"
-        )
-        self.assertEqual(str(self.course_instance), expected)
-
-    def test_course_assignment_collaboration_str(self):
-        """Test the __str__ method of CourseAssignmentCollaboration."""
-        expected = f"{self.course_instance} ↔ {self.assignment}"
-        self.assertEqual(str(self.assignment_collaboration), expected)
-
-    def test_students_str(self):
-        """Test the __str__ method of Students."""
-        expected = (
-            f"{self.student.first_name} {self.student.last_name} "
-            f"({self.student.ace_id})"
-        )
-        self.assertEqual(str(self.student), expected)
-
-    def test_student_enrollments_str(self):
-        """Test the __str__ method of StudentEnrollments."""
-        expected = f"{self.student} enrolled in {self.course_instance}"
-        self.assertEqual(str(self.student_enrollment), expected)
-
-    def test_professors_str(self):
-        """Test the __str__ method of Professors."""
-        expected = f"Professor ID {self.professor.id} - {self.professor.user}"
-        self.assertEqual(str(self.professor), expected)
-
-    def test_professor_enrollments_str(self):
-        """Test the __str__ method of ProfessorEnrollments."""
-        expected = f"{self.professor} assigned to {self.course_instance}"
-        self.assertEqual(str(self.professor_enrollment), expected)
-
-    def test_teaching_assistants_str(self):
-        """Test the __str__ method of TeachingAssistants."""
-        expected = f"TeachingAssistant ID {self.ta.id} - {self.ta.user}"
-        self.assertEqual(str(self.ta), expected)
-
-    def test_teaching_assistant_enrollment_str(self):
-        """Test the __str__ method of TeachingAssistantEnrollment."""
-        expected = f"{self.ta} assigned to {self.course_instance}"
-        self.assertEqual(str(self.ta_enrollment), expected)
-
-
-class CoursesModelsUniqueTest(BaseCoursesTest):
-    """Test unique constraints for Courses app models."""
-
-    def test_unique_course_catalog(self):
-        """Test the unique constraint on (subject, catalog_number) in CourseCatalog."""
-        with self.assertRaises(IntegrityError):
-            CourseCatalog.objects.create(
-                name="CS101-dup",
-                subject=self.catalog.subject,
-                catalog_number=self.catalog.catalog_number,
-                course_title="Different Title",
-                course_level="Undergraduate",
+        assert "Cohesion Score: 0.12" in str(cg)
+        with pytest.raises(IntegrityError):
+            CheatingGroups.objects.create(
+                assignment=self.asg,
+                cohesion_score=0.5,
+                analysis_report_path="r1.html",
             )
 
-    def test_unique_course_instances(self):
-        """Test the unique constraint on (semester, course_catalog, section_number, professor)."""
-        with self.assertRaises(IntegrityError):
-            CourseInstances.objects.create(
-                semester=self.semester,
-                course_catalog=self.catalog,
-                section_number=self.course_instance.section_number,
-                professor=self.professor,
-                teaching_assistant=self.ta,
-                canvas_course_id=654321,
+    def test_cheating_group_members_str(self):
+        """Test __str__ for CheatingGroupMembers."""
+        cg = CheatingGroups.objects.create(
+            assignment=self.asg, cohesion_score=0.5, analysis_report_path="r2.html"
+        )
+        cgm = CheatingGroupMembers.objects.create(
+            cheating_group=cg, student=self.st1, cluster_distance=5.6789
+        )
+        assert "Distance: 5.68" in str(cgm)
+
+    def test_confirmed_cheaters_str_and_unique(self):
+        """Test __str__ for ConfirmedCheaters."""
+        cc = ConfirmedCheaters.objects.create(
+            confirmed_date=datetime.date(2023, 1, 1),
+            threshold_used=90,
+            assignment=self.asg,
+            student=self.st1,
+        )
+        assert "(Confirmed: 2023-01-01)" in str(cc)
+        with pytest.raises(IntegrityError):
+            ConfirmedCheaters.objects.create(
+                confirmed_date=datetime.date(2023, 1, 2),
+                threshold_used=80,
+                assignment=self.asg,
+                student=self.st1,
             )
 
-    def test_unique_canvas_course_id(self):
-        """Test the uniqueness of canvas_course_id in CourseInstances."""
-        with self.assertRaises(IntegrityError):
-            CourseInstances.objects.create(
-                semester=self.semester,
-                course_catalog=self.catalog,
-                section_number=2,
-                professor=self.professor,
-                teaching_assistant=self.ta,
-                canvas_course_id=self.course_instance.canvas_course_id,
+    def test_submission_similarity_pairs_str_and_unique(self):
+        """Test __str__ for SubmissionSimilarityPairs."""
+        ssp = SubmissionSimilarityPairs.objects.create(
+            assignment=self.asg,
+            file_name="f.py",
+            submission_id_1=self.sub1,
+            submission_id_2=self.sub2,
+            match_id=99,
+            percentage=88,
+        )
+        out = str(ssp)
+        assert "↔" in out and "(88%)" in out
+        with pytest.raises(IntegrityError):
+            SubmissionSimilarityPairs.objects.create(
+                assignment=self.asg,
+                file_name="g.py",
+                submission_id_1=self.sub1,
+                submission_id_2=self.sub2,
+                match_id=100,
+                percentage=77,
             )
 
-    def test_unique_courses_semester(self):
-        """Test the unique constraint on (year, term, session) in CoursesSemester."""
-        with self.assertRaises(IntegrityError):
-            CoursesSemester.objects.create(
-                name="Fall Duplicate",
-                year=self.semester.year,
-                term=self.semester.term,
-                session=self.semester.session,
+    def test_flagged_students_str_and_unique(self):
+        """Test __str__ for FlaggedStudents."""
+        ssp = SubmissionSimilarityPairs.objects.create(
+            assignment=self.asg,
+            file_name="f2.py",
+            submission_id_1=self.sub1,
+            submission_id_2=self.sub2,
+            match_id=101,
+            percentage=50,
+        )
+        fs = FlaggedStudents.objects.create(
+            professor=self.prof,
+            student=self.st2,
+            similarity=ssp,
+            generative_ai=True,
+        )
+        assert "(AI)" in str(fs)
+        with pytest.raises(IntegrityError):
+            FlaggedStudents.objects.create(
+                professor=self.prof,
+                student=self.st2,
+                similarity=ssp,
+                generative_ai=False,
             )
 
-    def test_unique_course_assignment_collaboration(self):
-        """Test the unique constraint on (assignment, course_instance)."""
-        with self.assertRaises(IntegrityError):
-            CourseAssignmentCollaboration.objects.create(
-                assignment=self.assignment,
-                course_instance=self.course_instance,
-            )
+    def test_longitudinal_models_strisms_and_uniques(self):
+        """Test __str__ for LongitudinalCheatingGroups and members."""
+        lg = LongitudinalCheatingGroups.objects.create(score=3.1415)
+        assert "Score: 3.14" in str(lg)
 
-    def test_unique_student_enrollments(self):
-        """Test the unique constraint on (student, course_instance) in StudentEnrollments."""
-        with self.assertRaises(IntegrityError):
-            StudentEnrollments.objects.create(
-                student=self.student,
-                course_instance=self.course_instance,
-            )
+        lgm = LongitudinalCheatingGroupMembers.objects.create(
+            longitudinal_cheating_group=lg,
+            student=self.st1,
+            is_core_member=False,
+            appearance_count=7,
+        )
+        assert "Peripheral" in str(lgm)
 
-    def test_unique_professor_enrollments(self):
-        """Test the unique constraint on (professor, course_instance)."""
-        with self.assertRaises(IntegrityError):
-            ProfessorEnrollments.objects.create(
-                professor=self.professor,
-                course_instance=self.course_instance,
-            )
+        cg = CheatingGroups.objects.create(
+            assignment=self.asg, cohesion_score=0.2, analysis_report_path="r3.html"
+        )
+        lci = LongitudinalCheatingGroupInstances.objects.create(
+            cheating_group=cg,
+            longitudinal_cheating_group=lg,
+        )
+        assert "LongitudinalGroup" in str(lci)
 
-    def test_unique_teaching_assistant_enrollment(self):
-        """Test the unique constraint on (teaching_assistant, course_instance)."""
-        with self.assertRaises(IntegrityError):
-            TeachingAssistantEnrollment.objects.create(
-                teaching_assistant=self.ta,
-                course_instance=self.course_instance,
-            )
+    def test_full_cycle_combined(self):
+        """Touch every model in one transaction to ensure nothing blows up under real‐world ordering."""
+        cg = CheatingGroups(
+            assignment=self.asg, cohesion_score=0.999, analysis_report_path="all.html"
+        )
+        cg.save()
+        cgm = CheatingGroupMembers.objects.create(
+            cheating_group=cg, student=self.st1, cluster_distance=0.001
+        )
+        cc = ConfirmedCheaters.objects.create(
+            confirmed_date=datetime.date.today(),
+            threshold_used=1,
+            assignment=self.asg,
+            student=self.st2,
+        )
+        ssp = SubmissionSimilarityPairs.objects.create(
+            assignment=self.asg,
+            file_name="z.py",
+            submission_id_1=self.sub1,
+            submission_id_2=self.sub2,
+            match_id=111,
+            percentage=99,
+        )
+        fs = FlaggedStudents.objects.create(
+            professor=self.prof,
+            student=self.st1,
+            similarity=ssp,
+            generative_ai=False,
+        )
+        lg = LongitudinalCheatingGroups.objects.create(score=2.718)
+        lci = LongitudinalCheatingGroupInstances.objects.create(
+            cheating_group=cg, longitudinal_cheating_group=lg
+        )
+        lgm = LongitudinalCheatingGroupMembers.objects.create(
+            longitudinal_cheating_group=lg,
+            student=self.st2,
+            is_core_member=True,
+            appearance_count=3,
+        )
+        for obj in (cg, cgm, cc, ssp, fs, lg, lci, lgm):
+            assert str(obj)

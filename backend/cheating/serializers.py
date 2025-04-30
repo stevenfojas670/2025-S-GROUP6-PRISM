@@ -2,15 +2,19 @@
 
 from rest_framework import serializers
 
+from assignments.serializers import SubmissionsSerializer
+
 from .models import (
     CheatingGroups,
     CheatingGroupMembers,
     ConfirmedCheaters,
     FlaggedStudents,
-    SubmissionSimiliarityPairs,
+    SubmissionSimilarityPairs,
     LongitudinalCheatingGroups,
     LongitudinalCheatingGroupMembers,
     LongitudinalCheatingGroupInstances,
+    StudentReport,
+    AssignmentReport,
 )
 
 
@@ -74,18 +78,21 @@ class FlaggedStudentsSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class SubmissionSimiliarityPairsSerializer(serializers.ModelSerializer):
-    """Serializer for the SubmissionSimiliarityPairs model."""
+class SubmissionSimilarityPairsSerializer(serializers.ModelSerializer):
+    """Serializer for the SubmissionSimilarityPairs model."""
+
+    submission_id_1 = SubmissionsSerializer(read_only=True)
+    submission_id_2 = SubmissionsSerializer(read_only=True)
 
     class Meta:
-        """Meta options for SubmissionSimiliarityPairsSerializer.
+        """Meta options for SubmissionSimilarityPairsSerializer.
 
         Attributes:
-            model: The SubmissionSimiliarityPairs model.
+            model: The SubmissionSimilarityPairs model.
             fields: All model fields.
         """
 
-        model = SubmissionSimiliarityPairs
+        model = SubmissionSimilarityPairs
         fields = "__all__"
 
 
@@ -132,3 +139,63 @@ class LongitudinalCheatingGroupInstancesSerializer(serializers.ModelSerializer):
 
         model = LongitudinalCheatingGroupInstances
         fields = "__all__"
+
+
+class StudentReportSerializer(serializers.ModelSerializer):
+    """Serializes one StudentReport instance."""
+
+    submission_id = serializers.IntegerField(
+        source="submission_id", read_only=True, help_text="PK of the student submission"
+    )
+    student_name = serializers.SerializerMethodField(
+        help_text="Full name of the student"
+    )
+
+    class Meta:
+        """Meta options for StudentReportSerializer."""
+
+        model = StudentReport
+        fields = (
+            "submission_id",
+            "student_name",
+            "mean_similarity",
+            "z_score",
+            "ci_lower",
+            "ci_upper",
+        )
+
+    def get_student_name(self, obj):
+        """Look up and return student’s full name."""
+        student = obj.submission.student
+        return f"{student.first_name} {student.last_name}"
+
+
+class AssignmentReportSerializer(serializers.ModelSerializer):
+    """Serializes an AssignmentReport along with its StudentReports."""
+
+    assignment_id = serializers.IntegerField(
+        source="assignment_id", read_only=True, help_text="PK of the assignment"
+    )
+    student_reports = StudentReportSerializer(
+        many=True, read_only=True, help_text="List of per-student inference results"
+    )
+
+    class Meta:
+        """Meta options for AssignmentReportSerializer."""
+
+        model = AssignmentReport
+        fields = (
+            "id",
+            "assignment_id",
+            "created_at",
+            "mu",
+            "sigma",
+            "variance",
+            "student_reports",
+        )
+        read_only_fields = (
+            "id",
+            "assignment_id",
+            "created_at",
+            "student_reports",
+        )

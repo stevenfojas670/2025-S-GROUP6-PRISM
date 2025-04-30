@@ -29,14 +29,24 @@ const LoginComponent: React.FC = () => {
 		type: "success" | "error"
 		text: string
 	} | null>(null)
-	const context = useAuth()
+	const { user } = useAuth()
 
 	// Hydrated statee added to handle mismatched rendering
 	const [hydrated, setHydrated] = useState(false)
 
 	useEffect(() => {
 		setHydrated(true)
+
+		const errorMessage = sessionStorage.getItem("loginError")
+		if (errorMessage) {
+			setMessage({ type: "error", text: errorMessage })
+			sessionStorage.removeItem("loginError")
+		}
 	}, [])
+
+	useEffect(() => {
+		if (hydrated && user?.isLoggedIn) router.push("/courses/")
+	})
 
 	if (!hydrated) return null // Prevents SSR mismatches
 
@@ -53,9 +63,8 @@ const LoginComponent: React.FC = () => {
 			const data = await response.json()
 
 			if (response.ok) {
-				console.log(data["user"])
 				context?.login(data["user"])
-				router.push("/dashboard")
+				router.push("/courses/")
 			}
 		} catch (err) {
 			console.error("Login error:", err)
@@ -127,10 +136,12 @@ const LoginComponent: React.FC = () => {
 				</form>
 
 				{/* OR Divider */}
-				<Divider sx={{ width: "100%", my: 2 }}>OR</Divider>
+				<Divider sx={{ width: "100%", my: 2 }}></Divider>
 
 				{/* NextAuth Google Login Button */}
-				<SignInButton />
+				<Button variant="contained">
+					<SignInButton />
+				</Button>
 
 				{/* Display Messages */}
 				{message && (

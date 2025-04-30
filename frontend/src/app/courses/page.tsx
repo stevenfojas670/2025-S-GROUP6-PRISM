@@ -1,25 +1,32 @@
 "use client"
-import { Typography, Button, Box } from "@mui/material"
+import { Typography, Box } from "@mui/material"
 import CourseCards from "@/components/CourseCards"
-import { SignOutButton } from "@/components/AuthenticationMethod"
 import { useRouter } from "next/navigation"
 import { GetCourses } from "@/controllers/courses"
 import { Course, CourseCatalog, CourseResponse } from "@/types/coursesTypes"
 import { useAuth } from "@/context/AuthContext"
 import { useEffect, useState } from "react"
-import { useSearchParams } from "next/navigation"
+import { useCourseContext } from "@/context/CourseContext"
 
 export default function Courses() {
 	const router = useRouter()
 	const { user } = useAuth()
-	const searchParams = useSearchParams()
-	const semesterId = searchParams.get("semester")
+	const { setCourseInstanceId, semesterId } = useCourseContext()
 	const [courses, setCourses] = useState<Course[]>([])
 
+	const courseClick = (courseInstanceId: number, catalogId: number) => {
+		setCourseInstanceId(courseInstanceId)
+		router.push(`/courses/${catalogId}/assignments`)
+	}
+
 	useEffect(() => {
-		if (!semesterId) return
+		if (!(semesterId && user?.professor_id)) return
+		console.log(semesterId)
 		const loadCourses = async () => {
-			const data = await GetCourses(Number(semesterId))
+			const data = await GetCourses(
+				Number(semesterId),
+				Number(user?.professor_id)
+			)
 			if ("results" in data) {
 				setCourses(data.results)
 			} else {
@@ -28,37 +35,32 @@ export default function Courses() {
 		}
 
 		loadCourses()
-	}, [semesterId])
+	}, [semesterId, user?.professor_id])
 
 	return (
-		<Box>
-			<SignOutButton />
-
-			{/* Main banner */}
-			<div>
-				<div className="Banner">
-					<Typography>Welcome {user?.first_name}</Typography>
-					<h1>Professor ID: {user?.professor_id}</h1>
-					<h1>User ID: {user?.pk}</h1>
-				</div>
-
-				{/* 2 buttons -> compare students, alerts */}
-				<div className="comapreButtons">
-					<button onClick={() => router.push("/student_comparison")}>
-						Compare Students
-					</button>
-					<button onClick={() => router.push("/alerts")}>Alerts</button>
-				</div>
-
-				{/* Main Navigation */}
-				<div className="sections">
+		<Box
+			sx={(theme) => ({
+				backgroundColor: theme.palette.background.paper,
+				height: "100%",
+				p: 2,
+			})}
+		>
+			<Box>
+				<Box sx={{ mb: 2 }}>
+					<Typography variant="h4">Welcome {user?.first_name}</Typography>
+				</Box>
+				<Box className="sections">
 					{courses.map((course) => (
-						<CourseCards key={course.id}>
+						<CourseCards
+							key={course.id}
+							onClick={() => courseClick(course.id, course.course_catalog.id)}
+						>
 							<Typography>{course.course_catalog.name}</Typography>
+							<Typography>{course.section_number}</Typography>
 						</CourseCards>
 					))}
-				</div>
-			</div>
+				</Box>
+			</Box>
 		</Box>
 	)
 }
