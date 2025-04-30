@@ -1,39 +1,29 @@
 import { easyFetch } from "@/utils/fetchWrapper"
-import {
-	StudentEnrollments,
-	StudentEnrollmentsResponse,
-} from "@/types/studentTypes"
+
+import { Student, Response, StudentResponse } from "@/types/studentTypes"
 import { APIError } from "@/types/APIError"
+//need to get all students from specific course by course ID
+export async function GetStudents(id: number): Promise<StudentResponse | APIError> {
+	try {
+		const response = await easyFetch(
+			`http://localhost:8000/api/course/studentenrollments/?course_instance=${id}`,
+			{ method: "GET" }
+		)
 
-export async function GetStudents(
-	course_instance_id: number,
-	no_paginate: boolean
-): Promise<StudentEnrollmentsResponse | StudentEnrollments[] | APIError> {
-	const queryParams = new URLSearchParams({
-		course_instance: String(course_instance_id),
-	})
+		const data = await response.json()
 
-	if (no_paginate) {
-		queryParams.append("no_pagination", "true")
-	}
-
-	const response = await easyFetch(
-		`http://localhost:8000/api/course/studentenrollments/?${queryParams}`,
-		{ method: "GET" }
-	)
-
-	const data = await response.json()
-
-	if (response.ok) {
-		if (no_paginate) {
-			return data as StudentEnrollments[]
+		if (response.ok) {
+			return data.results as StudentResponse
 		} else {
-			return data as StudentEnrollmentsResponse
+			return {
+				detail: data.detail ?? "Failed to fetch students.",
+				status: response.status,
+			}
 		}
-	} else {
+	} catch (e) {
+		console.error(e)
 		return {
-			detail: data.detail ?? "Failed to fetch students.",
-			status: response.status,
+			message: "Something went wrong during fetch.",
 		}
 	}
 }

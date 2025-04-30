@@ -4,14 +4,8 @@ export interface Student {
 	nshe_id: number
 	codegrade_id: number
 	ace_id: string
-	first_name: string
-	last_name: string
-}
-
-export interface StudentEnrollments {
-	id: number
-	student: Student
-	course_instance: number
+    first_name: string
+    last_name: string
 }
 
 export interface StudentEnrollmentsResponse {
@@ -20,3 +14,20 @@ export interface StudentEnrollmentsResponse {
 	previous: string | null
 	results: StudentEnrollments[]
 }
+
+// Define the interface for the API response
+export interface StudentResponse {
+    count: number
+    next: string | null
+    previous: string | null
+    results: Response[]
+}
+
+export interface StudentEnrollments {
+	id: number
+	student: Student
+	course_instance: number
+}
+
+
+
