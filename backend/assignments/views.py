@@ -1,6 +1,6 @@
 """Assignment views with enhanced filtering, ordering, and search capabilities."""
 
-from rest_framework import filters, viewsets, status
+from rest_framework import filters, viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
