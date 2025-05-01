@@ -1,7 +1,6 @@
 """Serializers for the Assignments app."""
 
 from rest_framework import serializers
-from courses import serializers as courseSerializers
 
 from .models import (
     Assignments,
@@ -31,8 +30,6 @@ class AssignmentsSerializer(serializers.ModelSerializer):
 
 class SubmissionsSerializer(serializers.ModelSerializer):
     """Serializer for the Submissions model."""
-
-    students = courseSerializers.StudentEnrollmentsSerializer()
 
     class Meta:
         """Meta options for the SubmissionsSerializer.
