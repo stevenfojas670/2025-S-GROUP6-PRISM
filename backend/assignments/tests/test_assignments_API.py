@@ -140,15 +140,6 @@ class BaseViewTest(APITestCase):
             file_name="main.py",
             similarity_threshold=0.75,
         )
-        '''cls.sub1 = Submissions.objects.create(
-            grade=85.0,
-            created_at=datetime.date.today(),
-            flagged=False,
-            assignment=cls.assignment,
-            student=cls.student,
-            course_instance=cls.course_instance,
-            file_path="path/to/sub1",
-        )'''
         cls.sub2 = Submissions.objects.create(
             grade=90.0,
             created_at=datetime.date.today(),
@@ -462,7 +453,7 @@ class AggregatedAssignmentDataViewTests(BaseViewTest):
     def test_anonymous_cannot_access(self):
         """Test that anonymous users cannot access the aggregation endpoint."""
         res = self.client.get(self.url)
-        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_professor_sees_aggregations(self):
         """Test that a professor user can retrieve aggregated assignment data."""
