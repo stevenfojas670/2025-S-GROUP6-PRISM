@@ -21,7 +21,6 @@ from dotenv import load_dotenv
 # os: for loading the dotenv variables and making file directories
 import os
 
-
 # sys: error outputs
 import sys
 
@@ -35,50 +34,80 @@ def mkdir(dir_path):
         return False
     return True
 
-
-"""
-def find_filepath():.
-    Return the filepath of the autotest files in local directory.
-    # all files will be downloaded/created in the same folder directory called "autotest files"
-    folder = "autotest files"
-    return os.path.join(os.getcwd(), folder)
-"""
-
-
 def find_filepath(folder_string):
     """Over load function for adding file to a specified folder."""
     # all files will be downloaded/created in the same folder directory called "autotest files"
     folder = "autotest files"
     return os.path.join(os.getcwd(), folder, folder_string)
 
-
 def extract_data(client, tests):
     """Extract the input files/fixtures uploaded for each assignment."""
-    for tuple in tests:
-        assi_name = tuple[0]
-        test = tuple[1]
-        test_id = test.id
+    try:
+        for tuple in tests:
+            assi_name = tuple[0]
+            test = tuple[1]
+            test_id = test.id
 
-        # Go through the fixtures and get the contents
-        fixtures = test.fixtures
-        i = 0
-        for fixture in fixtures:
-            fixture_id = int(fixture.id)
-            curr_autotest = client.auto_test.get_fixture(
-                auto_test_id=test_id, fixture_id=fixture_id
-            )
-            curr_autotest = curr_autotest.decode("utf-8")
-            filename = fixture.name
-            foldername = "fixtures"
-            foldername = os.path.join(assi_name, foldername)
-            filepath = find_filepath(foldername)
-            if not mkdir(filepath):
-                return
-            filepath = os.path.join(filepath, filename)
-            with open(filepath, "w") as f:
-                f.write(str(curr_autotest))
-            i += 0
+            # Go through the fixtures and get the contents
+            fixtures = test.fixtures
+            # extract_fixture_scripts(client, fixtures, tuple)
+            meta = extract_metadata(tuple)
+            print(meta)
+            
+    except Exception as e:
+        print(str(e), file=sys.stderr)
 
+def extract_fixture_scripts(client, fixtures, tuple):
+    """"""
+    assi_name = tuple[0]
+    test = tuple[1]
+    test_id = test.id
+    for fixture in fixtures:
+        fixture_id = int(fixture.id)
+        curr_autotest = client.auto_test.get_fixture(
+            auto_test_id=test_id, fixture_id=fixture_id
+        )
+        curr_autotest = curr_autotest.decode("utf-8")
+        filename = fixture.name
+        foldername = "fixtures"
+        foldername = os.path.join(assi_name, foldername)
+        filepath = find_filepath(foldername)
+        if not mkdir(filepath):
+            return
+        filepath = os.path.join(filepath, filename)
+        with open(filepath, "w") as f:
+            f.write(str(curr_autotest))
+
+def extract_metadata(tuple):
+    """Create a dictionary that holds all auto test metadata."""
+    assi_name = tuple[0]
+    dictionary = {}
+    dictionary[assi_name] = {}
+    test = tuple[1]
+    dictionary[assi_name]["meta_data"] = []
+    for set in test.sets:
+        suites = set.suites
+        for suite in suites:
+            steps = suite.steps
+            for step in steps:
+                if not hasattr(step.data, "inputs"):
+                    continue
+                if not hasattr(step.data, "program"):
+                    continue
+                step_dict = {}
+                step_dict["name"] = step.name
+                step_dict["command"] = step.data.program
+                step_dict[f"{step.name}_i/o"] = []
+                inputs = step.data.inputs
+                for input in inputs:
+                    curr_io_dict = {}
+                    curr_io_dict["name"] = input.name
+                    curr_io_dict["args"] = input.args 
+                    curr_io_dict["stdin"] = input.stdin 
+                    curr_io_dict["output"] = input.output 
+                    step_dict[f"{step.name}_i/o"].append(curr_io_dict)
+                dictionary[assi_name]["meta_data"].append(step_dict)
+    return dictionary
 
 def main():
     """Login and populate the class attributes."""
@@ -104,6 +133,7 @@ def main():
             print(str(e), file=sys.stderr)
 
     extract_data(client, tests)
+    
 
 
 if __name__ == "__main__":
