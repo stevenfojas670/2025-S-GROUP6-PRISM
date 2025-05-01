@@ -3,12 +3,16 @@
 from rest_framework import filters, viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.request import Request
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action
+from rest_framework import status
 from django_filters.rest_framework import DjangoFilterBackend
 from prism_backend.mixins import CachedViewMixin
 from users.permissions import IsProfessorOrAdmin
 from django.db.models import Count, Max, Avg, F
 from cheating.models import SubmissionSimilarityPairs
+from courses.models import CourseInstances
 
 from .models import (
     Assignments,
@@ -59,17 +63,40 @@ class AssignmentsViewSet(viewsets.ModelViewSet, CachedViewMixin):
         "moss_report_directory_path",
     ]
 
-    # def get_queryset(self):
-    #     """Class function for querying assignments by course_catalog_id"""
-    #     queryset = Assignments.objects.all()
-    #     course_id = self.request.query_params.get("course_id")
+    @action(detail=False, methods=["get"], url_path="get-assignments-by-course")
+    def get_assignments_by_courseinstance(self, request: Request) -> Response:
+        """
+        Returns all assignments for a given course instance id.
+        Example: /assignments/by-courseinstance/?course=12
+        """
+        courseinstance_id = request.query_params.get("course")
 
-    #     if course_id:
-    #         queryset = queryset.filter(
-    #             semester__courseinstances__id=course_id
-    #         ).distinct()
+        if not courseinstance_id:
+            return Response(
+                {"detail": "'course' query parameter is required."},
+                status=400,
+            )
 
-    #     return queryset
+        try:
+            course_instance = CourseInstances.objects.select_related(
+                "course_catalog", "semester"
+            ).get(id=courseinstance_id)
+        except CourseInstances.DoesNotExist:
+            return Response({"detail": "CourseInstance not found."}, status=404)
+
+        # Fetch assignments matching course catalog and semester
+        assignments = Assignments.objects.filter(
+            course_catalog=course_instance.course_catalog,
+            semester=course_instance.semester,
+        ).order_by("assignment_number")
+
+        page = self.paginate_queryset(assignments)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(assignments, many=True)
+        return Response(serializer.data)
 
 
 class SubmissionsViewSet(viewsets.ModelViewSet, CachedViewMixin):

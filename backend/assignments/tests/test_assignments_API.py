@@ -225,6 +225,15 @@ class AssignmentsViewSetTest(BaseViewTest):
         self.assertIn("next", response.data)
         self.assertIn("previous", response.data)
 
+    def test_assignments_get_all_by_course(self):
+        """Test retrieving all assignments by course instance id."""
+        url = reverse("assignments-list")
+        response = self.client.get(url, {"course": 19})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["results"]), 23)
+        first_assignment = response.data["results"][0]
+        self.assertEqual(first_assignment["title"], "Assignment 0")
+
 
 class SubmissionsViewSetTest(BaseViewTest):
     """Tests for the SubmissionsViewSet endpoints."""
