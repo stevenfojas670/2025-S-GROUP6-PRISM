@@ -1,5 +1,6 @@
 import * as React from "react"
 import { ThemeProvider } from "@mui/material/styles"
+import AppLayoutWrapper from "./AppLayoutWrapper"
 import CssBaseline from "@mui/material/CssBaseline"
 import theme from "../theme"
 import InitColorSchemeScript from "@mui/material/InitColorSchemeScript"
@@ -10,7 +11,7 @@ interface Props {
 	children: React.ReactNode
 }
 
-export default function RootLayout(props: { children: React.ReactNode }) {
+export default function RootLayout({ children }: Props) {
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<body>
