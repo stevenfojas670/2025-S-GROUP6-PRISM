@@ -96,7 +96,7 @@ def make_text_files(meta_data, folder, client, tuple):
         for test in category[f"{category["name"]}_i/o"]:
             curr_folder = os.path.join(folder, str(i))
             curr_folder = find_filepath(curr_folder)
-            extract_fixture_scripts(allfixtures, tuple, curr_folder)
+            extract_fixture_scripts(allfixtures, curr_folder)
             i += 1
 
 def extract_fixture_scripts(fixtures, folder):
