@@ -1,6 +1,9 @@
 # 2025-S-GROUP6-PRISM
 
-[![codecov](https://codecov.io/gh/donessie94/2025-S-GROUP6-PRISM/graph/badge.svg?token=Z1QESDT3CW)](https://codecov.io/gh/donessie94/2025-S-GROUP6-PRISM)
+| Branch      | Coverage                                |
+| ----------- | --------------------------------------- |
+| **main**    | [![cov-main](https://codecov.io/gh/donessie94/2025-S-GROUP6-PRISM/graph/badge.svg?token=Z1QESDT3CW)](https://codecov.io/gh/donessie94/2025-S-GROUP6-PRISM) |
+| **dev**     | [![cov-dev](https://codecov.io/gh/donessie94/2025-S-GROUP6-PRISM/graph/badge.svg?branch=dev&token=Z1QESDT3CW)](https://codecov.io/gh/donessie94/2025-S-GROUP6-PRISM?branch=dev) |
 
 ## Project Overview
 
