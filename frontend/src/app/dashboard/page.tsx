@@ -9,11 +9,10 @@
 
 "use client"
 import { Container, Typography, Button } from "@mui/material"
-import { SignOutButton } from "@/components/AuthenticationMethod"
-import { StudentComparison } from "@/student_comparison" // student comparison
-import { Alerts } from "@/app/alerts" // alerts
+//import { StudentComparison } from "@/student_comparison" // student comparison
+//import { Alerts } from "@/app/alerts" // alerts
 import { useCallback, useEffect, useState } from "react"
-import { useRouter } from "next/Navigation"
+import { useRouter } from "next/navigation"
 import type { User } from "@/types/index"
 import { easyFetch } from "@/utils/fetchWrapper"
 
@@ -111,7 +110,7 @@ function Dashboard() {
 
 	return (
 		<Container>
-			<SignOutButton />
+			{/*
 			<Button onClick={fetchUsers}>
 				{loading ? "loading..." : "Fetch Users"}
 			</Button>
@@ -126,14 +125,9 @@ function Dashboard() {
 					))}
 				</div>
 			)}
-
+			*/}
 			{/* Main banner */}
 			<div>
-				<div className="Banner">
-					<button>menu</button>
-					<h1>"Hello, teacher name"</h1>
-				</div>
-
 				{/* 2 buttons -> compare students, alerts */}
 				<div className="comapreButtons">
 					<button onClick={() => router.push("/student_comparison")}>

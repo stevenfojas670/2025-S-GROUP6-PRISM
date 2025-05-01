@@ -18,6 +18,8 @@ import {
 } from "@mui/material"
 import { SignInButton } from "@/components/AuthenticationMethod" // Use SignInButton component
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/context/AuthContext"
+import { easyFetch } from "@/utils/fetchWrapper"
 
 const LoginComponent: React.FC = () => {
 	// for routing purposes, should be at the top of all files
@@ -34,7 +36,9 @@ const LoginComponent: React.FC = () => {
 	// for loading states
 	const [loading, setLoading] = useState(false);
 
-	// Hydrated state added to handle mismatched rendering
+	const context = useAuth()
+
+	// Hydrated statee added to handle mismatched rendering
 	const [hydrated, setHydrated] = useState(false)
 
 	useEffect(() => {
@@ -64,7 +68,6 @@ const LoginComponent: React.FC = () => {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ username, password }),
-				credentials: "include",
 			})
 
 			// await data response
@@ -72,7 +75,8 @@ const LoginComponent: React.FC = () => {
 
 			// if the response is good, route to dashboard. error out otherwise
 			if (response.ok) {
-				// console.log("Logged in:", data)
+				console.log(data["user"])
+				context?.login(data["user"])
 				router.push("/dashboard")
 			} else {
 				setMessage({ type: "error", text: ` ${data.error}`});
@@ -81,6 +85,7 @@ const LoginComponent: React.FC = () => {
 			setMessage({ type: "error", text: " Server error. Please try again."});
 		} finally {
 			setLoading(false);
+			setMessage({ type: "error", text: " Server error. Please try again."});
 		}
 	}
 
