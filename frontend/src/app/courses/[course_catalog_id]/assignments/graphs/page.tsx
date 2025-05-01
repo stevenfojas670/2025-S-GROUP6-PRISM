@@ -48,6 +48,7 @@ export default function Graphs() {
 		<Box
 			sx={(theme) => ({
 				width: "100%",
+				height: "100%",
 				overflow: "hidden",
 				backgroundColor: theme.palette.background.paper,
 				p: 2,
@@ -69,7 +70,7 @@ export default function Graphs() {
 					<Box
 						sx={{
 							width: "100%",
-							height: "100%",
+							height: 600,
 							overflow: "hidden",
 							mt: 1,
 							border: "1px solid #ccc",
@@ -189,48 +190,21 @@ export default function Graphs() {
 					<Box
 						sx={{
 							width: "100%",
-							overflow: "hidden",
 							mt: 1,
 							border: "1px solid #ccc",
 							borderRadius: 2,
-							position: "relative",
 						}}
 					>
 						{distributionPlot ? (
-							<TransformWrapper
-								initialScale={1}
-								minScale={0.5}
-								maxScale={5}
-								limitToBounds={false}
-							>
-								{({ resetTransform }) => (
-									<>
-										<Box
-											sx={{ display: "flex", justifyContent: "flex-end", p: 1 }}
-										>
-											<Button
-												variant="outlined"
-												size="small"
-												onClick={() => resetTransform()}
-											>
-												Reset View
-											</Button>
-										</Box>
-										<TransformComponent>
-											<Box
-												component="img"
-												src={distributionPlot}
-												alt="Distribution Plot"
-												sx={{
-													width: "100%",
-													height: "100%",
-													objectFit: "contain",
-												}}
-											/>
-										</TransformComponent>
-									</>
-								)}
-							</TransformWrapper>
+							<Box
+								component="img"
+								src={distributionPlot}
+								alt="Distribution Plot"
+								sx={{
+									height: "100%",
+									objectFit: "contain",
+								}}
+							/>
 						) : (
 							<Typography variant="caption" sx={{ p: 2 }}>
 								No Distribution Plot Available

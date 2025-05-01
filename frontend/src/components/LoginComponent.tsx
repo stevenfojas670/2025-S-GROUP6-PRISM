@@ -29,7 +29,7 @@ const LoginComponent: React.FC = () => {
 		type: "success" | "error"
 		text: string
 	} | null>(null)
-	const { user } = useAuth()
+	const { user, login } = useAuth()
 
 	// Hydrated statee added to handle mismatched rendering
 	const [hydrated, setHydrated] = useState(false)
@@ -63,11 +63,21 @@ const LoginComponent: React.FC = () => {
 			const data = await response.json()
 
 			if (response.ok) {
-				context?.login(data["user"])
+				login(data["user"])
 				router.push("/courses/")
+			} else {
+				setMessage({
+					type: "error",
+					text:
+						data?.non_field_errors?.[0] || "Login failed. Please try again.",
+				})
 			}
 		} catch (err) {
 			console.error("Login error:", err)
+			setMessage({
+				type: "error",
+				text: "Unexpected error. Please try again later.",
+			})
 		}
 	}
 

@@ -8,14 +8,14 @@
 "use client"
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Container, Typography } from "@mui/material"
+import { Typography } from "@mui/material"
 import styled, { keyframes } from "styled-components"
 import { GetCourses } from "@/controllers/courses"
 import { Course } from "@/types/coursesTypes"
 import { useAuth } from "@/context/AuthContext"
 import { useCourseContext } from "@/context/CourseContext"
 
-// interface for course and user 
+// interface for course and user
 
 /*
 	Pulls semesterId from URL
@@ -61,17 +61,18 @@ function Dashboard() {
 	return (
 		<Container>
 			<CompareButtons>
-				<Button onClick={() => router.push("/student_comparison")}>Compare Students</Button>
+				<Button onClick={() => router.push("/student_comparison")}>
+					Compare Students
+				</Button>
 				<Button onClick={() => router.push("/alerts")}>Alerts</Button>
 			</CompareButtons>
 
 			<Sections>
-			{courses.map((course) => (
-					<Button
-						key={course.id}
-						onClick={() => handleCourseClick(course.id)}
-					>
-						<Typography>{course.course_catalog.name} — {course.section_number}</Typography>
+				{courses.map((course) => (
+					<Button key={course.id} onClick={() => handleCourseClick(course.id)}>
+						<Typography>
+							{course.course_catalog.name} — {course.section_number}
+						</Typography>
 						<Typography>{course.course_catalog.course_title}</Typography>
 					</Button>
 				))}
@@ -88,7 +89,7 @@ const Container = styled.div`
 	justify-content: center;
 	padding: 2rem;
 	text-align: center;
-`;
+`
 
 const pastelDiagonal = keyframes`
   0% {
@@ -97,23 +98,23 @@ const pastelDiagonal = keyframes`
   100% {
     background-position: top right;
   }
-`;
+`
 
 const CompareButtons = styled.div`
 	Button {
-	width: 250px;        /* Increase width */
-	height: 60px;       /* Increase height */
-	padding: 1.5rem;     /* More internal spacing */
-	font-size: 1.2rem;   /* Larger text */
-	display: inline-flex;
-	justify-content: center;
-	align-items: center;
-	border: 1px solid #ccc;
-	border-radius: 8px;
-	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-	margin: 1rem;
-}
-`;
+		width: 250px; /* Increase width */
+		height: 60px; /* Increase height */
+		padding: 1.5rem; /* More internal spacing */
+		font-size: 1.2rem; /* Larger text */
+		display: inline-flex;
+		justify-content: center;
+		align-items: center;
+		border: 1px solid #ccc;
+		border-radius: 8px;
+		box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+		margin: 1rem;
+	}
+`
 
 const Button = styled.button`
 	&:hover {
@@ -134,25 +135,24 @@ const Button = styled.button`
 	&:not(:hover) {
 		background-color: white; /* resets back to white */
 	}
-}`;
+}`
 
 const Sections = styled.div`
-  margin-top: 5rem; /* Add spacing above the section buttons */
+	margin-top: 5rem; /* Add spacing above the section buttons */
 
-  Button {
-    width: 300px;
-    height: 250px;
-    padding: 1.5rem;
-    font-size: 1.2rem;
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    margin: 1rem;
-  }
+	Button {
+		width: 300px;
+		height: 250px;
+		padding: 1.5rem;
+		font-size: 1.2rem;
+		display: inline-flex;
+		justify-content: center;
+		align-items: center;
+		border: 1px solid #ccc;
+		border-radius: 8px;
+		box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+		margin: 1rem;
+	}
 `
-
 
 export default Dashboard
