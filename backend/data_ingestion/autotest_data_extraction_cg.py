@@ -45,13 +45,10 @@ def extract_data(client, tests):
     try:
         for tuple in tests:
             assi_name = tuple[0]
-            test = tuple[1]
-            test_id = test.id
             foldername = os.path.join(assi_name, "test_cases")
 
             # Go through the fixtures and get the contents
             meta = extract_metadata(tuple)
-            #print(meta)
             make_text_files(meta, foldername, client, tuple)
     except Exception as e:
         print(str(e), file=sys.stderr)
@@ -81,15 +78,15 @@ def extract_metadata(tuple):
                     curr_io_dict = {}
                     curr_io_dict["command"] = step.data.program
                     curr_io_dict["name"] = input.name
-                    curr_io_dict["args"] = input.args 
-                    curr_io_dict["stdin"] = input.stdin 
-                    curr_io_dict["output"] = input.output 
+                    curr_io_dict["args"] = input.args
+                    curr_io_dict["stdin"] = input.stdin
+                    curr_io_dict["output"] = input.output
                     step_dict[f"{step.name}_i/o"].append(curr_io_dict)
                 dictionary[assi_name]["meta_data"].append(step_dict)
     return dictionary
 
 def make_text_files(meta_data, folder, client, tuple):
-    """"""
+    """Download files: TODO."""
     assi_name = tuple[0]
     test_id = tuple[1].id
     fixtures = tuple[1].fixtures
@@ -102,11 +99,8 @@ def make_text_files(meta_data, folder, client, tuple):
             extract_fixture_scripts(allfixtures, tuple, curr_folder)
             i += 1
 
-def extract_fixture_scripts(fixtures, tuple, folder):
-    """"""
-    assi_name = tuple[0]
-    test = tuple[1]
-    test_id = test.id
+def extract_fixture_scripts(fixtures, folder):
+    """Download all input/output scripts from fixtures."""
     for key,value in fixtures.items():
         if "input" in key:
             new_folder = os.path.join(folder, "input_files")
@@ -121,6 +115,7 @@ def extract_fixture_scripts(fixtures, tuple, folder):
             f.write(str(value))
 
 def extract_fixtures(client, test_id, fixtures):
+    """Extract fixtures in a dictionary."""
     autotests = {}
     for fixture in fixtures:
         fixture_id = int(fixture.id)
@@ -155,7 +150,7 @@ def main():
             print(str(e), file=sys.stderr)
 
     extract_data(client, tests)
-    
+
 
 if __name__ == "__main__":
     main()
