@@ -173,13 +173,31 @@ class CourseInstancesAPITest(BaseCoursesAPITest):
     def test_courseinstances_search(self):
         """Test searching course instances by course_catalog."""
         url = reverse("courseinstances-list")
-        response = self.client.get(url, {"search": "Intro"})
+        response = self.client.get(url, {"search": "Computer Science I"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         found = any(
             item.get("course_catalog") == self.course_catalog.pk
             for item in response.data["results"]
         )
         self.assertTrue(found)
+
+    def test_courseinstances_by_semester(self):
+        """Test retrieving courses by semester id and user id."""
+        url = reverse("courseinstances-list")
+        response = self.client.get(url, {"uid": 3, "semester": 6})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreater(len(response.count), 0)
+        first_course = response.data["results"][0]
+        self.assertEqual(first_course["professor"], 3)
+
+    def test_courseinstances_by_userid(self):
+        """Test retrieving courses by user id."""
+        url = reverse("courseinstances-list")
+        response = self.client.get(url, {"uid": 3, "semester": 6})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreater(len(response.count), 0)
+        first_course = response.data["results"][3]
+        self.assertEqual(first_course["professor"], 3)
 
 
 class SemesterAPITest(BaseCoursesAPITest):
@@ -215,6 +233,15 @@ class SemesterAPITest(BaseCoursesAPITest):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for item in response.data["results"]:
             self.assertIn(self.semester.term, item["term"])
+
+    def test_semester_by_user(self):
+        """Test retrieving semesters based on the user id."""
+        url = reverse("semester-list")
+        response = self.client.get(url, {"uid": 3})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreater(len(response.data), 0)
+        first_semester = response.data[0]
+        self.assertEqual(first_semester["name"], "Spring 2024")
 
 
 class StudentsAPITest(BaseCoursesAPITest):

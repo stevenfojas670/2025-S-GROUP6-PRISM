@@ -3,6 +3,13 @@
 from rest_framework import filters, viewsets
 from django_filters.rest_framework import DjangoFilterBackend
 from prism_backend.mixins import CachedViewMixin
+from rest_framework.response import Response
+from rest_framework.request import Request
+from rest_framework.decorators import action
+from rest_framework import status
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 from .models import (
     CourseCatalog,
@@ -63,6 +70,112 @@ class CourseInstancesViewSet(viewsets.ModelViewSet, CachedViewMixin):
     ordering = ["section_number"]
     search_fields = ["course_catalog__course_title"]
 
+    @action(detail=False, methods=["get"], url_path="get-courses-by-semesters")
+    def get_courses(self, request: Request) -> Response:
+        """
+        Returns all courses for the current logged-in professor for a given semester.
+        If the user is a superuser, returns all matching courses for the semester.
+
+        Example: /courseinstances/get-courses/?uid=3&semester=6
+        """
+        user_id = request.query_params.get("uid")
+        semester_id = request.query_params.get("semester")
+
+        if not user_id or not semester_id:
+            return Response(
+                {"detail": "Both 'uid' and 'semester' query parameters are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response(
+                {"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        try:
+            semester = Semester.objects.get(id=semester_id)
+        except Semester.DoesNotExist:
+            return Response(
+                {"detail": "Semester not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        if user.is_superuser:
+            course_instances = CourseInstances.objects.filter(
+                semester=semester
+            ).select_related("semester", "professor", "course_catalog")
+        else:
+            try:
+                professor = Professors.objects.get(user=user)
+            except Professors.DoesNotExist:
+                return Response(
+                    {"detail": "User is not a professor."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+            course_instances = CourseInstances.objects.filter(
+                professor=professor, semester=semester
+            ).select_related("semester", "professor", "course_catalog")
+
+        # Apply pagination
+        page = self.paginate_queryset(course_instances)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(course_instances, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["get"], url_path="get-all-courses")
+    def get_all_courses(self, request: Request) -> Response:
+        """
+        Returns all courses for the current logged-in professor (across all semesters).
+        If the user is a superuser, returns all courses.
+
+        Example: /courseinstances/get-all-courses/?uid=3
+        """
+        user_id = request.query_params.get("uid")
+
+        if not user_id:
+            return Response(
+                {"detail": "'uid' query parameter is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response(
+                {"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        if user.is_superuser:
+            course_instances = CourseInstances.objects.all().select_related(
+                "semester", "professor", "course_catalog"
+            )
+        else:
+            try:
+                professor = Professors.objects.get(user=user)
+            except Professors.DoesNotExist:
+                return Response(
+                    {"detail": "User is not a professor."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+            course_instances = CourseInstances.objects.filter(
+                professor=professor
+            ).select_related("semester", "professor", "course_catalog")
+
+        # Apply pagination
+        page = self.paginate_queryset(course_instances)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(course_instances, many=True)
+        return Response(serializer.data)
+
 
 class SemesterViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling Semester entries."""
@@ -80,36 +193,51 @@ class SemesterViewSet(viewsets.ModelViewSet, CachedViewMixin):
     ordering = ["year"]
     search_fields = ["name", "term", "session"]
 
-    def get_queryset(self):
+    @action(detail=False, methods=["get"], url_path="get-semesters")
+    def get_semesters(self, request: Request) -> Response:
         """
-        Returns semesters taught by a professor.
+        Returns all semesters for the current logged in professor.
+        If the user is admin, then returns all semesters.
 
-        - If `semester_id` is provided, return that semester (only if taught by the professor).
-        - If not, return all semesters the professor has taught in.
+        Example Request: /semester/get-semesters/?uid=2
         """
-        queryset = super().get_queryset()
-        request = self.request
-        semester_id = request.query_params.get("semester_id")
 
-        # Determine professor ID from query param or authenticated user
-        professor_id = request.query_params.get("professor_id")
-        if not professor_id:
+        user_id = request.query_params.get("uid")
+        if not user_id:
+            return Response(
+                {"detail": "Missing uid query parameter."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response(
+                {"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Admins get all semesters
+        if user.is_superuser:
+            print("Is admin.")
+            semesters = Semester.objects.all()
+        else:
             try:
-                professor_id = request.user.professors.id
+                professor = Professors.objects.get(user=user)
+                course_instances = CourseInstances.objects.filter(
+                    professor=professor
+                ).select_related("semester")
+                semester_ids = course_instances.values_list(
+                    "semester_id", flat=True
+                ).distinct()
+                semesters = Semester.objects.filter(id__in=semester_ids)
             except Professors.DoesNotExist:
-                return queryset.none()  # Not a professor
+                return Response(
+                    {"detail": "User is not a professor."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
 
-        if not professor_id:
-            return queryset.none()  # No professor context
-
-        # If a specific semester ID is passed, return that one if linked to this professor
-        if semester_id:
-            return queryset.filter(
-                id=semester_id, courseinstances__professor__id=professor_id
-            ).distinct()
-
-        # Otherwise return all semesters the professor has taught in
-        return queryset.filter(courseinstances__professor__id=professor_id).distinct()
+        serializer = self.get_serializer(semesters, many=True)
+        return Response(serializer.data)
 
 
 class StudentsViewSet(viewsets.ModelViewSet, CachedViewMixin):
@@ -144,11 +272,6 @@ class StudentEnrollmentsViewSet(viewsets.ModelViewSet, CachedViewMixin):
     ordering_fields = ["student"]
     ordering = ["student"]
     search_fields = []
-
-    def paginate_queryset(self, queryset):
-        if self.request.query_params.get("no_pagination", "").lower() == "true":
-            return None
-        return super().paginate_queryset(queryset)
 
 
 class ProfessorsViewSet(viewsets.ModelViewSet, CachedViewMixin):
