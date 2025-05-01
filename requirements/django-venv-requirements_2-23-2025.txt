@@ -1,7 +1,6 @@
 annotated-types==0.7.0
 anyio==4.9.0
 asgiref==3.8.1
-async-timeout==5.0.1
 attrs==25.1.0
 Authlib==1.5.1
 autobahn==24.4.2
@@ -17,6 +16,7 @@ channels_redis==4.2.1
 charset-normalizer==3.4.1
 click==8.1.8
 codegrade==16.1.84
+colorama==0.4.6
 constantly==23.10.4
 contourpy==1.3.2
 coverage==7.6.12
@@ -108,6 +108,7 @@ rich==13.9.4
 rpds-py==0.23.1
 rsa==4.9
 ruamel.yaml==0.18.10
+ruamel.yaml.clib==0.2.12
 safety==3.3.1
 safety-schemas==0.0.11
 scikit-learn==1.6.1
@@ -133,13 +134,3 @@ uritemplate==4.1.1
 urllib3==2.3.0
 validate_email==1.3
 zope.interface==7.2
-contourpy==1.3.2
-cycler==0.12.1
-fonttools==4.57.0
-kiwisolver==1.4.8
-matplotlib==3.10.1
-pillow==11.2.1
-pyparsing==3.2.3
-scikit-learn==1.6.1
-scipy==1.15.2
-threadpoolctl==3.6.0
