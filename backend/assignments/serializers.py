@@ -2,6 +2,7 @@
 
 from rest_framework import serializers
 from courses import serializers as courseSerializers
+from courses import serializers as courseSerializers
 
 from .models import (
     Assignments,
