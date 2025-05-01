@@ -241,7 +241,7 @@ class AggregatedAssignmentDataView(APIView):
             .annotate(flagged_count=Count("id"))
         )
 
-        # Professor wise average similarity score.
+        # Professor wise average similarity score
         response_data["professor_avg_similarity"] = list(
             base_qs
             .values("submission_id_1__course_instance__professor__user__username")
