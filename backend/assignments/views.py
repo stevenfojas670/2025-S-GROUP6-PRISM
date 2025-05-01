@@ -13,6 +13,7 @@ from users.permissions import IsProfessorOrAdmin
 from django.db.models import Count, Max, Avg, F
 from cheating.models import SubmissionSimilarityPairs
 from courses.models import CourseInstances
+from courses.serializers import StudentsSerializer
 
 from .models import (
     Assignments,
@@ -96,7 +97,36 @@ class AssignmentsViewSet(viewsets.ModelViewSet, CachedViewMixin):
             return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(assignments, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["get"], url_path="get-submissions")
+    def get_submissions_by_assignment(self, request: Request) -> Response:
+        """
+        Returns a list of students and their submissions for a given assignment ID.
+        Example: /assignments/get-submissions/?asid=3
+        """
+        assignment_id = request.query_params.get("asid")
+
+        if not assignment_id:
+            return Response(
+                {"detail": "'asid' (assignment_id) is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        submissions = Submissions.objects.filter(
+            assignment_id=assignment_id
+        ).select_related("student", "assignment", "course_instance")
+
+        results = []
+        for submission in submissions:
+            student_data = StudentsSerializer(submission.student).data
+            submission_data = SubmissionsSerializer(submission).data
+            results.append({"student": student_data, "submission": submission_data})
+
+        page = self.paginate_queryset(results)
+        if page is not None:
+            return self.get_paginated_response(page)
+        return Response(results, status=status.HTTP_200_OK)
 
 
 class SubmissionsViewSet(viewsets.ModelViewSet, CachedViewMixin):
@@ -114,6 +144,41 @@ class SubmissionsViewSet(viewsets.ModelViewSet, CachedViewMixin):
     ordering_fields = ["grade", "created_at"]
     ordering = ["created_at"]
     search_fields = ["file_path"]
+
+    def get_queryset(self):
+        """View method to enforce logical AND when using query params
+        to query by assignment_id, course_instance_id, semester_id,
+        and student_id
+
+        Query Example: /submissions/?student=382&asid=1&course=3&semester=1
+
+        Returns:
+            queryset: Django query object to be translated under the
+            the hood to the HTTP response.
+        """
+
+        queryset = Submissions.objects.select_related(
+            "assignment", "course_instance", "student"
+        ).all()
+
+        assignment_id = self.request.query_params.get("asid")
+        course_instance_id = self.request.query_params.get("course")
+        semester_id = self.request.query_params.get("semester")
+        student_id = self.request.query_params.get("student")
+
+        if assignment_id:
+            queryset = queryset.filter(assignment_id=assignment_id)
+
+        if course_instance_id:
+            queryset = queryset.filter(course_instance_id=course_instance_id)
+
+        if semester_id:
+            queryset = queryset.filter(assignment__semester_id=semester_id)
+
+        if student_id:
+            queryset = queryset.filter(student_id=student_id)
+
+        return queryset
 
 
 class BaseFilesViewSet(viewsets.ModelViewSet, CachedViewMixin):

@@ -234,6 +234,15 @@ class AssignmentsViewSetTest(BaseViewTest):
         first_assignment = response.data["results"][0]
         self.assertEqual(first_assignment["title"], "Assignment 0")
 
+    def test_assignments_get_submission_by_assignment_id(self):
+        """Test retrieving all submissions based on assignment id."""
+        url = reverse("assignments-list")
+        response = self.client.get(url, {"asid": 25})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreater(len(response["count"]), 0)
+        first_submission = response.data["results"][0]
+        self.assertEqual(first_submission["student"]["first_name"], "Mary")
+
 
 class SubmissionsViewSetTest(BaseViewTest):
     """Tests for the SubmissionsViewSet endpoints."""
@@ -269,6 +278,20 @@ class SubmissionsViewSetTest(BaseViewTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for item in response.data["results"]:
             self.assertIn("submission", item["file_path"])
+
+    def test_submissions_get(self):
+        """Test retrieving submissions by assignment_id, course_instance_id
+        semester_id, AND/OR student_id.
+        """
+        url = reverse("submissions-list")
+        response = self.client.get(
+            url, {"asid": 1, "course": 3, "semester": 1, "student": 382}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("results", response.data)
+        self.assertGreater(response["count"], 0)
+        first_submission = response.data["results"][0]
+        self.assertEqual(first_submission["grade"], "90.10")
 
 
 class BaseFilesViewSetTest(BaseViewTest):

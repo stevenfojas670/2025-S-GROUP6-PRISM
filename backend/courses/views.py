@@ -102,9 +102,11 @@ class CourseInstancesViewSet(viewsets.ModelViewSet, CachedViewMixin):
             )
 
         if user.is_superuser:
-            course_instances = CourseInstances.objects.filter(
-                semester=semester
-            ).select_related("semester", "professor", "course_catalog")
+            course_instances = (
+                CourseInstances.objects.filter(semester=semester)
+                .select_related("semester", "professor", "course_catalog")
+                .order_by("id")
+            )
         else:
             try:
                 professor = Professors.objects.get(user=user)
@@ -114,9 +116,11 @@ class CourseInstancesViewSet(viewsets.ModelViewSet, CachedViewMixin):
                     status=status.HTTP_403_FORBIDDEN,
                 )
 
-            course_instances = CourseInstances.objects.filter(
-                professor=professor, semester=semester
-            ).select_related("semester", "professor", "course_catalog")
+            course_instances = (
+                CourseInstances.objects.filter(professor=professor, semester=semester)
+                .select_related("semester", "professor", "course_catalog")
+                .order_by("id")
+            )
 
         # Apply pagination
         page = self.paginate_queryset(course_instances)
@@ -125,7 +129,7 @@ class CourseInstancesViewSet(viewsets.ModelViewSet, CachedViewMixin):
             return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(course_instances, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["get"], url_path="get-all-courses")
     def get_all_courses(self, request: Request) -> Response:
@@ -163,18 +167,19 @@ class CourseInstancesViewSet(viewsets.ModelViewSet, CachedViewMixin):
                     status=status.HTTP_403_FORBIDDEN,
                 )
 
-            course_instances = CourseInstances.objects.filter(
-                professor=professor
-            ).select_related("semester", "professor", "course_catalog")
+            course_instances = (
+                CourseInstances.objects.filter(professor=professor)
+                .select_related("semester", "professor", "course_catalog")
+                .order_by("id")
+            )
 
-        # Apply pagination
         page = self.paginate_queryset(course_instances)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(course_instances, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["get"], url_path="get-all-students")
     def get_all_students(self, request: Request) -> Response:
@@ -232,7 +237,7 @@ class CourseInstancesViewSet(viewsets.ModelViewSet, CachedViewMixin):
             return self.get_paginated_response(serializer.data)
 
         serializer = StudentsSerializer(students, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class SemesterViewSet(viewsets.ModelViewSet, CachedViewMixin):
@@ -287,15 +292,20 @@ class SemesterViewSet(viewsets.ModelViewSet, CachedViewMixin):
                 semester_ids = course_instances.values_list(
                     "semester_id", flat=True
                 ).distinct()
-                semesters = Semester.objects.filter(id__in=semester_ids)
+                semesters = Semester.objects.filter(id__in=semester_ids).order_by("id")
             except Professors.DoesNotExist:
                 return Response(
                     {"detail": "User is not a professor."},
                     status=status.HTTP_403_FORBIDDEN,
                 )
 
+        page = self.paginate_queryset(semesters)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
         serializer = self.get_serializer(semesters, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class StudentsViewSet(viewsets.ModelViewSet, CachedViewMixin):
