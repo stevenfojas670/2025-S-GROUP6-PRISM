@@ -113,37 +113,6 @@ class SemesterViewSet(viewsets.ModelViewSet, CachedViewMixin):
         # Otherwise return all semesters the professor has taught in
         return queryset.filter(courseinstances__professor__id=professor_id).distinct()
 
-    def get_queryset(self):
-        """
-        Returns semesters taught by a professor.
-
-        - If `semester_id` is provided, return that semester (only if taught by the professor).
-        - If not, return all semesters the professor has taught in.
-        """
-        queryset = super().get_queryset()
-        request = self.request
-        semester_id = request.query_params.get("semester_id")
-
-        # Determine professor ID from query param or authenticated user
-        professor_id = request.query_params.get("professor_id")
-        if not professor_id:
-            try:
-                professor_id = request.user.professors.id
-            except Professors.DoesNotExist:
-                return queryset.none()  # Not a professor
-
-        if not professor_id:
-            return queryset.none()  # No professor context
-
-        # If a specific semester ID is passed, return that one if linked to this professor
-        if semester_id:
-            return queryset.filter(
-                id=semester_id, courseinstances__professor__id=professor_id
-            ).distinct()
-
-        # Otherwise return all semesters the professor has taught in
-        return queryset.filter(courseinstances__professor__id=professor_id).distinct()
-
 
 class StudentsViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling Students entries."""
