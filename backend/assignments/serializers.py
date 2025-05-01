@@ -34,6 +34,7 @@ class SubmissionsSerializer(serializers.ModelSerializer):
     """Serializer for the Submissions model."""
 
     student = courseSerializers.StudentsSerializer()
+    assignment = AssignmentsSerializer()
 
     class Meta:
         """Meta options for the SubmissionsSerializer.

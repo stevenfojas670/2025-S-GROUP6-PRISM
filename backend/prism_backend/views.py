@@ -64,7 +64,6 @@ class GoogleAuthView(APIView):
 
 
 class CustomLoginView(DJLoginView):
-class CustomLoginView(DJLoginView):
     """Custom login view with throttling.
 
     Extends the default LoginView to define a custom throttle scope.

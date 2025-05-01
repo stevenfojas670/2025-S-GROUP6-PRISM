@@ -160,8 +160,11 @@ class SubmissionSimilarityPairsViewSet(viewsets.ModelViewSet, CachedViewMixin):
         "assignment",
         "file_name",
         "match_id",
-        "submission_id_1",
-        "submission_id_2",
+        "submission_id_1__student_id",
+        "submission_id_2__student_id",
+        "submission_id_1__assignment_id",
+        "submission_id_1__assignment__course_catalog_id",
+        "submission_id_1__assignment__semester_id",
     ]
     ordering_fields = ["percentage"]
     ordering = ["percentage"]

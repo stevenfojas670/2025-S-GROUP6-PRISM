@@ -20,8 +20,6 @@ import { SignInButton } from "@/components/AuthenticationMethod" // Use SignInBu
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/AuthContext"
 import { easyFetch } from "@/utils/fetchWrapper"
-import { useAuth } from "@/context/AuthContext"
-import { easyFetch } from "@/utils/fetchWrapper"
 
 const LoginComponent: React.FC = () => {
 	// for routing purposes, should be at the top of all files
@@ -66,9 +64,6 @@ const LoginComponent: React.FC = () => {
 			setMessage({ type: "error", text: "Username and password are required." })
 			return
 		}
-
-		// sets loading status
-		setLoading(true)
 
 		// handles the form submission by fetching the api call for logging in
 		try {
@@ -158,14 +153,8 @@ const LoginComponent: React.FC = () => {
 					>
 						Password
 					</label>
-					<Button
-						type="submit"
-						variant="contained"
-						fullWidth
-						sx={{ mt: 2 }}
-						disabled={loading}
-					>
-						{loading ? "Logging in..." : "Login"}
+					<Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
+						Sign In
 					</Button>
 				</form>
 

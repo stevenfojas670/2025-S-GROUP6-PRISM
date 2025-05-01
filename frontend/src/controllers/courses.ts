@@ -20,6 +20,7 @@ export async function GetCourses(
 		const data = await response.json()
 
 		if (response.ok) {
+			console.log(data)
 			return data as CourseResponse
 		} else {
 			return {
