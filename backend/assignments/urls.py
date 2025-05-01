@@ -42,7 +42,7 @@ router.register(
 urlpatterns = [
     path("", include(router.urls)),
     path(
-        "assignments/aggregated-data/",
+        "aggregated-data/",
         AggregatedAssignmentDataView.as_view(),
         name="aggregated-assignment-data"
     ),

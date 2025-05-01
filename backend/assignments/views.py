@@ -1,6 +1,6 @@
 """Assignment views with enhanced filtering, ordering, and search capabilities."""
 
-from rest_framework import filters, viewsets, status
+from rest_framework import filters, viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -171,12 +171,11 @@ class AggregatedAssignmentDataView(APIView):
     """
     API endpoint for aggregated assignment data.
 
-    Returns combined statistics (i.e. average grade) for submissions
-    grouped by student and assignment. Professors, TAs, and admins can
-    filter by students, assignments, and course.
+    Returns combined statistics (i.e. similarity scores and flagged counts)
+    for submissions, grouped and filtered as requested. Professors, TAs, and
+    admins can filter by students, assignments, and course instance.
     """
 
-    # just in case we add other perms...
     permission_classes = [IsAuthenticated, IsProfessorOrAdmin]
 
     def get(self, request, format=None):
@@ -185,85 +184,68 @@ class AggregatedAssignmentDataView(APIView):
         assignment_ids = request.query_params.getlist("assignments")
         course_id = request.query_params.get("course")
 
-        # Build a queryset that retrieves data along with similarity scores.
-        qs = SubmissionSimilarityPairs.objects.select_related(
+        # Build a single base queryset and apply any filters
+        base_qs = SubmissionSimilarityPairs.objects.select_related(
             "assignment",
             "submission_id_1__student",
-            "submission_id_2"  # add other stuff if we want to show different things
-        ).values(
-            "assignment__title",
-            "assignment__assignment_number",
-            "submission_id_1__student__first_name",
-            "submission_id_1__student__last_name",
-            "percentage"    # Similarity score
-            # other fields here later...
+            "submission_id_2__student",
         )
 
         if student_ids:
-            qs = qs.filter(submission_id_1__student__id__in=student_ids)
+            base_qs = base_qs.filter(submission_id_1__student__id__in=student_ids)
         if assignment_ids:
-            qs = qs.filter(assignment__id__in=assignment_ids)
+            base_qs = base_qs.filter(assignment__id__in=assignment_ids)
         if course_id:
-            qs = qs.filter(course_instance_id=course_id)
+            base_qs = base_qs.filter(submission_id_1__course_instance_id=course_id)
 
-        # didnt want to use the dataframe method for this. Stuck to ORM aggregations
-        # qs becomes a list of dicts
-
-        # EVERYTHING gonna go in here ;)
         response_data = {}
 
-        '''Theres basically 2 strategies to filling response_data.
-        Doing aggregations with .objects.values(...).annotate(...) (aka ORM aggregations)
-        keeps aggregations in the db, meaning its faster bc of less data transferred on network. It only returns aggregated fields
-        instead of full model instnaces or all raw data, this makes it fast too. Its simple for standard aggregations like
-        average and max.
-        Disadvantages: More complex aggregations are a LOT harder. It can also be annoying to do multiple aggregations in the db.
-        '''
-
-        # Highest sim score per student
-        response_data["student_max_similarity_score"] = list(SubmissionSimilarityPairs.objects.values(
-            "submission_id_1__student__id",
-            "submission_id_1__student__first_name",
-            "submission_id_1__student__last_name",
-        ).annotate(
-            max_score=Max("percentage")
-        ))
-
-        # Average sim score per assignment
-        response_data["assignment_avg_similarity_score"] = list(SubmissionSimilarityPairs.objects.values(
-            "assignment__id",
-            "assignment__title"
-        ).annotate(
-            avg_score=Avg("percentage")
-        ))
-
-        # Flagged submissions per assignment
-        # the 'F' lets each sim score be compared against its assignments own threshold. (dynamic)
-        response_data["flagged_per_assignment"] = list(SubmissionSimilarityPairs.objects.filter(
-            percentage__gte=F('assignment__requiredsubmissionfile_set__similarity_threshold')
-        ).values(
-            "assignment__title"
-        ).annotate(
-            flagged_count=Count("id")
-        ))
-
-        # similarity score over time trend
-        response_data["similarity_trends"] = list(
-            Submissions.objects.values("created_at")
-            .annotate(avg_similarity=Avg("submission__submissionsimilaritypairs__percentage"))
+        # Highest similarity score per student
+        response_data["student_max_similarity_score"] = list(
+            base_qs.values(
+                "submission_id_1__student__id",
+                "submission_id_1__student__first_name",
+                "submission_id_1__student__last_name",
+            ).annotate(max_score=Max("percentage"))
         )
 
-        # Flagged submissions per professor
-        response_data["flagged_by_professor"] = list(SubmissionSimilarityPairs.objects.filter(
-            percentage__gte=F('assignment__requiredsubmissionfiles__similarity_threshold'))
-            .values("assignment__course_instance__professor__user__username")
+        # Average similarity score per assignment
+        response_data["assignment_avg_similarity_score"] = list(
+            base_qs.values(
+                "assignment__id",
+                "assignment__title",
+            ).annotate(avg_score=Avg("percentage"))
+        )
+
+        # Flagged submissions per assignment (uses dynamic threshold)
+        response_data["flagged_per_assignment"] = list(
+            base_qs
+            .filter(percentage__gte=F("assignment__requiredsubmissionfiles__similarity_threshold"))
+            .values("assignment__title")
             .annotate(flagged_count=Count("id"))
         )
 
-        # Professor-wise average similarity score. We probably want admins to see this for all professors
+        # Similarity score trend over time (per submission date)
+        response_data["similarity_trends"] = list(
+            base_qs
+            .values(date=F("submission_id_1__created_at"))
+            .annotate(avg_similarity=Avg("percentage"))
+            .order_by("date")
+        )
+
+        # Flagged submissions per professor
+        response_data["flagged_by_professor"] = list(
+            base_qs
+            .filter(percentage__gte=F("assignment__requiredsubmissionfiles__similarity_threshold"))
+            .values("submission_id_1__course_instance__professor__user__username")
+            .annotate(flagged_count=Count("id"))
+        )
+
+        # Professor wise average similarity score
         response_data["professor_avg_similarity"] = list(
-            SubmissionSimilarityPairs.objects.values("assignment__course_instance__professor__user__username")
+            base_qs
+            .values("submission_id_1__course_instance__professor__user__username")
             .annotate(avg_similarity=Avg("percentage"))
         )
 
-        return Response(response_data, status=status.HTTP_200_OK)
+        return Response(response_data, status=200)
