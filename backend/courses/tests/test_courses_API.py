@@ -199,6 +199,15 @@ class CourseInstancesAPITest(BaseCoursesAPITest):
         first_course = response.data["results"][3]
         self.assertEqual(first_course["professor"], 3)
 
+    def test_courseinstances_get_students_by_uid(self):
+        """Test retrieving students by user id."""
+        url = reverse("courseinstances-list")
+        response = self.client.get(url, {"uid": 3, "course": 11})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreater(len(response.count), 0)
+        first_student = response.data["results"][0]
+        self.assertEqual(first_student["first_name"], "Charlie")
+
 
 class SemesterAPITest(BaseCoursesAPITest):
     """Test API endpoints for SemesterViewSet."""

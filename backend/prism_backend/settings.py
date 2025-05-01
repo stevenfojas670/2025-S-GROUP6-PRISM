@@ -209,6 +209,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "dj_rest_auth.jwt_auth.JWTCookieAuthentication",
     ],
+    "DEFAULT_PAGINATION_CLASS": "courses.pagination.StandardResultsSetPagination",
     # "NUM_PROXIES": 0,  # In prod, change this to 1, since we are using NGINX. This will allow us to view the client IP
     # Use these as global throttlers
     # "DEFAULT_THROTTLE_CLASSES": [

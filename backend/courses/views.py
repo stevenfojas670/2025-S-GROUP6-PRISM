@@ -176,6 +176,64 @@ class CourseInstancesViewSet(viewsets.ModelViewSet, CachedViewMixin):
         serializer = self.get_serializer(course_instances, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=["get"], url_path="get-all-students")
+    def get_all_students(self, request: Request) -> Response:
+        """
+        Returns all students for the current logged-in professor.
+        Optional: filter by specific course_instance_id.
+
+        Example:
+        - /courseinstances/get-all-students/?uid=3
+        - /courseinstances/get-all-students/?uid=3&course=10
+        """
+        user_id = request.query_params.get("uid")
+        courseinstance_id = request.query_params.get("course")
+
+        if not user_id:
+            return Response(
+                {"detail": "'uid' query parameter is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response(
+                {"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        try:
+            professor = Professors.objects.get(user=user)
+        except Professors.DoesNotExist:
+            return Response(
+                {"detail": "User is not a professor."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Filter courses by professor
+        courses = CourseInstances.objects.filter(professor=professor)
+
+        if courseinstance_id:
+            courses = courses.filter(id=courseinstance_id)
+
+        # Get all enrolled students for those courses
+        student_enrollments = StudentEnrollments.objects.filter(
+            course_instance__in=courses
+        ).select_related("student")
+
+        students = Students.objects.filter(
+            id__in=student_enrollments.values_list("student_id", flat=True).distinct()
+        ).order_by("last_name", "first_name")
+
+        # Optional pagination
+        page = self.paginate_queryset(students)
+        if page is not None:
+            serializer = StudentsSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = StudentsSerializer(students, many=True)
+        return Response(serializer.data)
+
 
 class SemesterViewSet(viewsets.ModelViewSet, CachedViewMixin):
     """ViewSet for handling Semester entries."""
