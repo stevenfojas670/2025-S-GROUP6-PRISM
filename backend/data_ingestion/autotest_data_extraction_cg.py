@@ -47,36 +47,15 @@ def extract_data(client, tests):
             assi_name = tuple[0]
             test = tuple[1]
             test_id = test.id
+            foldername = os.path.join(assi_name, "test_cases")
 
             # Go through the fixtures and get the contents
-            fixtures = test.fixtures
-            # extract_fixture_scripts(client, fixtures, tuple)
             meta = extract_metadata(tuple)
-            print(meta)
-            
+            #print(meta)
+            make_text_files(meta, foldername, client, tuple)
     except Exception as e:
         print(str(e), file=sys.stderr)
 
-def extract_fixture_scripts(client, fixtures, tuple):
-    """"""
-    assi_name = tuple[0]
-    test = tuple[1]
-    test_id = test.id
-    for fixture in fixtures:
-        fixture_id = int(fixture.id)
-        curr_autotest = client.auto_test.get_fixture(
-            auto_test_id=test_id, fixture_id=fixture_id
-        )
-        curr_autotest = curr_autotest.decode("utf-8")
-        filename = fixture.name
-        foldername = "fixtures"
-        foldername = os.path.join(assi_name, foldername)
-        filepath = find_filepath(foldername)
-        if not mkdir(filepath):
-            return
-        filepath = os.path.join(filepath, filename)
-        with open(filepath, "w") as f:
-            f.write(str(curr_autotest))
 
 def extract_metadata(tuple):
     """Create a dictionary that holds all auto test metadata."""
@@ -96,11 +75,11 @@ def extract_metadata(tuple):
                     continue
                 step_dict = {}
                 step_dict["name"] = step.name
-                step_dict["command"] = step.data.program
                 step_dict[f"{step.name}_i/o"] = []
                 inputs = step.data.inputs
                 for input in inputs:
                     curr_io_dict = {}
+                    curr_io_dict["command"] = step.data.program
                     curr_io_dict["name"] = input.name
                     curr_io_dict["args"] = input.args 
                     curr_io_dict["stdin"] = input.stdin 
@@ -108,6 +87,49 @@ def extract_metadata(tuple):
                     step_dict[f"{step.name}_i/o"].append(curr_io_dict)
                 dictionary[assi_name]["meta_data"].append(step_dict)
     return dictionary
+
+def make_text_files(meta_data, folder, client, tuple):
+    """"""
+    assi_name = tuple[0]
+    test_id = tuple[1].id
+    fixtures = tuple[1].fixtures
+    allfixtures = extract_fixtures(client, test_id, fixtures)
+    i = 1
+    for category in meta_data[assi_name]["meta_data"]:
+        for test in category[f"{category["name"]}_i/o"]:
+            curr_folder = os.path.join(folder, str(i))
+            curr_folder = find_filepath(curr_folder)
+            extract_fixture_scripts(allfixtures, tuple, curr_folder)
+            i += 1
+
+def extract_fixture_scripts(fixtures, tuple, folder):
+    """"""
+    assi_name = tuple[0]
+    test = tuple[1]
+    test_id = test.id
+    for key,value in fixtures.items():
+        if "input" in key:
+            new_folder = os.path.join(folder, "input_files")
+        elif "output" in key:
+            new_folder = os.path.join(folder, "output_files")
+        else:
+            continue
+        if not mkdir(new_folder):
+            return
+        filepath = os.path.join(new_folder, key)
+        with open(filepath, "w") as f:
+            f.write(str(value))
+
+def extract_fixtures(client, test_id, fixtures):
+    autotests = {}
+    for fixture in fixtures:
+        fixture_id = int(fixture.id)
+        curr_autotest = client.auto_test.get_fixture(
+            auto_test_id=test_id, fixture_id=fixture_id
+        )
+        curr_autotest = curr_autotest.decode("utf-8")
+        autotests[fixture.name] = curr_autotest
+    return autotests
 
 def main():
     """Login and populate the class attributes."""
@@ -134,7 +156,6 @@ def main():
 
     extract_data(client, tests)
     
-
 
 if __name__ == "__main__":
     main()
