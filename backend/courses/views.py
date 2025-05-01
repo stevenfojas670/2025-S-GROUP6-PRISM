@@ -3,7 +3,6 @@
 from rest_framework import filters, viewsets
 from django_filters.rest_framework import DjangoFilterBackend
 from prism_backend.mixins import CachedViewMixin
-from rest_framework.request import Request
 
 from .models import (
     CourseCatalog,
@@ -59,7 +58,6 @@ class CourseInstancesViewSet(viewsets.ModelViewSet, CachedViewMixin):
         filters.OrderingFilter,
         filters.SearchFilter,
     ]
-    filterset_fields = ["section_number", "canvas_course_id", "professor", "semester"]
     filterset_fields = ["section_number", "canvas_course_id", "professor", "semester"]
     ordering_fields = ["section_number"]
     ordering = ["section_number"]

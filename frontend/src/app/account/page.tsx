@@ -3,8 +3,6 @@
 import React, { useEffect, useState } from "react"
 import { useAuth } from "@/context/AuthContext"
 import { easyFetch } from "@/utils/fetchWrapper"
-import { autocompleteClasses } from "@mui/material"
-import { match } from "assert"
 
 interface UserInfo {
 	first_name: string
