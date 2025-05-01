@@ -27,13 +27,11 @@ jobs:
 
       - name: Install Requirements
         run: |
-          cd backend 
           pip install -r requirements/django-venv-requirements_2-23-2025.txt
           pip install -r requirements/apt-requirements_2-23-2025.txt
 
       - name: Lint Code with Flake8
         run: |
-          cd backend
           pip install flake8
           flake8 .
 
@@ -83,7 +81,6 @@ jobs:
 
       - name: Install Requirements
         run: |
-          cd backend
           pip install -r requirements/django-venv-requirements_2-23-2025.txt
           pip install -r requirements/apt-requirements_2-23-2025.txt
 
@@ -102,8 +99,6 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: ${{ secrets.DB_PORT }}
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID}}
-          GOOGLE_CLIENT_SECRET: ${{secrets.GOOGLE_CLIENT_SECRET}}
         run: |
           cd backend
           python manage.py makemigrations
@@ -116,8 +111,6 @@ jobs:
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: ${{ secrets.DB_PORT }}
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID}}
-          GOOGLE_CLIENT_SECRET: ${{secrets.GOOGLE_CLIENT_SECRET}}
         run: |
           cd backend
           python manage.py migrate
@@ -131,8 +124,6 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: ${{ secrets.DB_PORT }}
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID}}
-          GOOGLE_CLIENT_SECRET: ${{secrets.GOOGLE_CLIENT_SECRET}}
           # so i dont forget redis://127.0.0.1:6379/1 for caching.
         run: |
           cd backend

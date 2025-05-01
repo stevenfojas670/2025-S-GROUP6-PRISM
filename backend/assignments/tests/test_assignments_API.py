@@ -6,6 +6,7 @@ This module tests the API endpoints for assignments and related models.
 import datetime
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.urls import reverse
 
 from rest_framework import status
@@ -28,6 +29,7 @@ from courses.models import (
     Students,
     TeachingAssistants,
 )
+from cheating.models import SubmissionSimilarityPairs
 
 User = get_user_model()
 
@@ -81,6 +83,14 @@ class BaseViewTest(APITestCase):
             first_name="John",
             last_name="Doe",
         )
+        cls.student2 = Students.objects.create(
+            email="student2@example.com",
+            nshe_id=12121212,
+            codegrade_id=34345656,
+            ace_id="ACE124",
+            first_name="Jane",
+            last_name="Smith",
+        )
         cls.assignment = Assignments.objects.create(
             course_catalog=cls.catalog,
             semester=cls.semester,
@@ -129,6 +139,31 @@ class BaseViewTest(APITestCase):
             assignment=cls.assignment,
             file_name="main.py",
             similarity_threshold=0.75,
+        )
+        cls.sub2 = Submissions.objects.create(
+            grade=90.0,
+            created_at=datetime.date.today(),
+            flagged=False,
+            assignment=cls.assignment,
+            student=cls.student2,
+            course_instance=cls.course_instance,
+            file_path="path/to/sub2",
+        )
+        cls.sim1 = SubmissionSimilarityPairs.objects.create(
+            assignment=cls.assignment,
+            file_name="f1.py",
+            submission_id_1=cls.submission,
+            submission_id_2=cls.sub2,
+            match_id=1,
+            percentage=80,
+        )
+        cls.sim2 = SubmissionSimilarityPairs.objects.create(
+            assignment=cls.assignment,
+            file_name="f2.py",
+            submission_id_1=cls.sub2,
+            submission_id_2=cls.submission,
+            match_id=2,
+            percentage=60,
         )
 
 
@@ -404,3 +439,63 @@ class RequiredSubmissionFilesViewSetTest(BaseViewTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for item in response.data["results"]:
             self.assertIn("main", item["file_name"])
+
+
+class AggregatedAssignmentDataViewTests(BaseViewTest):
+    """Tests for the new AggregatedAssignmentDataView endpoint."""
+
+    @classmethod
+    def setUpTestData(cls):
+        """Set up test data for AggregatedAssignmentDataView tests."""
+        super().setUpTestData()
+        cls.url = reverse("aggregated-assignment-data")  # make sure its in urls.py (PR 69)
+
+    def test_anonymous_cannot_access(self):
+        """Test that anonymous users cannot access the aggregation endpoint."""
+        res = self.client.get(self.url)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_professor_sees_aggregations(self):
+        """Test that a professor user can retrieve aggregated assignment data."""
+        # add the professor to the Professor group
+        prof_group, _ = Group.objects.get_or_create(name="Professor")
+        self.professor_user.groups.add(prof_group)
+        self.client.login(email=self.professor_user.email, password="pass123")
+
+        res = self.client.get(self.url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        data = res.json()
+        # all the keys to expect
+        expected = {
+            "student_max_similarity_score",
+            "assignment_avg_similarity_score",
+            "flagged_per_assignment",
+            "similarity_trends",
+            "flagged_by_professor",
+            "professor_avg_similarity",
+        }
+        self.assertTrue(expected.issubset(data.keys()))
+        # check that the max sim score is 80. Its the only subsimpair i made tbh
+        max_scores = {d["submission_id_1__student__first_name"]: d["max_score"]
+                      for d in data["student_max_similarity_score"]}
+        self.assertEqual(max_scores[self.student.first_name], 80)
+
+    def test_admin_sees_everything(self):
+        """Test that an admin user can access all aggregated assignment data."""
+        admin = User.objects.create_superuser(email="admin@example.com", password="superpass")
+        self.client.login(email=admin.email, password="superpass")
+        res = self.client.get(self.url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_filter_by_assignment(self):
+        """Test filtering aggregated data by assignment ID."""
+        prof_group, _ = Group.objects.get_or_create(name="Professor")
+        self.professor_user.groups.add(prof_group)
+        self.client.login(email=self.professor_user.email, password="pass123")
+
+        # filter on a bogus assignment id
+        res = self.client.get(self.url, {"assignments": [9999]})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        data = res.json()
+        for lst in data.values():
+            self.assertEqual(lst, [])
