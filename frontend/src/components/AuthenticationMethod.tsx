@@ -1,7 +1,6 @@
 "use client"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import Button from "@mui/material/Button"
 
 export function SignInButton() {
 	return (
@@ -17,6 +16,5 @@ export function SignInButton() {
 
 export function SignOutButton() {
 	const router = useRouter()
-
 	return <span onClick={() => router.push("/logout")}>Sign Out</span>
 }

@@ -2,10 +2,12 @@ import { easyFetch } from "@/utils/fetchWrapper"
 import { Semester, SemesterResponse } from "@/types/semesterTypes"
 import { APIError } from "@/types/APIError"
 
-export async function GetSemesters(): Promise<SemesterResponse | APIError> {
+export async function GetSemesters(
+	uid: number
+): Promise<SemesterResponse | APIError> {
 	try {
 		const response = await easyFetch(
-			"http://localhost:8000/api/course/semester/",
+			`http://localhost:8000/api/course/semester/get-semesters/?uid=${uid}`,
 			{ method: "GET" }
 		)
 

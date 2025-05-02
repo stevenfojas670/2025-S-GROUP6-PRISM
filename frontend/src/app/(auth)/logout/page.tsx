@@ -21,10 +21,9 @@ export default function LogoutPage() {
 				if (response.ok) {
 					context?.logout()
 					console.log("Succesfully logged out of Django: ", data)
+				} else {
+					throw new Error("Error logging out of Django: ", data.details)
 				}
-				// else { *This is mainly for testing, if logout fails, who cares, just go back to login
-				// 	throw new Error("Error logging out of Django: ", data)
-				// }
 				router.push("/login")
 			} catch (err) {
 				console.error(err)

@@ -9,7 +9,9 @@ from .serializers import (
     LoginSerializer,
 )
 from dj_rest_auth.jwt_auth import set_jwt_cookies
+from dj_rest_auth.jwt_auth import unset_jwt_cookies
 from dj_rest_auth.views import LoginView as DJLoginView
+from dj_rest_auth.views import LogoutView
 from rest_framework.views import APIView
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -92,4 +94,13 @@ class CustomLoginView(DJLoginView):
         # Add extra data to the response
         response.data["user"]["professor_id"] = data.get("professor_id")
 
+        return response
+
+
+class CustomLogoutView(LogoutView):
+    def post(self, request, *args, **kwargs):
+        response = Response(
+            {"detail": "Successfully logged out."}, status=status.HTTP_200_OK
+        )
+        unset_jwt_cookies(response)
         return response

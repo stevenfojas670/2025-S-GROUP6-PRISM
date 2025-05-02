@@ -15,80 +15,42 @@ import {
 	TableRow,
 	Paper,
 } from "@mui/material"
-import { useRouter } from "next/navigation"
-import { easyFetch } from "@/utils/fetchWrapper"
-import { useCourseContext } from "@/context/CourseContext"
+import { useParams, useRouter } from "next/navigation"
 import { GetStudents } from "@/controllers/students"
-import { StudentEnrollments } from "@/types/studentTypes"
-import { blueGrey, grey } from "@mui/material/colors"
-/**
- * This will be used for pagination if necessary
- */
-interface AssignmentResponse {
-	count: number
-	next: null
-	previous: null
-}
+import { GetAssignments } from "@/controllers/assignments"
+import { AssignmentItem } from "@/types/assignmentTypes"
+import { Student } from "@/types/studentTypes"
+import { useAuth } from "@/context/AuthContext"
 
-interface AssignmentItem {
-	id: number
-	assignment_number: number
-	title: string
-	due_date: string | null
-	lock_date: string | null
-	pdf_filepath: string | null
-	has_base_code: boolean | null
-	moss_report_directory_path: string | null
-	bulk_ai_directory_path: string | null
-	language: string | null
-	has_policy: boolean | null
-	course_catalog: number | null
-	semester: number | null
-}
-
-const assignmentFields = [
-	"Title",
-	"Assignment Number",
-	"Due Date",
-	"Lock Date",
-	"Details",
+const columns: { key: keyof AssignmentItem; label: string }[] = [
+	{ key: "title", label: "Title" },
+	{ key: "assignment_number", label: "Number" },
+	{ key: "due_date", label: "Due Date" },
+	{ key: "lock_date", label: "Lock Date" },
 ]
 
 export default function Assignments() {
 	const router = useRouter()
-
+	const { courseId } = useParams()
+	const { user } = useAuth()
 	const [assignments, setAssignments] = useState<AssignmentItem[]>([])
-	const [students, setStudents] = useState<StudentEnrollments[]>([])
-	const { courseInstanceId } = useCourseContext()
+	const [students, setStudents] = useState<Student[]>([])
 
 	useEffect(() => {
-		if (!courseInstanceId) return
+		if (!courseId || !user) return
 		const fetchAssignments = async () => {
-			try {
-				const queryParams = new URLSearchParams({
-					course_id: String(courseInstanceId),
-				})
+			const data = await GetAssignments(Number(courseId))
 
-				const response = await easyFetch(
-					`http://localhost:8000/api/assignment/assignments/?${queryParams}`,
-					{
-						method: "get",
-					}
-				)
-
-				const data = await response.json()
-
-				if (response.ok) {
-					setAssignments(data)
-				}
-			} catch (error) {
-				console.error(error)
+			if ("results" in data) {
+				setAssignments(data.results)
+			} else {
+				console.error("Error fetching assignments: ", data)
 			}
 		}
 
 		const fetchStudents = async () => {
-			if (!courseInstanceId) return
-			const data = await GetStudents(Number(courseInstanceId), true)
+			if (!courseId || !user) return
+			const data = await GetStudents(Number(user.pk), Number(courseId))
 			if (Array.isArray(data)) {
 				setStudents(data)
 			} else {
@@ -98,7 +60,7 @@ export default function Assignments() {
 
 		fetchAssignments()
 		fetchStudents()
-	}, [courseInstanceId])
+	}, [courseId, user])
 
 	return (
 		<Box sx={{ display: "flex", gap: 2 }}>
@@ -125,15 +87,14 @@ export default function Assignments() {
 					<Button variant="contained">Export All</Button>
 				</Box>
 				<Box sx={{ overflowY: "auto", height: "100%" }}>
-					<TableContainer
-						sx={{ backgroundColor: grey[200], p: 1, borderRadius: 1 }}
-					>
-						<Table sx={{}}>
+					<TableContainer component={Paper} elevation={3}>
+						<Table>
 							<TableHead>
 								<TableRow>
-									{assignmentFields.map((field, index) => (
-										<TableCell key={index}>{field}</TableCell>
+									{columns.map((col) => (
+										<TableCell key={col.key}>{col.label}</TableCell>
 									))}
+									<TableCell>Action</TableCell>
 								</TableRow>
 							</TableHead>
 							<TableBody>
@@ -144,13 +105,7 @@ export default function Assignments() {
 										<TableCell>{assignment.due_date}</TableCell>
 										<TableCell>{assignment.lock_date}</TableCell>
 										<TableCell>
-											<Button
-												onClick={() =>
-													router.push(
-														`/courses/${courseInstanceId}/assignments/graphs?assignment=${assignment.id}`
-													)
-												}
-											>
+											<Button onClick={() => console.log("nothing")}>
 												View
 											</Button>
 										</TableCell>
@@ -184,7 +139,7 @@ export default function Assignments() {
 						<React.Fragment key={student.id}>
 							<ListItemButton sx={{ width: "100%" }}>
 								<ListItemText
-									primary={`${student.student.first_name} ${student.student.last_name}`}
+									primary={`${student.first_name} ${student.last_name}`}
 									sx={{ width: "100%" }}
 								/>
 							</ListItemButton>

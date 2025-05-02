@@ -5,7 +5,6 @@ import {
 	List,
 	ListItemButton,
 	ListItemText,
-	Divider,
 	Collapse,
 } from "@mui/material"
 import { ExpandLess, ExpandMore } from "@mui/icons-material"
@@ -14,23 +13,24 @@ import { useCourseContext } from "@/context/CourseContext"
 import { GetSemesters } from "@/controllers/semesters"
 import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/context/AuthContext"
 
 export default function LeftPanel() {
 	const router = useRouter()
 	const { setSemesterId } = useCourseContext()
-
+	const { user } = useAuth()
 	const [semOpen, setSemOpen] = useState<boolean>(false)
 	const [semesters, setSemesters] = useState<Semester[]>([])
 	const [semId, setSemId] = useState<number | null>(null)
 
 	const handleSemesterClick = async (semId: number) => {
 		setSemesterId(semId)
-		router.push(`/courses?semester=${semId}`)
+		router.push(`/semesters/${semId}`)
 	}
 
 	useEffect(() => {
 		const fetchSemesters = async () => {
-			const data = await GetSemesters()
+			const data = await GetSemesters(Number(user?.pk))
 			if ("results" in data) {
 				setSemesters(data.results)
 			} else {
@@ -44,7 +44,7 @@ export default function LeftPanel() {
 	return (
 		<Box
 			sx={(theme) => ({
-				minWidth: 200,
+				minWidth: 250,
 				maxWidth: 250,
 				minHeight: "100%",
 				position: "relative",

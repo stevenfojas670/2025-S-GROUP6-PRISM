@@ -1,32 +1,22 @@
 "use client"
 import { Typography, Box } from "@mui/material"
 import CourseCards from "@/components/CourseCards"
-import { useRouter } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { GetCourses } from "@/controllers/courses"
-import { Course, CourseCatalog, CourseResponse } from "@/types/coursesTypes"
+import { Course } from "@/types/coursesTypes"
 import { useAuth } from "@/context/AuthContext"
 import { useEffect, useState } from "react"
-import { useCourseContext } from "@/context/CourseContext"
 
 export default function Courses() {
 	const router = useRouter()
 	const { user } = useAuth()
-	const { setCourseInstanceId, semesterId } = useCourseContext()
+	const { semesterId } = useParams()
 	const [courses, setCourses] = useState<Course[]>([])
 
-	const courseClick = (courseInstanceId: number, catalogId: number) => {
-		setCourseInstanceId(courseInstanceId)
-		router.push(`/courses/${catalogId}/assignments`)
-	}
-
 	useEffect(() => {
-		if (!(semesterId && user?.professor_id)) return
-		console.log(semesterId)
+		if (!semesterId || !user?.pk) return
 		const loadCourses = async () => {
-			const data = await GetCourses(
-				Number(semesterId),
-				Number(user?.professor_id)
-			)
+			const data = await GetCourses(Number(user?.pk), Number(semesterId))
 			if ("results" in data) {
 				setCourses(data.results)
 			} else {
@@ -35,7 +25,7 @@ export default function Courses() {
 		}
 
 		loadCourses()
-	}, [semesterId, user?.professor_id])
+	}, [user?.pk, semesterId])
 
 	return (
 		<Box
@@ -53,7 +43,7 @@ export default function Courses() {
 					{courses.map((course) => (
 						<CourseCards
 							key={course.id}
-							onClick={() => courseClick(course.id, course.course_catalog.id)}
+							onClick={() => router.push(`courses/${course.id}`)}
 						>
 							<Typography>{course.course_catalog.name}</Typography>
 							<Typography>{course.section_number}</Typography>

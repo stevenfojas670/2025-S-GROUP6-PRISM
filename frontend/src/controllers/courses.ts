@@ -1,19 +1,14 @@
 import { easyFetch } from "@/utils/fetchWrapper"
-import { Course, CourseCatalog, CourseResponse } from "@/types/coursesTypes"
+import { CourseResponse } from "@/types/coursesTypes"
 import { APIError } from "@/types/APIError"
 
 export async function GetCourses(
-	semID: number,
-	professorID: number
+	uid: number,
+	semesterid: number
 ): Promise<CourseResponse | APIError> {
-	const queryParams = new URLSearchParams({
-		semester: String(semID),
-		professor: String(professorID),
-	})
-
 	try {
 		const response = await easyFetch(
-			`http://localhost:8000/api/course/courseinstances/?${queryParams}`,
+			`http://localhost:8000/api/course/courseinstances/get-courses-by-semesters/?uid=${uid}&semester=${semesterid}`,
 			{ method: "GET" }
 		)
 

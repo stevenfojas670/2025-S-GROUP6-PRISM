@@ -79,7 +79,7 @@ const LoginComponent: React.FC = () => {
 			// if the response is good, route to dashboard. error out otherwise
 			if (response.ok) {
 				login(data["user"])
-				router.push("/courses/")
+				router.push("/semesters/")
 			} else {
 				setMessage({
 					type: "error",
