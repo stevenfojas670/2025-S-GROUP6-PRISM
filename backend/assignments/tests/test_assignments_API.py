@@ -553,7 +553,7 @@ class AggregatedAssignmentDataViewTests(BaseViewTest):
 
         # Perform JWT login
         login_response = self.client.post(
-            "/api/auth/login/",
+            "/api/login/",
             {"email": self.professor_user.email, "password": "pass123"},
             format="json",
         )
@@ -575,7 +575,7 @@ class AggregatedAssignmentDataViewTests(BaseViewTest):
         )
 
         login_response = self.client.post(
-            "/api/auth/login/",
+            "/api/login/",
             {"email": admin.email, "password": admin.password},
             format="json",
         )
@@ -594,7 +594,7 @@ class AggregatedAssignmentDataViewTests(BaseViewTest):
         self.professor_user.groups.add(prof_group)
 
         login_response = self.client.post(
-            "/api/auth/login/",
+            "/api/login/",
             {"email": self.professor_user.email, "password": "pass123"},
             format="json",
         )
