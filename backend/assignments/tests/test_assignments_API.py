@@ -553,11 +553,11 @@ class AggregatedAssignmentDataViewTests(BaseViewTest):
 
         # Perform JWT login
         login_response = self.client.post(
-            "/api/login/",
-            {"email": self.professor_user.email, "password": "pass123"},
+            "/api/login",
+            {"username": self.professor_user.email, "password": "pass123"},
             format="json",
         )
-        self.assertEqual(login_response.status_code, 200)
+        self.assertEqual(login_response.status_code, 200, msg=login_response.json())
 
         # Set the JWT access cookie manually
         self.client.cookies["prism-access"] = login_response.cookies.get(
@@ -575,11 +575,11 @@ class AggregatedAssignmentDataViewTests(BaseViewTest):
         )
 
         login_response = self.client.post(
-            "/api/login/",
-            {"email": admin.email, "password": "superpass"},
+            "/api/login",
+            {"username": admin.email, "password": "superpass"},
             format="json",
         )
-        self.assertEqual(login_response.status_code, 200)
+        self.assertEqual(login_response.status_code, 200, msg=login_response.json())
 
         self.client.cookies["prism-access"] = login_response.cookies.get(
             "prism-access"
@@ -594,17 +594,17 @@ class AggregatedAssignmentDataViewTests(BaseViewTest):
         self.professor_user.groups.add(prof_group)
 
         login_response = self.client.post(
-            "/api/login/",
-            {"email": self.professor_user.email, "password": "pass123"},
+            "/api/login",
+            {"username": self.professor_user.email, "password": "pass123"},
             format="json",
         )
-        self.assertEqual(login_response.status_code, 200)
+        self.assertEqual(login_response.status_code, 200, msg=login_response.json())
 
         self.client.cookies["prism-access"] = login_response.cookies.get(
             "prism-access"
         ).value
 
-        res = self.client.get(self.url, {"assignments": [9999]})
+        res = self.client.get(self.url, {"assignments": 9999})
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
         data = res.json()
