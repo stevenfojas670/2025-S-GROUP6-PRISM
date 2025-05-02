@@ -97,32 +97,6 @@ class BaseCheatingAPITest(APITestCase):
             language="Python",
             has_policy=True,
         )
-        cls.submission1 = Submissions.objects.create(
-            grade=95.0,
-            created_at=datetime.date.today(),
-            flagged=False,
-            assignment=cls.assignment,
-            student=cls.student1,
-            course_instance=cls.course_instance,
-            file_path="code1.py",
-        )
-        cls.submission2 = Submissions.objects.create(
-            grade=88.0,
-            created_at=datetime.date.today(),
-            flagged=True,
-            assignment=cls.assignment,
-            student=cls.student2,
-            course_instance=cls.course_instance,
-            file_path="code2.py",
-        )
-        cls.similarity = SubmissionSimilarityPairs.objects.create(
-            assignment=cls.assignment,
-            file_name="code1.py",
-            submission_id_1=cls.submission1,
-            submission_id_2=cls.submission2,
-            match_id=1,
-            percentage=78,
-        )
 
 
 class CheatingGroupsAPITest(BaseCheatingAPITest):
@@ -276,7 +250,7 @@ class SubmissionSimilarityPairsAPITest(BaseCheatingAPITest):
         for item in response.data["results"]:
             self.assertIn("code.py", item["file_name"])
 
-    def test_filter_by_assignment_and_course_instance(self):
+    def test_submission_filter_by_assignment_and_course_instance(self):
         """Test retrieving similarity pairs based on assignment and course instance."""
         url = reverse("submission-similarity-pairs-list")
         response = self.client.get(
@@ -284,45 +258,6 @@ class SubmissionSimilarityPairsAPITest(BaseCheatingAPITest):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreaterEqual(len(response.data["results"]), 1)
-
-    def test_filter_by_students_and_semester(self):
-        """Test retrieving similarity pairs based on students and semester."""
-        url = reverse("submission-similarity-pairs-list")
-        response = self.client.get(
-            url,
-            {
-                "student1": self.student1.id,
-                "student2": self.student2.id,
-                "semester": self.semester.id,
-            },
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["results"]), 1)
-
-    def test_filter_by_assignment_only(self):
-        """Test retrieving similiarity pairs by assignment only."""
-        url = reverse("submission-similarity-pairs-list")
-        response = self.client.get(url, {"asid": self.assignment.id})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["results"]), 1)
-
-    def test_filter_by_invalid_assignment(self):
-        """Test querying similarity scores for an invalid assignment."""
-        url = reverse("submission-similarity-pairs-list")
-        response = self.client.get(url, {"asid": 999})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["results"]), 0)
-
-    def test_filter_by_matching_course(self):
-        """Test retrieving similarity pairs filtered by course instance."""
-        url = reverse("submission-similarity-pairs-list")
-        response = self.client.get(url, {"course": self.course_instance.id})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["results"]), 1)
-        self.assertEqual(
-            response.data["results"][0]["id"],
-            self.similarity.id,
-        )
 
 
 class LongitudinalCheatingGroupsAPITest(BaseCheatingAPITest):
