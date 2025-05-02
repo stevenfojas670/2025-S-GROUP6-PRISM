@@ -163,12 +163,85 @@ class SubmissionSimilarityPairsViewSet(viewsets.ModelViewSet, CachedViewMixin):
         "submission_id_1__student_id",
         "submission_id_2__student_id",
         "submission_id_1__assignment_id",
-        "submission_id_1__assignment__course_catalog_id",
         "submission_id_1__assignment__semester_id",
+        "submission_id_1__course_instance",
+        "submission_id_2__course_instance",
     ]
-    ordering_fields = ["percentage"]
+    ordering_fields = ["percentage", "match_id", "file_name"]
     ordering = ["percentage"]
-    search_fields = ["file_name", "assignment__title"]
+    search_fields = [
+        "file_name",
+        "assignment__title",
+        "submission_id_1__student__first_name",
+        "submission_id_2__student__first_name",
+    ]
+
+    def get_queryset(self):
+        """
+        Return a filtered queryset of submission similarity pairs.
+
+        Query parameters:
+        - student1: ID of the first student
+        - student2: ID of the second student
+        - asid: Assignment ID
+        - course: CourseInstance ID (must match both submissions)
+        - course1 + course2: Allow either submission to match
+        - semester: Semester ID (must match both submissions)
+        - semester1 + semester2: Allow either submission to match
+        """
+        queryset = SubmissionSimilarityPairs.objects.select_related(
+            "assignment",
+            "submission_id_1__student",
+            "submission_id_1__course_instance",
+            "submission_id_1__assignment__semester",
+            "submission_id_2__student",
+            "submission_id_2__course_instance",
+            "submission_id_2__assignment__semester",
+        )
+
+        request = self.request
+        student1 = request.query_params.get("student1")
+        student2 = request.query_params.get("student2")
+        assignment_id = request.query_params.get("asid")
+        course = request.query_params.get("course")
+        course1 = request.query_params.get("course1")
+        course2 = request.query_params.get("course2")
+        semester = request.query_params.get("semester")
+        semester1 = request.query_params.get("semester1")
+        semester2 = request.query_params.get("semester2")
+
+        if student1:
+            queryset = queryset.filter(submission_id_1__student_id=student1)
+        if student2:
+            queryset = queryset.filter(submission_id_2__student_id=student2)
+        if assignment_id:
+            queryset = queryset.filter(assignment_id=assignment_id)
+
+        # Course filtering
+        if course:
+            queryset = queryset.filter(
+                submission_id_1__course_instance_id=course,
+                submission_id_2__course_instance_id=course,
+            )
+        elif course1 and course2:
+            queryset = queryset.filter(
+                submission_id_1__course_instance_id=course1,
+                submission_id_2__course_instance_id=course2,
+            )
+
+        # Semester filtering
+        if semester:
+            queryset = queryset.filter(
+                submission_id_1__assignment__semester_id=semester,
+                submission_id_2__assignment__semester_id=semester,
+            )
+        elif semester1 and semester2:
+            queryset = queryset.filter(
+                submission_id_1__assignment__semester_id=semester1,
+                submission_id_2__assignment__semester_id=semester2,
+            )
+
+        return queryset
 
 
 class LongitudinalCheatingGroupsViewSet(viewsets.ModelViewSet, CachedViewMixin):
