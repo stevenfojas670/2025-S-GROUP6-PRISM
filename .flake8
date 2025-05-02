@@ -15,4 +15,5 @@ exclude =
     .idea,
     .vscode,
     .mypy_cache,
-    .coverage.*
+    .coverage.*,
+    frontend

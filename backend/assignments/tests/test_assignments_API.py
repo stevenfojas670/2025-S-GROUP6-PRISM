@@ -280,9 +280,7 @@ class SubmissionsViewSetTest(BaseViewTest):
             self.assertIn("submission", item["file_path"])
 
     def test_submissions_get(self):
-        """Test retrieving submissions by assignment_id, course_instance_id
-        semester_id, AND/OR student_id.
-        """
+        """Test retrieving submissions by assignment_id, course_instance_id, semester_id, AND/OR student_id."""
         url = reverse("submissions-list")
         response = self.client.get(
             url, {"asid": 1, "course": 3, "semester": 1, "student": 382}

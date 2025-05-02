@@ -8,9 +8,6 @@ from rest_framework.request import Request
 from rest_framework.decorators import action
 from rest_framework import status
 from django.contrib.auth import get_user_model
-
-User = get_user_model()
-
 from .models import (
     CourseCatalog,
     CourseInstances,
@@ -34,6 +31,8 @@ from .serializers import (
     TeachingAssistantEnrollmentsSerializer,
 )
 from .pagination import StandardResultsSetPagination
+
+User = get_user_model()
 
 
 class CourseCatalogViewSet(viewsets.ModelViewSet, CachedViewMixin):
@@ -72,11 +71,17 @@ class CourseInstancesViewSet(viewsets.ModelViewSet, CachedViewMixin):
 
     @action(detail=False, methods=["get"], url_path="get-courses-by-semesters")
     def get_courses(self, request: Request) -> Response:
-        """
-        Returns all courses for the current logged-in professor for a given semester.
-        If the user is a superuser, returns all matching courses for the semester.
+        """Return courses for the given semester based on user privileges.
 
-        Example: /courseinstances/get-courses/?uid=3&semester=6
+        Returns all course instances for the specified semester. If the user
+        is a professor, only their courses are returned. Superusers receive
+        all matching courses for the semester.
+
+        Example:
+            /courseinstances/get-courses/?uid=3&semester=6
+
+        Returns:
+            Response: A paginated or full list of serialized course instances.
         """
         user_id = request.query_params.get("uid")
         semester_id = request.query_params.get("semester")
@@ -133,11 +138,16 @@ class CourseInstancesViewSet(viewsets.ModelViewSet, CachedViewMixin):
 
     @action(detail=False, methods=["get"], url_path="get-all-courses")
     def get_all_courses(self, request: Request) -> Response:
-        """
-        Returns all courses for the current logged-in professor (across all semesters).
-        If the user is a superuser, returns all courses.
+        """Return all courses across semesters for the specified user.
 
-        Example: /courseinstances/get-all-courses/?uid=3
+        If the user is a professor, returns only their courses. If the user
+        is a superuser, returns all courses across all semesters.
+
+        Example:
+            /courseinstances/get-all-courses/?uid=3
+
+        Returns:
+            Response: A paginated or full list of serialized course instances.
         """
         user_id = request.query_params.get("uid")
 
@@ -183,13 +193,16 @@ class CourseInstancesViewSet(viewsets.ModelViewSet, CachedViewMixin):
 
     @action(detail=False, methods=["get"], url_path="get-all-students")
     def get_all_students(self, request: Request) -> Response:
-        """
-        Returns all students for the current logged-in professor.
-        Optional: filter by specific course_instance_id.
+        """Return all students for the logged-in professor.
 
-        Example:
-        - /courseinstances/get-all-students/?uid=3
-        - /courseinstances/get-all-students/?uid=3&course=10
+        Optionally filters students by a specific course instance ID.
+
+        Examples:
+            /courseinstances/get-all-students/?uid=3
+            /courseinstances/get-all-students/?uid=3&course=10
+
+        Returns:
+            Response: A paginated or full list of serialized students.
         """
         user_id = request.query_params.get("uid")
         courseinstance_id = request.query_params.get("course")
@@ -258,13 +271,17 @@ class SemesterViewSet(viewsets.ModelViewSet, CachedViewMixin):
 
     @action(detail=False, methods=["get"], url_path="get-semesters")
     def get_semesters(self, request: Request) -> Response:
-        """
-        Returns all semesters for the current logged in professor.
-        If the user is admin, then returns all semesters.
+        """Return semesters for the logged-in professor or all if admin.
 
-        Example Request: /semester/get-semesters/?uid=2
-        """
+        Returns all semesters associated with the professor's courses.
+        If the user is a superuser, returns all semesters in the system.
 
+        Example:
+            /semester/get-semesters/?uid=2
+
+        Returns:
+            Response: A paginated or full list of serialized semesters.
+        """
         user_id = request.query_params.get("uid")
         if not user_id:
             return Response(

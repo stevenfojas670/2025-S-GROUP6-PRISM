@@ -66,9 +66,9 @@ class AssignmentsViewSet(viewsets.ModelViewSet, CachedViewMixin):
 
     @action(detail=False, methods=["get"], url_path="get-assignments-by-course")
     def get_assignments_by_courseinstance(self, request: Request) -> Response:
-        """
-        Returns all assignments for a given course instance id.
-        Example: /assignments/by-courseinstance/?course=12
+        """Return all assignments for a given course instance ID.
+
+        Example: /assignments/get-assignments-by-course/?course=12
         """
         courseinstance_id = request.query_params.get("course")
 
@@ -101,8 +101,8 @@ class AssignmentsViewSet(viewsets.ModelViewSet, CachedViewMixin):
 
     @action(detail=False, methods=["get"], url_path="get-submissions")
     def get_submissions_by_assignment(self, request: Request) -> Response:
-        """
-        Returns a list of students and their submissions for a given assignment ID.
+        """Return a list of students and their submissions for a given assignment ID.
+
         Example: /assignments/get-submissions/?asid=3
         """
         assignment_id = request.query_params.get("asid")
@@ -146,17 +146,16 @@ class SubmissionsViewSet(viewsets.ModelViewSet, CachedViewMixin):
     search_fields = ["file_path"]
 
     def get_queryset(self):
-        """View method to enforce logical AND when using query params
-        to query by assignment_id, course_instance_id, semester_id,
-        and student_id
+        """Return submissions filtered by logical AND on query parameters.
 
-        Query Example: /submissions/?student=382&asid=1&course=3&semester=1
+        Filters by assignment ID, course instance ID, semester ID, and student ID,
+        if provided in the query string.
+
+        Example query: /submissions/?student=382&asid=1&course=3&semester=1
 
         Returns:
-            queryset: Django query object to be translated under the
-            the hood to the HTTP response.
+            QuerySet: A filtered Django QuerySet of Submissions.
         """
-
         queryset = Submissions.objects.select_related(
             "assignment", "course_instance", "student"
         ).all()
