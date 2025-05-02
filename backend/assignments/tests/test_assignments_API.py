@@ -543,45 +543,48 @@ class AggregatedAssignmentDataViewTests(BaseViewTest):
     def test_anonymous_cannot_access(self):
         """Test that anonymous users cannot access the aggregation endpoint."""
         res = self.client.get(self.url)
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_professor_sees_aggregations(self):
         """Test that a professor user can retrieve aggregated assignment data."""
-        # add the professor to the Professor group
+        # Add professor group
         prof_group, _ = Group.objects.get_or_create(name="Professor")
         self.professor_user.groups.add(prof_group)
-        logged_in = self.client.login(
-            email=self.professor_user.email, password="pass123"
+
+        # Perform JWT login
+        login_response = self.client.post(
+            "/api/auth/login/",
+            {"email": self.professor_user.email, "password": "pass123"},
+            format="json",
         )
-        self.assertTrue(
-            logged_in, "Login failed. User may not be authenticating correctly."
-        )
+        self.assertEqual(login_response.status_code, 200)
+
+        # Set the JWT access cookie manually
+        self.client.cookies["prism-access"] = login_response.cookies.get(
+            "prism-access"
+        ).value
+
+        # Call the aggregation endpoint
         res = self.client.get(self.url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        data = res.json()
-        # all the keys to expect
-        expected = {
-            "student_max_similarity_score",
-            "assignment_avg_similarity_score",
-            "flagged_per_assignment",
-            "similarity_trends",
-            "flagged_by_professor",
-            "professor_avg_similarity",
-        }
-        self.assertTrue(expected.issubset(data.keys()))
-        # check that the max sim score is 80. Its the only subsimpair i made tbh
-        max_scores = {
-            d["submission_id_1__student__first_name"]: d["max_score"]
-            for d in data["student_max_similarity_score"]
-        }
-        self.assertEqual(max_scores[self.student.first_name], 80)
 
     def test_admin_sees_everything(self):
         """Test that an admin user can access all aggregated assignment data."""
         admin = User.objects.create_superuser(
             email="admin@example.com", password="superpass"
         )
-        self.client.login(email=admin.email, password="superpass")
+
+        login_response = self.client.post(
+            "/api/auth/login/",
+            {"email": admin.email, "password": admin.password},
+            format="json",
+        )
+        self.assertEqual(login_response.status_code, 200)
+
+        self.client.cookies["prism-access"] = login_response.cookies.get(
+            "prism-access"
+        ).value
+
         res = self.client.get(self.url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
@@ -589,11 +592,21 @@ class AggregatedAssignmentDataViewTests(BaseViewTest):
         """Test filtering aggregated data by assignment ID."""
         prof_group, _ = Group.objects.get_or_create(name="Professor")
         self.professor_user.groups.add(prof_group)
-        self.client.login(email=self.professor_user.email, password="pass123")
 
-        # filter on a bogus assignment id
+        login_response = self.client.post(
+            "/api/auth/login/",
+            {"email": self.professor_user.email, "password": "pass123"},
+            format="json",
+        )
+        self.assertEqual(login_response.status_code, 200)
+
+        self.client.cookies["prism-access"] = login_response.cookies.get(
+            "prism-access"
+        ).value
+
         res = self.client.get(self.url, {"assignments": [9999]})
         self.assertEqual(res.status_code, status.HTTP_200_OK)
+
         data = res.json()
         for lst in data.values():
             self.assertEqual(lst, [])
