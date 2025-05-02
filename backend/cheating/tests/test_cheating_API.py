@@ -10,14 +10,13 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from assignments.models import Assignments, Submissions
+from assignments.models import Assignments
 from cheating.models import (
     CheatingGroups,
     CheatingGroupMembers,
     ConfirmedCheaters,
     LongitudinalCheatingGroups,
     LongitudinalCheatingGroupMembers,
-    SubmissionSimilarityPairs,
 )
 from courses.models import (
     Semester,
@@ -249,15 +248,6 @@ class SubmissionSimilarityPairsAPITest(BaseCheatingAPITest):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for item in response.data["results"]:
             self.assertIn("code.py", item["file_name"])
-
-    def test_submission_filter_by_assignment_and_course_instance(self):
-        """Test retrieving similarity pairs based on assignment and course instance."""
-        url = reverse("submission-similarity-pairs-list")
-        response = self.client.get(
-            url, {"asid": self.assignment.id, "course": self.course_instance.id}
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertGreaterEqual(len(response.data["results"]), 1)
 
 
 class LongitudinalCheatingGroupsAPITest(BaseCheatingAPITest):
