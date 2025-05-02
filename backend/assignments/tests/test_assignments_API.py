@@ -314,16 +314,6 @@ class SubmissionsViewSetTest(BaseViewTest):
         for sub in response.data["results"]:
             self.assertEqual(sub["student"]["id"], self.student.id)
 
-    def test_filter_submissions_by_student_id_only(self):
-        """Test filtering submissions by student ID only."""
-        url = reverse("submissions-list")
-        response = self.client.get(url, {"student": self.student.id})
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertGreaterEqual(response.data["count"], 1)
-        for sub in response.data["results"]:
-            self.assertEqual(sub["student"]["id"], self.student.id)
-
     def test_filter_submissions_by_semester_id_only(self):
         """Test filtering submissions by semester ID only."""
         url = reverse("submissions-list")

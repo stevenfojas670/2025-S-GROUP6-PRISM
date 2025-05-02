@@ -13,7 +13,6 @@ from users.permissions import IsProfessorOrAdmin
 from django.db.models import Count, Max, Avg, F
 from cheating.models import SubmissionSimilarityPairs
 from courses.models import CourseInstances
-from courses.serializers import StudentsSerializer
 
 from .models import (
     Assignments,
