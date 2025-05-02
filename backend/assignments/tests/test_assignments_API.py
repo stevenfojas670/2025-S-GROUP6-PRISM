@@ -550,8 +550,12 @@ class AggregatedAssignmentDataViewTests(BaseViewTest):
         # add the professor to the Professor group
         prof_group, _ = Group.objects.get_or_create(name="Professor")
         self.professor_user.groups.add(prof_group)
-        self.client.login(email=self.professor_user.email, password="pass123")
-
+        logged_in = self.client.login(
+            email=self.professor_user.email, password="pass123"
+        )
+        self.assertTrue(
+            logged_in, "Login failed. User may not be authenticating correctly."
+        )
         res = self.client.get(self.url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         data = res.json()
