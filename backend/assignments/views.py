@@ -32,6 +32,7 @@ from .serializers import (
     ConstraintsSerializer,
     PolicyViolationsSerializer,
     RequiredSubmissionFilesSerializer,
+    AssignmentCreateSerializer,
 )
 
 
@@ -62,6 +63,19 @@ class AssignmentsViewSet(viewsets.ModelViewSet, CachedViewMixin):
         "pdf_filepath",
         "moss_report_directory_path",
     ]
+
+    def get_serializer_class(self):
+        """Return the appropriate serializer class based on the action.
+
+        Uses AssignmentCreateSerializer for 'create' actions to handle
+        nested writes. Defaults to AssignmentsSerializer for all other actions.
+
+        Returns:
+            serializers.ModelSerializer: The serializer class to use.
+        """
+        if self.action == "create":
+            return AssignmentCreateSerializer
+        return AssignmentsSerializer
 
     @action(detail=False, methods=["get"], url_path="get-assignments-by-course")
     def get_assignments_by_course(self, request: Request) -> Response:
@@ -293,9 +307,7 @@ class AggregatedAssignmentDataView(APIView):
         # Flagged submissions per assignment (uses dynamic threshold)
         response_data["flagged_per_assignment"] = list(
             base_qs.filter(
-                percentage__gte=F(
-                    "assignment__requiredsubmissionfiles__similarity_threshold"
-                )
+                percentage__gte=F("assignment__required_files__similarity_threshold")
             )
             .values("assignment__title")
             .annotate(flagged_count=Count("id"))
@@ -311,9 +323,7 @@ class AggregatedAssignmentDataView(APIView):
         # Flagged submissions per professor
         response_data["flagged_by_professor"] = list(
             base_qs.filter(
-                percentage__gte=F(
-                    "assignment__requiredsubmissionfiles__similarity_threshold"
-                )
+                percentage__gte=F("assignment__required_files__similarity_threshold")
             )
             .values("submission_id_1__course_instance__professor__user__username")
             .annotate(flagged_count=Count("id"))

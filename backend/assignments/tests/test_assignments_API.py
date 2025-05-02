@@ -610,3 +610,157 @@ class AggregatedAssignmentDataViewTests(BaseViewTest):
         data = res.json()
         for lst in data.values():
             self.assertEqual(lst, [])
+
+
+class AssignmentCreationTests(BaseViewTest):
+    """Test case for creating assignments with nested data."""
+
+    def setUp(self):
+        """Log in as a professor before each test."""
+        prof_group, _ = Group.objects.get_or_create(name="Professor")
+        self.professor_user.groups.add(prof_group)
+
+        login_response = self.client.post(
+            "/api/login",
+            {"username": self.professor_user.email, "password": "pass123"},
+            format="json",
+        )
+        self.assertEqual(login_response.status_code, 200, msg=login_response.json())
+        self.client.cookies["prism-access"] = login_response.cookies.get(
+            "prism-access"
+        ).value
+
+    def test_create_assignment_with_nested_data(self):
+        """Test creating an assignment with base files, required files, and constraints."""
+        url = reverse("assignments-list")
+        payload = {
+            "course_catalog": self.catalog.id,
+            "semester": self.semester.id,
+            "assignment_number": 2,
+            "title": "Nested Test Assignment",
+            "due_date": "2025-10-01",
+            "lock_date": "2025-10-02T23:59:59Z",
+            "pdf_filepath": "path/to/test2.pdf",
+            "has_base_code": True,
+            "moss_report_directory_path": "path/to/moss2",
+            "bulk_ai_directory_path": "path/to/bulk2",
+            "language": "Python",
+            "has_policy": True,
+            "base_files": [
+                {"file_name": "starter.py", "file_path": "files/starter.py"},
+                {"file_name": "utils.py", "file_path": "files/utils.py"},
+            ],
+            "required_files": [{"file_name": "main.py", "similarity_threshold": 85.0}],
+            "constraints": [
+                {
+                    "identifier": "eval",
+                    "is_library": False,
+                    "is_keyword": True,
+                    "is_permitted": False,
+                }
+            ],
+        }
+
+        res = self.client.post(url, payload, format="json")
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED, msg=res.json())
+        self.assertEqual(res.data["title"], "Nested Test Assignment")
+
+        # Ensure nested objects were created
+        assignment_id = res.data["id"]
+        self.assertTrue(BaseFiles.objects.filter(assignment_id=assignment_id).exists())
+        self.assertTrue(
+            RequiredSubmissionFiles.objects.filter(assignment_id=assignment_id).exists()
+        )
+        self.assertTrue(
+            Constraints.objects.filter(assignment_id=assignment_id).exists()
+        )
+
+    def test_create_assignment_without_optional_nested_data(self):
+        """Test creating an assignment with required files only (base and constraints omitted)."""
+        url = reverse("assignments-list")
+        payload = {
+            "course_catalog": self.catalog.id,
+            "semester": self.semester.id,
+            "assignment_number": 3,
+            "title": "Minimal Assignment",
+            "due_date": "2025-10-15",
+            "lock_date": "2025-10-16T23:59:59Z",
+            "pdf_filepath": "path/to/basic.pdf",
+            "has_base_code": False,
+            "moss_report_directory_path": "path/to/moss3",
+            "bulk_ai_directory_path": "path/to/bulk3",
+            "language": "Java",
+            "has_policy": False,
+            "required_files": [{"file_name": "main.java", "similarity_threshold": 75}],
+        }
+
+        res = self.client.post(url, payload, format="json")
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED, msg=res.json())
+        self.assertTrue(
+            RequiredSubmissionFiles.objects.filter(
+                assignment__title="Minimal Assignment"
+            ).exists()
+        )
+
+    def test_create_assignment_with_only_base_files(self):
+        """Test creating an assignment with only base files."""
+        url = reverse("assignments-list")
+        payload = {
+            "course_catalog": self.catalog.id,
+            "semester": self.semester.id,
+            "assignment_number": 4,
+            "title": "Assignment with Base Files",
+            "due_date": "2025-10-20",
+            "lock_date": "2025-10-21T23:59:59Z",
+            "pdf_filepath": "files/base_only.pdf",
+            "has_base_code": True,
+            "moss_report_directory_path": "moss/base_only",
+            "bulk_ai_directory_path": "bulk/base_only",
+            "language": "Python",
+            "has_policy": False,
+            "base_files": [{"file_name": "setup.py", "file_path": "files/setup.py"}],
+            "required_files": [{"file_name": "main.java", "similarity_threshold": 75}],
+        }
+
+        res = self.client.post(url, payload, format="json")
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED, msg=res.json())
+        self.assertTrue(
+            BaseFiles.objects.filter(
+                assignment__title="Assignment with Base Files"
+            ).exists()
+        )
+
+    def test_create_assignment_with_only_constraints(self):
+        """Test creating an assignment with only constraints."""
+        url = reverse("assignments-list")
+        payload = {
+            "course_catalog": self.catalog.id,
+            "semester": self.semester.id,
+            "assignment_number": 6,
+            "title": "Assignment with Constraints",
+            "due_date": "2025-10-25",
+            "lock_date": "2025-10-26T23:59:59Z",
+            "pdf_filepath": "files/constraints_only.pdf",
+            "has_base_code": False,
+            "moss_report_directory_path": "moss/constraints_only",
+            "bulk_ai_directory_path": "bulk/constraints_only",
+            "language": "C",
+            "has_policy": True,
+            "required_files": [{"file_name": "main.java", "similarity_threshold": 75}],
+            "constraints": [
+                {
+                    "identifier": "goto",
+                    "is_library": False,
+                    "is_keyword": True,
+                    "is_permitted": False,
+                }
+            ],
+        }
+
+        res = self.client.post(url, payload, format="json")
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED, msg=res.json())
+        self.assertTrue(
+            Constraints.objects.filter(
+                assignment__title="Assignment with Constraints"
+            ).exists()
+        )

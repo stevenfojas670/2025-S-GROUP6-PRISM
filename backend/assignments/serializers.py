@@ -50,6 +50,8 @@ class SubmissionsSerializer(serializers.ModelSerializer):
 class BaseFilesSerializer(serializers.ModelSerializer):
     """Serializer for the BaseFiles model."""
 
+    assignment = serializers.PrimaryKeyRelatedField(read_only=True)
+
     class Meta:
         """Meta options for the BaseFilesSerializer.
 
@@ -79,6 +81,8 @@ class BulkSubmissionsSerializer(serializers.ModelSerializer):
 
 class ConstraintsSerializer(serializers.ModelSerializer):
     """Serializer for the Constraints model."""
+
+    assignment = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         """Meta options for the ConstraintsSerializer.
@@ -110,6 +114,8 @@ class PolicyViolationsSerializer(serializers.ModelSerializer):
 class RequiredSubmissionFilesSerializer(serializers.ModelSerializer):
     """Serializer for the RequiredSubmissionFiles model."""
 
+    assignment = serializers.PrimaryKeyRelatedField(read_only=True)
+
     class Meta:
         """Meta options for the RequiredSubmissionFilesSerializer.
 
@@ -120,3 +126,77 @@ class RequiredSubmissionFilesSerializer(serializers.ModelSerializer):
 
         model = RequiredSubmissionFiles
         fields = "__all__"
+
+
+class AssignmentCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating Assignments with nested related data."""
+
+    base_files = BaseFilesSerializer(many=True, required=False)
+    required_files = RequiredSubmissionFilesSerializer(
+        many=True, required=True, min_length=1
+    )
+    constraints = ConstraintsSerializer(many=True, required=False)
+
+    class Meta:
+        """Meta options for AssignmentCreateSerializer.
+
+        Attributes:
+            model: The Assignments model class.
+            fields: All model fields including nested related data.
+        """
+
+        model = Assignments
+        fields = [
+            "id",
+            "course_catalog",
+            "semester",
+            "assignment_number",
+            "title",
+            "due_date",
+            "lock_date",
+            "pdf_filepath",
+            "has_base_code",
+            "moss_report_directory_path",
+            "bulk_ai_directory_path",
+            "language",
+            "has_policy",
+            "base_files",
+            "required_files",
+            "constraints",
+        ]
+
+    def create(self, validated_data):
+        """Create a new assignment with optional base files, required files, and constraints.
+
+        Args:
+            validated_data (dict): Validated data for the assignment and nested objects.
+
+        Returns:
+            Assignments: The created assignment instance.
+        """
+        base_files = validated_data.pop("base_files", [])
+        required_files = validated_data.pop("required_files", [])
+        constraints = validated_data.pop("constraints", [])
+
+        try:
+            assignment = Assignments.objects.create(**validated_data)
+
+            for base in base_files:
+                BaseFiles.objects.create(assignment=assignment, **base)
+
+            if not required_files:
+                raise serializers.ValidationError(
+                    {"required_files": "At least one required file is mandatory."}
+                )
+            for req in required_files:
+                RequiredSubmissionFiles.objects.create(assignment=assignment, **req)
+
+            for const in constraints:
+                Constraints.objects.create(assignment=assignment, **const)
+
+        except Exception as e:
+            raise serializers.ValidationError(
+                {"detail": f"Assignment creation failed: {str(e)}"}
+            )
+
+        return assignment
