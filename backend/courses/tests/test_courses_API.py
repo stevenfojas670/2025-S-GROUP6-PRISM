@@ -171,51 +171,48 @@ class CourseInstancesAPITest(BaseCoursesAPITest):
         self.assertEqual(sections, sorted(sections))
 
     def test_courseinstances_search(self):
-        """Test searching course instances by course_catalog."""
+        """Test searching course instances by course_catalog course_title."""
         url = reverse("courseinstances-list")
-        response = self.client.get(url, {"search": "Computer Science I"})
+        response = self.client.get(url, {"search": "Intro"})
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
         found = any(
-            item.get("course_catalog") == self.course_catalog.pk
+            "Intro" in item.get("course_catalog", {}).get("course_title", "")
             for item in response.data["results"]
         )
         self.assertTrue(found)
 
-    def test_courseinstances_by_semester(self):
-        """Test retrieving courses by semester id and user id."""
-        url = reverse("courseinstances-list")
-        response = self.client.get(url, {"uid": 3, "semester": 6})
+    def test_get_courses_by_semesters(self):
+        """Test custom action: get courses for a specific semester and professor."""
+        url = reverse("courseinstances-get-courses")
+        response = self.client.get(
+            url, {"uid": self.professor_user.id, "semester": self.semester.id}
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertGreater(len(response.count), 0)
-        first_course = response.data["results"][0]
-        self.assertEqual(first_course["professor"], 3)
+        self.assertIn("results", response.data)
+        self.assertGreaterEqual(len(response.data["results"]), 1)
+        self.assertEqual(response.data["results"][0]["professor"], self.professor.id)
 
-    def test_courseinstances_by_userid(self):
-        """Test retrieving courses by user id."""
-        url = reverse("courseinstances-list")
-        response = self.client.get(url, {"uid": 3, "semester": 6})
+    def test_get_all_courses_professor(self):
+        """Test custom action: get all courses for the logged-in professor."""
+        url = reverse("courseinstances-get-all-courses")
+        response = self.client.get(url, {"uid": self.professor_user.id})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertGreater(len(response.count), 0)
-        first_course = response.data["results"][3]
-        self.assertEqual(first_course["professor"], 3)
+        self.assertIn("results", response.data)
+        self.assertGreaterEqual(len(response.data["results"]), 1)
+        self.assertEqual(response.data["results"][0]["professor"], self.professor.id)
 
-    def test_courseinstances_get_students_by_uid(self):
-        """Test retrieving students by user id."""
-        url = reverse("courseinstances-list")
-        response = self.client.get(url, {"uid": 3, "course": 11})
+    def test_get_all_students_for_course(self):
+        """Test custom action: get all students for a professor's course."""
+        url = reverse("courseinstances-get-all-students")
+        response = self.client.get(
+            url, {"uid": self.professor_user.id, "course": self.course_instance.id}
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertGreater(len(response.count), 0)
-        first_student = response.data["results"][0]
-        self.assertEqual(first_student["first_name"], "Charlie")
-
-    def test_courseinstances_get_students_by_uid_and_course(self):
-        """Test retrieving students by user id and courseinstance id."""
-        url = reverse("courseinstances-list")
-        response = self.client.get(url, {"uid": 3, "course": 11})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertGreater(len(response.count), 0)
-        first_student = response.data["results"][2]
-        self.assertEqual(first_student["first_name"], "Carla")
+        self.assertIn("results", response.data)
+        self.assertGreaterEqual(len(response.data["results"]), 1)
+        self.assertEqual(response.data["results"][0]["id"], self.student.id)
 
 
 class SemesterAPITest(BaseCoursesAPITest):
@@ -252,14 +249,15 @@ class SemesterAPITest(BaseCoursesAPITest):
         for item in response.data["results"]:
             self.assertIn(self.semester.term, item["term"])
 
-    def test_semester_by_user(self):
-        """Test retrieving semesters based on the user id."""
-        url = reverse("semester-list")
-        response = self.client.get(url, {"uid": 3})
+    def test_get_semesters_for_professor(self):
+        """Test retrieving semesters via custom get-semesters action."""
+        url = reverse("semester-get-semesters")
+        response = self.client.get(url, {"uid": self.professor_user.id})
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertGreater(len(response.data), 0)
-        first_semester = response.data[0]
-        self.assertEqual(first_semester["name"], "Spring 2024")
+        self.assertIn("results", response.data)
+        self.assertGreaterEqual(len(response.data["results"]), 1)
+        self.assertEqual(response.data["results"][0]["id"], self.semester.id)
 
 
 class StudentsAPITest(BaseCoursesAPITest):

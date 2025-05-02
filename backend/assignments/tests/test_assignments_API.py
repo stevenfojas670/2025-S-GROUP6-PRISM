@@ -225,23 +225,15 @@ class AssignmentsViewSetTest(BaseViewTest):
         self.assertIn("next", response.data)
         self.assertIn("previous", response.data)
 
-    def test_assignments_get_all_by_course(self):
-        """Test retrieving all assignments by course instance id."""
-        url = reverse("assignments-list")
-        response = self.client.get(url, {"course": 19})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["results"]), 23)
-        first_assignment = response.data["results"][0]
-        self.assertEqual(first_assignment["title"], "Assignment 0")
+    def test_get_assignments_by_course(self):
+        """Test retrieving assignments via get-assignments-by-course action."""
+        url = reverse("assignments-get-assignments-by-course")
+        response = self.client.get(url, {"course": self.course_instance.id})
 
-    def test_assignments_get_submission_by_assignment_id(self):
-        """Test retrieving all submissions based on assignment id."""
-        url = reverse("assignments-list")
-        response = self.client.get(url, {"asid": 25})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertGreater(len(response["count"]), 0)
-        first_submission = response.data["results"][0]
-        self.assertEqual(first_submission["student"]["first_name"], "Mary")
+        self.assertIn("results", response.data)
+        self.assertGreaterEqual(len(response.data["results"]), 1)
+        self.assertEqual(response.data["results"][0]["title"], self.assignment.title)
 
 
 class SubmissionsViewSetTest(BaseViewTest):
@@ -279,17 +271,93 @@ class SubmissionsViewSetTest(BaseViewTest):
         for item in response.data["results"]:
             self.assertIn("submission", item["file_path"])
 
-    def test_submissions_get(self):
-        """Test retrieving submissions by assignment_id, course_instance_id, semester_id, AND/OR student_id."""
+    def test_filter_submissions_by_multiple_params(self):
+        """Test filtering submissions by assignment, course, semester, and student ID."""
         url = reverse("submissions-list")
         response = self.client.get(
-            url, {"asid": 1, "course": 3, "semester": 1, "student": 382}
+            url,
+            {
+                "asid": self.assignment.id,
+                "course": self.course_instance.id,
+                "semester": self.semester.id,
+                "student": self.student.id,
+            },
         )
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("results", response.data)
-        self.assertGreater(response["count"], 0)
-        first_submission = response.data["results"][0]
-        self.assertEqual(first_submission["grade"], "90.10")
+        self.assertGreaterEqual(response.data["count"], 1)
+
+        # Validate the submission belongs to the right student and assignment
+        submission = response.data["results"][0]
+        self.assertEqual(submission["student"]["id"], self.student.id)
+        self.assertEqual(submission["assignment"]["id"], self.assignment.id)
+        self.assertEqual(submission["course_instance"], self.course_instance.id)
+
+    def test_filter_submissions_by_assignment_id_only(self):
+        """Test filtering submissions by assignment ID only."""
+        url = reverse("submissions-list")
+        response = self.client.get(url, {"asid": self.assignment.id})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(response.data["count"], 1)
+        for sub in response.data["results"]:
+            self.assertEqual(sub["assignment"]["id"], self.assignment.id)
+
+    def test_filter_submissions_by_student_id_only(self):
+        """Test filtering submissions by student ID only."""
+        url = reverse("submissions-list")
+        response = self.client.get(url, {"student": self.student.id})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(response.data["count"], 1)
+        for sub in response.data["results"]:
+            self.assertEqual(sub["student"]["id"], self.student.id)
+
+    def test_filter_submissions_by_student_id_only(self):
+        """Test filtering submissions by student ID only."""
+        url = reverse("submissions-list")
+        response = self.client.get(url, {"student": self.student.id})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(response.data["count"], 1)
+        for sub in response.data["results"]:
+            self.assertEqual(sub["student"]["id"], self.student.id)
+
+    def test_filter_submissions_by_semester_id_only(self):
+        """Test filtering submissions by semester ID only."""
+        url = reverse("submissions-list")
+        response = self.client.get(url, {"semester": self.semester.id})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(response.data["count"], 1)
+        for sub in response.data["results"]:
+            self.assertEqual(
+                sub["assignment"]["id"], self.assignment.id
+            )  # same assignment implies same semester
+
+    def test_filter_submissions_by_course_instance_id_only(self):
+        """Test filtering submissions by course instance ID only."""
+        url = reverse("submissions-list")
+        response = self.client.get(url, {"course": self.course_instance.id})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(response.data["count"], 1)
+        for sub in response.data["results"]:
+            self.assertEqual(sub["course_instance"], self.course_instance.id)
+
+    def test_filter_submissions_by_assignment_and_student(self):
+        """Test filtering submissions by both assignment and student ID."""
+        url = reverse("submissions-list")
+        response = self.client.get(
+            url, {"asid": self.assignment.id, "student": self.student2.id}
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(response.data["count"], 1)
+        for sub in response.data["results"]:
+            self.assertEqual(sub["assignment"]["id"], self.assignment.id)
+            self.assertEqual(sub["student"]["id"], self.student2.id)
 
 
 class BaseFilesViewSetTest(BaseViewTest):

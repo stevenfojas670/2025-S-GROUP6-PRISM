@@ -65,7 +65,7 @@ class AssignmentsViewSet(viewsets.ModelViewSet, CachedViewMixin):
     ]
 
     @action(detail=False, methods=["get"], url_path="get-assignments-by-course")
-    def get_assignments_by_courseinstance(self, request: Request) -> Response:
+    def get_assignments_by_course(self, request: Request) -> Response:
         """Return all assignments for a given course instance ID.
 
         Example: /assignments/get-assignments-by-course/?course=12
@@ -98,35 +98,6 @@ class AssignmentsViewSet(viewsets.ModelViewSet, CachedViewMixin):
 
         serializer = self.get_serializer(assignments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
-    @action(detail=False, methods=["get"], url_path="get-submissions")
-    def get_submissions_by_assignment(self, request: Request) -> Response:
-        """Return a list of students and their submissions for a given assignment ID.
-
-        Example: /assignments/get-submissions/?asid=3
-        """
-        assignment_id = request.query_params.get("asid")
-
-        if not assignment_id:
-            return Response(
-                {"detail": "'asid' (assignment_id) is required."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        submissions = Submissions.objects.filter(
-            assignment_id=assignment_id
-        ).select_related("student", "assignment", "course_instance")
-
-        results = []
-        for submission in submissions:
-            student_data = StudentsSerializer(submission.student).data
-            submission_data = SubmissionsSerializer(submission).data
-            results.append({"student": student_data, "submission": submission_data})
-
-        page = self.paginate_queryset(results)
-        if page is not None:
-            return self.get_paginated_response(page)
-        return Response(results, status=status.HTTP_200_OK)
 
 
 class SubmissionsViewSet(viewsets.ModelViewSet, CachedViewMixin):

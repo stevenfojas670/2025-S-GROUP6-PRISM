@@ -67,7 +67,13 @@ class CourseInstancesViewSet(viewsets.ModelViewSet, CachedViewMixin):
     filterset_fields = ["section_number", "canvas_course_id", "professor", "semester"]
     ordering_fields = ["section_number"]
     ordering = ["section_number"]
-    search_fields = ["course_catalog__course_title"]
+    search_fields = [
+        "course_catalog__name",
+        "course_catalog__course_title",
+        "course_catalog__subject",
+        "course_catalog__catalog_number",
+        "course_catalog__course_level",
+    ]
 
     @action(detail=False, methods=["get"], url_path="get-courses-by-semesters")
     def get_courses(self, request: Request) -> Response:
