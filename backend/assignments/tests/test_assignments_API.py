@@ -576,7 +576,7 @@ class AggregatedAssignmentDataViewTests(BaseViewTest):
 
         login_response = self.client.post(
             "/api/login/",
-            {"email": admin.email, "password": admin.password},
+            {"email": admin.email, "password": "superpass"},
             format="json",
         )
         self.assertEqual(login_response.status_code, 200)
