@@ -98,7 +98,25 @@ class CustomLoginView(DJLoginView):
 
 
 class CustomLogoutView(LogoutView):
+    """Handle POST request to deauthenticate and unset JWT cookies.
+
+    Args:
+        request (Request): The HTTP request object containing user credentials.
+
+    Returns:
+        Response: HTTP 200 OK response with successful logout.
+    """
+
     def post(self, request, *args, **kwargs):
+        """
+        Generate the HTTP response for a successful logout.
+
+        This method extends the default behavior of the dj-resut-auth method
+        `LogoutView` to unset the JWT cookie on logout request.
+
+        Returns:
+            Response: An HTTP 200 response on successful logout.
+        """
         response = Response(
             {"detail": "Successfully logged out."}, status=status.HTTP_200_OK
         )
