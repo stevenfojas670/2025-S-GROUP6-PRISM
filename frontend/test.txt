@@ -1,0 +1,197 @@
+
+> frontend@0.1.0 test
+> jest
+
+(node:28520) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+FAIL tests/login.test.js
+  LoginComponent
+    √ renders login form with username and password fields (56 ms)
+    √ allows the user to type in the username and password fields (25 ms)
+    √ redirects to semesters on successful login (85 ms)
+    √ displays error message on failed login (78 ms)
+    √ does not submit if fields are empty (18 ms)
+    × disables login button during submission (525 ms)
+    × clicking Google Sign In calls signIn (7 ms)
+
+  ● LoginComponent › disables login button during submission
+
+    expect(element).toBeDisabled()
+
+    Received element is not disabled:
+      <button class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-fullWidth MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-fullWidth css-jzhkw0-MuiButtonBase-root-MuiButton-root" data-testid="login-submit" tabindex="0" type="submit" />
+
+    Ignored nodes: comments, script, style
+    [36m<html>[39m
+      [36m<head>[39m
+        [36m<meta[39m
+          [33mcontent[39m=[32m""[39m
+          [33mname[39m=[32m"emotion-insertion-point"[39m
+        [36m/>[39m
+      [36m</head>[39m
+      [36m<body>[39m
+        [36m<div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiContainer-root MuiContainer-maxWidthXs css-mzavur-MuiContainer-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiBox-root css-wgkxa3"[39m
+            [36m>[39m
+              [36m<h1[39m
+                [33mclass[39m=[32m"MuiTypography-root MuiTypography-h5 MuiTypography-gutterBottom css-1f9xtph-MuiTypography-root"[39m
+              [36m>[39m
+                [0mPRISM[0m
+              [36m</h1>[39m
+              [36m<form[39m
+                [33mstyle[39m=[32m"width: 100%;"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"MuiFormControl-root MuiFormControl-marginNormal MuiFormControl-fullWidth MuiTextField-root css-16bevx5-MuiFormControl-root-MuiTextField-root"[39m
+                [36m>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"MuiFormLabel-root MuiInputLabel-root MuiInputLabel-formControl MuiInputLabel-animated MuiInputLabel-shrink MuiInputLabel-sizeMedium MuiInputLabel-outlined MuiFormLabel-colorPrimary MuiFormLabel-filled MuiInputLabel-root MuiInputLabel-formControl MuiInputLabel-animated MuiInputLabel-shrink MuiInputLabel-sizeMedium MuiInputLabel-outlined css-113d811-MuiFormLabel-root-MuiInputLabel-root"[39m
+                    [33mdata-shrink[39m=[32m"true"[39m
+                    [33mfor[39m=[32m"username-input"[39m
+                    [33mid[39m=[32m"username-input-label"[39m
+                  [36m>[39m
+                    [0mUsername[0m
+                  [36m</label>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl css-1blp12k-MuiInputBase-root-MuiOutlinedInput-root"[39m
+                  [36m>[39m
+                    [36m<input[39m
+                      [33maria-invalid[39m=[32m"false"[39m
+                      [33maria-label[39m=[32m"Username"[39m
+                      [33mclass[39m=[32m"MuiInputBase-input MuiOutlinedInput-input css-16wblaj-MuiInputBase-input-MuiOutlinedInput-input"[39m
+                      [33mid[39m=[32m"username-input"[39m
+                      [33mtype[39m=[32m"text"[39m
+                      [33mvalue[39m=[32m"testuser"[39m
+                    [36m/>[39m
+                    [36m<fieldset[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"MuiOutlinedInput-notchedOutline css-1ll44ll-MuiOutlinedInput-notchedOutline"[39m
+                    [36m>[39m
+                      [36m<legend[39m
+                        [33mclass[39m=[32m"css-w1u3ce"[39m
+                      [36m>[39m
+                        [36m<span>[39m
+                          [0mUsername[0m
+                        [36m</span>[39m
+                      [36m</legend>[39m
+                    [36m</fieldset>[39m
+                  [36m</div>[39m
+                [36m</div>[39m
+                [36m<label[39m
+                  [33mfor[39m=[32m"username-input"[39m
+                  [33mid[39m=[32m"username-label"[39m
+                  [33mstyle[39m=[32m"display: none;"[39m
+                [36m>[39m
+                  [0mUsername[0m
+                [36m</label>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"MuiFormControl-root MuiFormControl-marginNormal MuiFormControl-fullWidth MuiTextField-root css-16bevx5-MuiFormControl-root-MuiTextField-root"[39m
+                [36m>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"MuiFormLabel-root MuiInputLabel-root MuiInputLabel-formControl MuiInputLabel-animated MuiInputLabel-shrink MuiInputLabel-sizeMedium MuiInputLabel-outlined MuiFormLabel-colorPrimary MuiFormLabel-filled MuiInputLabel-root MuiInputLabel-formControl MuiInputLabel-animated MuiInputLabel-shrink MuiInputLabel-sizeMedium MuiInputLabel-outlined css-113d811-MuiFormLabel-root-MuiInputLabel-root"[39m
+                    [33mdata-shrink[39m=[32m"true"[39m
+                    [33mfor[39m=[32m"password-input"[39m
+                    [33mid[39m=[32m"password-input-label"[39m
+                  [36m>[39m
+                    [0mPassword[0m
+                  [36m</label>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl css-1blp12k-MuiInputBase-root-MuiOutlinedInput-root"[39m
+                  [36m>[39m
+                    [36m<input[39m
+                      [33maria-invalid[39m=[32m"false"[39m
+                      [33maria-labelledby[39m=[32m"password-label"[39m
+                      [33mclass[39m=[32m"MuiInputBase-input MuiOutlinedInput-input css-16wblaj-MuiInputBase-input-MuiOutlinedInput-input"[39m
+                      [33mid[39m=[32m"password-input"[39m
+                      [33mtype[39m=[32m"password"[39m
+                      [33mvalue[39m=[32m"password123"[39m
+                    [36m/>[39m
+                    [36m<fieldset[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"MuiOutlinedInput-notchedOutline css-1ll44ll-MuiOutlinedInput-notchedOutline"[39m
+                    [36m>[39m
+                      [36m<legend[39m
+                        [33mclass[39m=[32m"css-w1u3ce"[39m
+                      [36m>[39m
+                        [36m<span>[39m
+                          [0mPassword[0m
+                        [36m</span>[39m
+                      [36m</legend>[39m
+                    [36m</fieldset>[39m
+                  [36m</div>[39m
+                [36m</div>[39m
+                [36m<label[39m
+                  [33mfor[39m=[32m"password-input"[39m
+                  [33mid[39m=[32m"password-label"[39m
+                  [33mstyle[39m=[32m"display: none;"[39m
+                [36m>[39m
+                  [0mPassword[0m
+                [36m</label>[39m
+                [36m<button[39m
+                  [33mclass[39m=[32m"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-fullWidth MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-fullWidth css-jzhkw0-MuiButtonBase-root-MuiButton-root"[39m
+                  [33mdata-testid[39m=[32m"login-submit"[39m
+                  [33mtabindex[39m=[32m"0"[39m
+                  [33mtype[39m=[32m"submit"[39m
+                [36m>[39m
+                  [0mSign In[0m
+                [36m</button>[39m
+              [36m</form>[39m
+              [36m<hr[39m
+                [33mclass[39m=[32m"MuiDivider-root MuiDivider-fullWidth css-5425ll-MuiDivider-root"[39m
+              [36m/>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-74d805-MuiButtonBase-root-MuiButton-root"[39m
+                [33mdata-testid[39m=[32m"google-sign-in"[39m
+                [33mtabindex[39m=[32m"0"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0mSign In with Google[0m
+                [36m</span>[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</body>[39m
+    [36m</html>[39m
+
+    [0m [90m 122 |[39m 		fireEvent[33m.[39mclick(loginButton)[33m;[39m
+     [90m 123 |[39m
+    [31m[1m>[22m[39m[90m 124 |[39m 		[36mawait[39m waitFor(() [33m=>[39m expect(loginButton)[33m.[39mtoBeDisabled()[33m,[39m { timeout[33m:[39m [35m500[39m })[33m;[39m
+     [90m     |[39m 		                                        [31m[1m^[22m[39m
+     [90m 125 |[39m 		[36mawait[39m waitFor(() [33m=>[39m expect(loginButton)[33m.[39mnot[33m.[39mtoBeDisabled()[33m,[39m {
+     [90m 126 |[39m 			timeout[33m:[39m [35m1000[39m[33m,[39m
+     [90m 127 |[39m 		})[33m;[39m[0m
+
+      at toBeDisabled (tests/login.test.js:124:43)
+      at runWithExpensiveErrorDiagnosticsDisabled (node_modules/@testing-library/dom/dist/config.js:47:12)
+      at checkCallback (node_modules/@testing-library/dom/dist/wait-for.js:124:77)
+      at checkRealTimersCallback (node_modules/@testing-library/dom/dist/wait-for.js:118:16)
+      at Timeout.task [as _onTimeout] (node_modules/jsdom/lib/jsdom/browser/Window.js:520:19)
+
+  ● LoginComponent › clicking Google Sign In calls signIn
+
+    expect(jest.fn()).toHaveBeenCalled()
+
+    Expected number of calls: >= 1
+    Received number of calls:    0
+
+    [0m [90m 133 |[39m 		fireEvent[33m.[39mclick(googleButton)[33m;[39m
+     [90m 134 |[39m
+    [31m[1m>[22m[39m[90m 135 |[39m 		expect(signIn)[33m.[39mtoHaveBeenCalled()[33m;[39m
+     [90m     |[39m 		               [31m[1m^[22m[39m
+     [90m 136 |[39m 	})[33m;[39m
+     [90m 137 |[39m })[33m;[39m
+     [90m 138 |[39m[0m
+
+      at Object.toHaveBeenCalled (tests/login.test.js:135:18)
+
+Test Suites: 1 failed, 1 total
+Tests:       2 failed, 5 passed, 7 total
+Snapshots:   0 total
+Time:        3.029 s
+Ran all test suites.

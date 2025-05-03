@@ -5,7 +5,7 @@
 */
 
 "use client"
-
+import { signIn } from "next-auth/react"
 import React, { useState, useEffect } from "react"
 import {
 	TextField,
@@ -26,6 +26,7 @@ const LoginComponent: React.FC = () => {
 	const router = useRouter()
 
 	// variables for html and testing
+	const [loading, setLoading] = useState(false)
 	const [username, setUsername] = useState<string>("")
 	const [password, setPassword] = useState<string>("")
 	const [message, setMessage] = useState<{
@@ -48,7 +49,7 @@ const LoginComponent: React.FC = () => {
 	}, [])
 
 	useEffect(() => {
-		if (hydrated && user?.isLoggedIn) router.push("/courses/")
+		if (hydrated && user?.isLoggedIn) router.push("/semesters")
 	})
 
 	if (!hydrated) return null // Prevents SSR mismatches
@@ -56,27 +57,22 @@ const LoginComponent: React.FC = () => {
 	// handles the submition of the html form to offer interactivity
 	// this gets activated when the form is submitted when login is attempted
 	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-		// creates a non-cancelable event
 		event.preventDefault()
 
-		// Validate there's input
 		if (!username || !password) {
 			setMessage({ type: "error", text: "Username and password are required." })
 			return
 		}
 
-		// handles the form submission by fetching the api call for logging in
 		try {
+			setLoading(true) // start loading
 			const response = await easyFetch("http://localhost:8000/api/login", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ username, password }),
 			})
-
-			// await data response
 			const data = await response.json()
 
-			// if the response is good, route to dashboard. error out otherwise
 			if (response.ok) {
 				login(data["user"])
 				router.push("/semesters/")
@@ -93,6 +89,8 @@ const LoginComponent: React.FC = () => {
 				type: "error",
 				text: "Unexpected error. Please try again later.",
 			})
+		} finally {
+			setLoading(false) // stop loading
 		}
 	}
 
@@ -153,7 +151,14 @@ const LoginComponent: React.FC = () => {
 					>
 						Password
 					</label>
-					<Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
+					<Button
+						type="submit"
+						variant="contained"
+						fullWidth
+						sx={{ mt: 2 }}
+						data-testid="login-submit"
+						disabled={loading} // 🔑 This is required for the test
+					>
 						Sign In
 					</Button>
 				</form>
@@ -162,8 +167,14 @@ const LoginComponent: React.FC = () => {
 				<Divider sx={{ width: "100%", my: 2 }}></Divider>
 
 				{/* NextAuth Google Login Button */}
-				<Button variant="contained">
-					<SignInButton />
+				<Button
+					variant="contained"
+					data-testid="google-sign-in"
+					onClick={() =>
+						signIn("google", { callbackUrl: "http://localhost:3000/callback" })
+					}
+				>
+					Sign In with Google
 				</Button>
 
 				{/* Display Messages */}
