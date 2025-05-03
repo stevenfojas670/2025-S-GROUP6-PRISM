@@ -68,7 +68,7 @@ const theme = createTheme({
 					variants: [
 						{
 							style: {
-								backgroundColor: "#cccccc",
+								backgroundColor: "#dedede",
 							},
 						},
 					],
@@ -85,6 +85,13 @@ const theme = createTheme({
 							},
 						},
 					],
+				},
+			},
+		},
+		MuiTypography: {
+			styleOverrides: {
+				h4: {
+					fontWeight: "bold",
 				},
 			},
 		},

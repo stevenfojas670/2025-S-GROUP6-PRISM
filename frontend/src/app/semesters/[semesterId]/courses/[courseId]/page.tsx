@@ -14,11 +14,13 @@ import {
 	TableHead,
 	TableRow,
 	Paper,
+	Divider,
+	TablePagination,
 } from "@mui/material"
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import { GetStudents } from "@/controllers/students"
 import { GetAssignments } from "@/controllers/assignments"
-import { AssignmentItem } from "@/types/assignmentTypes"
+import { AssignmentItem, AssignmentResponse } from "@/types/assignmentTypes"
 import { Student } from "@/types/studentTypes"
 import { useAuth } from "@/context/AuthContext"
 
@@ -30,11 +32,12 @@ const columns: { key: keyof AssignmentItem; label: string }[] = [
 ]
 
 export default function Assignments() {
-	const router = useRouter()
 	const { courseId } = useParams()
 	const { user } = useAuth()
 	const [assignments, setAssignments] = useState<AssignmentItem[]>([])
 	const [students, setStudents] = useState<Student[]>([])
+	const [assignmentPagination, setAssignmentPagination] =
+		useState<AssignmentResponse | null>(null)
 
 	useEffect(() => {
 		if (!courseId || !user) return
@@ -43,6 +46,7 @@ export default function Assignments() {
 
 			if ("results" in data) {
 				setAssignments(data.results)
+				setAssignmentPagination(data)
 			} else {
 				console.error("Error fetching assignments: ", data)
 			}
@@ -63,32 +67,33 @@ export default function Assignments() {
 	}, [courseId, user])
 
 	return (
-		<Box sx={{ display: "flex", gap: 2 }}>
-			{/* Body Container */}
+		<Box
+			sx={{
+				display: "flex",
+				height: "100vh",
+				overflow: "hidden", // prevents horizontal scroll
+				gap: 1,
+			}}
+		>
+			{/* Main Content */}
 			<Box
 				sx={(theme) => ({
 					backgroundColor: theme.palette.background.paper,
 					p: 2,
 					boxShadow: 2,
-					overflowX: "auto",
-					width: "100%",
-					height: "100%",
+					flex: 1,
+					overflow: "auto",
 				})}
 			>
 				{/* Page buttons */}
-				<Box
-					sx={{
-						display: "flex",
-						gap: 2,
-						mb: 2,
-					}}
-				>
+				<Box sx={{ display: "flex", gap: 2, mb: 2 }}>
 					<Button variant="contained">Upload Assignment</Button>
 					<Button variant="contained">Export All</Button>
 				</Box>
-				<Box sx={{ overflowY: "auto", height: "100%" }}>
-					<TableContainer component={Paper} elevation={3}>
-						<Table>
+				<Divider />
+				<Box sx={{ pt: 2 }}>
+					<TableContainer>
+						<Table stickyHeader>
 							<TableHead>
 								<TableRow>
 									{columns.map((col) => (
@@ -99,7 +104,7 @@ export default function Assignments() {
 							</TableHead>
 							<TableBody>
 								{assignments.map((assignment) => (
-									<TableRow key={assignment.id}>
+									<TableRow hover key={assignment.id}>
 										<TableCell>{assignment.title}</TableCell>
 										<TableCell>{assignment.assignment_number}</TableCell>
 										<TableCell>{assignment.due_date}</TableCell>
@@ -114,36 +119,41 @@ export default function Assignments() {
 							</TableBody>
 						</Table>
 					</TableContainer>
+					<TablePagination
+						rowsPerPageOptions={[10, 25, 50, 100, 150, 200]}
+						component="div"
+						count={assignmentPagination?.count ?? 0}
+						rowsPerPage={assignmentPagination?.page_size ?? 10}
+						page={(assignmentPagination?.current_page ?? 1) - 1}
+						onPageChange={() => {}}
+						onRowsPerPageChange={() => {}}
+					/>
 				</Box>
 			</Box>
-			{/* Students List */}
+
+			{/* Student Sidebar */}
 			<Box
 				sx={(theme) => ({
-					p: 2,
-					minWidth: 200,
-					maxWidth: 400,
-					flexShrink: 0,
-					flexGrow: 0,
+					width: 300,
 					backgroundColor: theme.palette.background.paper,
 					boxShadow: 2,
-					position: "sticky",
-					top: 0,
-					height: "100vh",
+					p: 2,
 					overflowY: "auto",
-					zIndex: 10,
+					height: "100vh",
+					flexShrink: 0,
 				})}
 			>
-				<Typography>Students</Typography>
-				<List component="div" disablePadding>
+				<Typography variant="h6" gutterBottom>
+					Students
+				</Typography>
+				<Divider />
+				<List dense>
 					{students.map((student) => (
-						<React.Fragment key={student.id}>
-							<ListItemButton sx={{ width: "100%" }}>
-								<ListItemText
-									primary={`${student.first_name} ${student.last_name}`}
-									sx={{ width: "100%" }}
-								/>
-							</ListItemButton>
-						</React.Fragment>
+						<ListItemButton key={student.id}>
+							<ListItemText
+								primary={`${student.first_name} ${student.last_name}`}
+							/>
+						</ListItemButton>
 					))}
 				</List>
 			</Box>

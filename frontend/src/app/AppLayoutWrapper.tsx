@@ -10,55 +10,56 @@ interface Props {
 }
 
 export default function AppLayoutWrapper({ children }: Props) {
-	const { user } = useAuth()
-	console.log(user?.email)
+	const { user, loading } = useAuth()
+
+	if (loading) return null
+
 	if (!user?.isLoggedIn) {
 		return children
-	} else {
-		return (
+	}
+	return (
+		<Box
+			sx={{
+				display: "flex",
+				height: "100vh",
+				flexDirection: "column",
+			}}
+		>
+			<AppBar
+				position="static"
+				sx={(theme) => ({
+					backgroundColor: theme.palette.background.paper,
+					color: theme.palette.text.primary,
+					zIndex: 100,
+				})}
+			>
+				<Toolbar>
+					<Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+						PRISM
+					</Typography>
+					<Button variant="contained">
+						<SignOutButton />
+					</Button>
+				</Toolbar>
+			</AppBar>
 			<Box
 				sx={{
 					display: "flex",
-					height: "100vh",
-					flexDirection: "column",
+					height: "100%",
+					overflow: "hidden",
 				}}
 			>
-				<AppBar
-					position="static"
-					sx={(theme) => ({
-						backgroundColor: theme.palette.background.paper,
-						color: theme.palette.text.primary,
-						zIndex: 100,
-					})}
-				>
-					<Toolbar>
-						<Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-							PRISM
-						</Typography>
-						<Button variant="contained">
-							<SignOutButton />
-						</Button>
-					</Toolbar>
-				</AppBar>
+				<LeftPanel />
 				<Box
 					sx={{
-						display: "flex",
-						height: "100%",
-						overflow: "hidden",
+						flexGrow: 1,
+						overflow: "auto",
+						p: 1,
 					}}
 				>
-					<LeftPanel />
-					<Box
-						sx={{
-							flexGrow: 1,
-							overflow: "auto",
-							p: 2,
-						}}
-					>
-						{children}
-					</Box>
+					{children}
 				</Box>
 			</Box>
-		)
-	}
+		</Box>
+	)
 }

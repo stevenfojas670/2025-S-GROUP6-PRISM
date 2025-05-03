@@ -21,5 +21,7 @@ export interface CourseResponse {
 	count: number
 	next: string | null
 	previous: string | null
+	current_page: number
+	page_size: number
 	results: Course[]
 }

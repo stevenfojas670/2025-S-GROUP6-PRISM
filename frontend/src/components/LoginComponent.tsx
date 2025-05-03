@@ -49,7 +49,7 @@ const LoginComponent: React.FC = () => {
 	}, [])
 
 	useEffect(() => {
-		if (hydrated && user?.isLoggedIn) router.push("/semesters")
+		if (hydrated && user?.isLoggedIn) router.push("/dashboard")
 	})
 
 	if (!hydrated) return null // Prevents SSR mismatches

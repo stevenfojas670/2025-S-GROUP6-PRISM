@@ -6,6 +6,7 @@ interface AuthContextType {
 	user: User | null
 	login: (userData: User) => void
 	logout: () => void
+	loading: boolean
 }
 
 // Creation of context
@@ -14,11 +15,13 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 // This is the global provider that is set in Providers.tsx to allow for the application to use context fields
 const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 	const [user, setUser] = useState<User | null>(null)
+	const [loading, setLoading] = useState(true)
 
 	// Loading the user from local storage on page load
 	useEffect(() => {
 		const storedUser = localStorage.getItem("user")
 		if (storedUser) setUser(JSON.parse(storedUser))
+		setLoading(false)
 	}, [])
 
 	// Set user with login
@@ -35,7 +38,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 	}
 
 	return (
-		<AuthContext.Provider value={{ user, login, logout }}>
+		<AuthContext.Provider value={{ user, login, logout, loading }}>
 			{children}
 		</AuthContext.Provider>
 	)

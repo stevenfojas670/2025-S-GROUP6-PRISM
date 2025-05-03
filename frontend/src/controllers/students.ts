@@ -8,7 +8,7 @@ export async function GetStudents(
 ): Promise<StudentResponse | APIError> {
 	try {
 		const response = await easyFetch(
-			`http://localhost:8000/api/course/courseinstances/get-all-students/?uid=${uid}&course=${courseId}`,
+			`http://localhost:8000/api/course/courseinstances/get-all-students/?uid=${uid}&course=${courseId}&page_size=200`,
 			{ method: "GET" }
 		)
 

@@ -1,6 +1,6 @@
 "use client"
-import { Typography, Box } from "@mui/material"
-import CourseCards from "@/components/CourseCards"
+import { Typography, Box, Divider } from "@mui/material"
+import CustomCards from "@/components/CustomCards"
 import { useParams, useRouter } from "next/navigation"
 import { GetCourses } from "@/controllers/courses"
 import { Course } from "@/types/coursesTypes"
@@ -12,6 +12,7 @@ export default function Courses() {
 	const { user } = useAuth()
 	const { semesterId } = useParams()
 	const [courses, setCourses] = useState<Course[]>([])
+	const [loading, setLoading] = useState(true)
 
 	useEffect(() => {
 		if (!semesterId || !user?.pk) return
@@ -22,10 +23,11 @@ export default function Courses() {
 			} else {
 				console.error("Error fetching courses: ", data)
 			}
+			setLoading(false)
 		}
 
 		loadCourses()
-	}, [user?.pk, semesterId])
+	}, [user, semesterId])
 
 	return (
 		<Box
@@ -36,19 +38,24 @@ export default function Courses() {
 			})}
 		>
 			<Box>
-				<Box sx={{ mb: 2 }}>
-					<Typography variant="h4">Welcome {user?.first_name}</Typography>
-				</Box>
-				<Box className="sections">
-					{courses.map((course) => (
-						<CourseCards
-							key={course.id}
-							onClick={() => router.push(`courses/${course.id}`)}
-						>
-							<Typography>{course.course_catalog.name}</Typography>
-							<Typography>{course.section_number}</Typography>
-						</CourseCards>
-					))}
+				<Typography variant="h4" gutterBottom>
+					Courses
+				</Typography>
+				<Divider />
+				<Box className="sections" sx={{ pt: 2 }}>
+					{loading ? (
+						<Typography>Loading courses...</Typography>
+					) : (
+						courses.map((course) => (
+							<CustomCards
+								key={course.id}
+								onClick={() => router.push(`courses/${course.id}`)}
+							>
+								<Typography>{course.course_catalog.name}</Typography>
+								<Typography>{course.section_number}</Typography>
+							</CustomCards>
+						))
+					)}
 				</Box>
 			</Box>
 		</Box>
