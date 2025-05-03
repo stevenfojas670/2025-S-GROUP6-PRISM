@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react"
 import { useAuth } from "@/context/AuthContext"
 import { easyFetch } from "@/utils/fetchWrapper"
+import { User } from "@/types"
 
 interface UserInfo {
 	first_name: string
@@ -33,7 +34,7 @@ export default function AccountPage() {
 
 				const data = await res.json()
 
-				const matchedUser = data.find((u: any) => u.id === user.professor_id)
+				const matchedUser = data.find((u: User) => u.pk === user.professor_id)
 
 				if (!matchedUser) throw new Error("User not found in response")
 
@@ -49,7 +50,7 @@ export default function AccountPage() {
 		}
 
 		fetchUser()
-	}, [user?.professor_id])
+	}, [user])
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		if (!userInfo) return

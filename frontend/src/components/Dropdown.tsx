@@ -2,8 +2,6 @@
 // Using Autocomplete from Material UI
 // Documentation here: https://mui.com/material-ui/react-autocomplete/
 
-import React, { ReactNode } from "react"
-import { useState } from "react"
 import TextField from "@mui/material/TextField"
 import Autocomplete from "@mui/material/Autocomplete"
 

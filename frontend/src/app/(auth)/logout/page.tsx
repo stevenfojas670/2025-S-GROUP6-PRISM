@@ -32,7 +32,7 @@ export default function LogoutPage() {
 		}
 
 		logoutFlow()
-	}, [])
+	}, [router, context])
 
 	return <p>Logging you out...</p>
 }

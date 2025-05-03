@@ -47,7 +47,7 @@ export default function OAuthCallbackHandler() {
 
 			sendToDjango()
 		}
-	}, [session, router])
+	}, [session, router, context])
 
 	return <p>Authenticating with backend...</p>
 }
