@@ -5,161 +5,77 @@
     Header takes Display_Name
 */
 
-// this is from stevens pr #39 - freatures/authentication
-
 "use client"
-import { Container, Typography, Button } from "@mui/material"
-import { SignOutButton } from "@/components/AuthenticationMethod"
-import { StudentComparison } from "@/student_comparison" // student comparison
-import { Alerts } from "@/app/alerts" // alerts
-import { useCallback, useEffect, useState } from "react"
-import { useRouter } from "next/Navigation"
-import type { User } from "@/types/index"
-import { easyFetch } from "@/utils/fetchWrapper"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { Typography, Box } from "@mui/material"
+import { GetSemesters } from "@/controllers/semesters"
+import { useAuth } from "@/context/AuthContext"
+import { Semester } from "@/types/semesterTypes"
+import CustomCards from "@/components/CustomCards"
+import DashboardSection from "@/components/DashboardSection"
 
-// basic button layout -> need to acces how many sections a teacher has, their name and the class name -> create that many buttons/div containers to show
-// updated 3/25: added place holder buttons for now to get the styling done for future prs
-// need an additional 2 buttons that are alwasy set for compare students and alerts -> respective buttons must be linked to their respective pages
-// updated 3/25: buttons now link to the two respective pages using the onlick function and pushing to the route
-// an alert icon appears if a section has been detected of cheating
-// Updated 3/25: added a section that is set to false, this will be used to add the icon on the sections
-
-// come back to header and replace the teacher name with the actual name assigned to the profile
-
-// one div for the creating the sections
-
-// the other div for the two main buttons at the top
-
-// added a button for the menu in the header
-
-// waiting to see how the team is going to approach linking the pages
-// Updated: using stevens pr I updated the buttons to prep for the linking of the pages
-
-// first porition of dashboard is added from stevens pr #39 - features/authentication
-function Dashboard() {
+export default function Dashboard() {
 	const router = useRouter()
-
-	const [courses, setCourses] = useState<any[]>([])
-	const [users, setUsers] = useState<User[]>([])
-	const [loading, setLoading] = useState<Boolean>(false)
-	const [asNumber, setAsNumber] = useState("")
-	const [classInstance, setClassInstance] = useState("")
-	const [assignments, setAssignments] = useState<any[]>([])
-
-	const fetchUsers = useCallback(async () => {
-		setLoading(true)
-		try {
-			const response = await easyFetch("http://localhost:8000/api/user/users", {
-				method: "get",
-			})
-
-			const data = await response.json()
-
-			if (response.ok) {
-				setUsers(data)
-			} else {
-				console.error("Failed to fetch users.")
-			}
-		} catch (err) {
-			console.error(err)
-		} finally {
-			setLoading(false)
-		}
-	}, [])
+	const { user } = useAuth()
+	const [semesters, setSemesters] = useState<Semester[]>([])
+	const [loading, setLoading] = useState(true)
 
 	useEffect(() => {
-		const fetchCourses = async () => {
-			try {
-				const response = await fetch(
-					"http://localhost:8000/api/course/sectionclassprof",
-					{
-						method: "get",
-					}
-				)
-
-				const data = await response.json()
-
-				if (response.ok) {
-					setCourses(data)
-				}
-			} catch (error) {
-				console.error(error)
+		const loadSemesters = async () => {
+			const data = await GetSemesters(Number(user?.pk))
+			if ("results" in data) {
+				setSemesters(data.results)
+			} else {
+				console.error("Error fetching semesters: ", data)
 			}
+			setLoading(false)
 		}
-
-		fetchCourses()
-	}, [])
-
-	const fetchAssignments = useCallback(async () => {
-		try {
-			const response = await fetch(
-				`http://localhost:8000/api/assignment/assignments?assignment_number=${asNumber}&class_instance__name=${classInstance}`,
-				{
-					method: "get",
-				}
-			)
-
-			const data = await response.json()
-
-			if (response.ok) {
-				setAssignments(data)
-			}
-		} catch (error) {
-			console.error(error)
-		}
-	}, [])
+		loadSemesters()
+	}, [user])
 
 	return (
-		<Container>
-			<SignOutButton />
-			<Button onClick={fetchUsers}>
-				{loading ? "loading..." : "Fetch Users"}
-			</Button>
-			{users.length > 0 && (
-				<div>
-					{users.map((user, index) => (
-						<ul key={index}>
-							<li>{user.email}</li>
-							<li>{user.first_name}</li>
-							<li>{user.last_name}</li>
-						</ul>
-					))}
-				</div>
-			)}
+		<Box
+			sx={(theme) => ({
+				backgroundColor: theme.palette.background.paper,
+				height: "100%",
+				p: 2,
+				display: "flex",
+				flexDirection: "column",
+				gap: 2,
+			})}
+		>
+			{/* Rendering semesters */}
+			<DashboardSection title="View your semesters">
+				{loading ? (
+					<Typography>Loading semesters...</Typography>
+				) : (
+					semesters.map((semester) => (
+						<CustomCards
+							key={semester.id}
+							onClick={() => router.push(`/semesters/${semester.id}`)}
+						>
+							<Typography>{semester.name}</Typography>
+						</CustomCards>
+					))
+				)}
+			</DashboardSection>
 
-			{/* Main banner */}
-			<div>
-				<div className="Banner">
-					<button>menu</button>
-					<h1>"Hello, teacher name"</h1>
-				</div>
-
-				{/* 2 buttons -> compare students, alerts */}
-				<div className="comapreButtons">
-					<button onClick={() => router.push("/student_comparison")}>
-						Compare Students
-					</button>
-					<button onClick={() => router.push("/alerts")}>Alerts</button>
-				</div>
-
-				{/* Main Navigation */}
-				<div className="sections">
-					{Array.from({ length: 6 }).map((_, index) => (
-						<button key={index} className="action-button">
-							Action Button {index + 1}
-						</button>
-					))}
-				</div>
-			</div>
-			<Container>
-				{courses.map((course, index) => (
-					<Container key={index}>
-						<Button onClick={fetchAssignments}>{course.section_number}</Button>
-					</Container>
-				))}
-			</Container>
-		</Container>
+			{/* View other options */}
+			<DashboardSection title="Other options">
+				<CustomCards onClick={() => router.push("/student_comparison")}>
+					<Typography>Student Comparison</Typography>
+				</CustomCards>
+				<CustomCards onClick={() => router.push("/alerts")}>
+					<Typography>Alerts</Typography>
+				</CustomCards>
+				<CustomCards onClick={() => router.push("/assignment_creation")}>
+					<Typography>Assignment Creation</Typography>
+				</CustomCards>
+				<CustomCards onClick={() => router.push("/plagiarism_report")}>
+					<Typography>Plagiarism Report</Typography>
+				</CustomCards>
+			</DashboardSection>
+		</Box>
 	)
 }
-
-export default Dashboard

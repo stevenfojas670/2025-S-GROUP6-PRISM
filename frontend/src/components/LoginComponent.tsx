@@ -5,7 +5,7 @@
 */
 
 "use client"
-
+import { signIn } from "next-auth/react"
 import React, { useState, useEffect } from "react"
 import {
 	TextField,
@@ -18,69 +18,79 @@ import {
 } from "@mui/material"
 import { SignInButton } from "@/components/AuthenticationMethod" // Use SignInButton component
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/context/AuthContext"
+import { easyFetch } from "@/utils/fetchWrapper"
 
 const LoginComponent: React.FC = () => {
 	// for routing purposes, should be at the top of all files
 	const router = useRouter()
 
 	// variables for html and testing
+	const [loading, setLoading] = useState(false)
 	const [username, setUsername] = useState<string>("")
 	const [password, setPassword] = useState<string>("")
 	const [message, setMessage] = useState<{
 		type: "success" | "error"
 		text: string
 	} | null>(null)
+	const { user, login } = useAuth()
 
-	// for loading states
-	const [loading, setLoading] = useState(false);
-
-	// Hydrated state added to handle mismatched rendering
+	// Hydrated statee added to handle mismatched rendering
 	const [hydrated, setHydrated] = useState(false)
 
 	useEffect(() => {
 		setHydrated(true)
+
+		const errorMessage = sessionStorage.getItem("loginError")
+		if (errorMessage) {
+			setMessage({ type: "error", text: errorMessage })
+			sessionStorage.removeItem("loginError")
+		}
 	}, [])
+
+	useEffect(() => {
+		if (hydrated && user?.isLoggedIn) router.push("/dashboard")
+	})
 
 	if (!hydrated) return null // Prevents SSR mismatches
 
 	// handles the submition of the html form to offer interactivity
 	// this gets activated when the form is submitted when login is attempted
 	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-		// creates a non-cancelable event
 		event.preventDefault()
 
-		// Validate there's input
 		if (!username || !password) {
-			setMessage({ type: "error", text: "Username and password are required." });
-			return;
+			setMessage({ type: "error", text: "Username and password are required." })
+			return
 		}
 
-		// sets loading status
-		setLoading(true);
-
-		// handles the form submission by fetching the api call for logging in
 		try {
-			const response = await fetch("http://localhost:8000/api/login", {
+			setLoading(true) // start loading
+			const response = await easyFetch("http://localhost:8000/api/login", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ username, password }),
-				credentials: "include",
 			})
-
-			// await data response
 			const data = await response.json()
 
-			// if the response is good, route to dashboard. error out otherwise
 			if (response.ok) {
-				// console.log("Logged in:", data)
-				router.push("/dashboard")
+				login(data["user"])
+				router.push("/semesters/")
 			} else {
-				setMessage({ type: "error", text: ` ${data.error}`});
+				setMessage({
+					type: "error",
+					text:
+						data?.non_field_errors?.[0] || "Login failed. Please try again.",
+				})
 			}
 		} catch (err) {
-			setMessage({ type: "error", text: " Server error. Please try again."});
+			console.error("Login error:", err)
+			setMessage({
+				type: "error",
+				text: "Unexpected error. Please try again later.",
+			})
 		} finally {
-			setLoading(false);
+			setLoading(false) // stop loading
 		}
 	}
 
@@ -146,17 +156,26 @@ const LoginComponent: React.FC = () => {
 						variant="contained"
 						fullWidth
 						sx={{ mt: 2 }}
-						disabled={loading}
+						data-testid="login-submit"
+						disabled={loading} // 🔑 This is required for the test
 					>
-						{loading ? "Logging in..." : "Login"}
+						Sign In
 					</Button>
 				</form>
 
 				{/* OR Divider */}
-				<Divider sx={{ width: "100%", my: 2 }}>OR</Divider>
+				<Divider sx={{ width: "100%", my: 2 }}></Divider>
 
 				{/* NextAuth Google Login Button */}
-				<SignInButton />
+				<Button
+					variant="contained"
+					data-testid="google-sign-in"
+					onClick={() =>
+						signIn("google", { callbackUrl: "http://localhost:3000/callback" })
+					}
+				>
+					Sign In with Google
+				</Button>
 
 				{/* Display Messages */}
 				{message && (

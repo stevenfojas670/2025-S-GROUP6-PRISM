@@ -117,8 +117,7 @@ class BaseFiles(models.Model):
     """
 
     assignment = models.ForeignKey(
-        "Assignments",
-        models.CASCADE,
+        "Assignments", models.CASCADE, related_name="base_files"
     )
     file_name = models.TextField()
     file_path = models.TextField(unique=True)
@@ -186,8 +185,7 @@ class Constraints(models.Model):
     """
 
     assignment = models.ForeignKey(
-        "Assignments",
-        models.CASCADE,
+        "Assignments", models.CASCADE, related_name="constraints"
     )
     identifier = models.TextField()
     is_library = models.BooleanField()
@@ -260,8 +258,7 @@ class RequiredSubmissionFiles(models.Model):
     """
 
     assignment = models.ForeignKey(
-        Assignments,
-        models.CASCADE,
+        Assignments, models.CASCADE, related_name="required_files"
     )
     file_name = models.TextField()
     similarity_threshold = models.DecimalField(

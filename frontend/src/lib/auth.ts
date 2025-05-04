@@ -6,7 +6,6 @@ import type {
 import type { NextAuthOptions } from "next-auth"
 import { getServerSession } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
-import { userAgent } from "next/server"
 
 export const authOptions: NextAuthOptions = {
 	providers: [

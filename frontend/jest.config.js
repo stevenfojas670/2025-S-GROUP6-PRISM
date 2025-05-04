@@ -1,16 +1,16 @@
-const nextJest = require("next/jest");
+const nextJest = require('next/jest');
 
-const createJestConfig = nextJest({ dir: "./" });
+const createJestConfig = nextJest({ dir: './' }); // Assumes you're in frontend/
 
 const customJestConfig = {
-  setupFilesAfterEnv: ["./jest.setup.js"],
-  testEnvironment: "jsdom",
-  moduleNameMapper: {
-    "^@/(.*)$": "./src/$1",
-  },
-  transform: {
-    "^.+\\.(js|jsx|ts|tsx)$": ["babel-jest", { presets: ["next/babel"] }],
-  },
+	setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+	testEnvironment: 'jsdom',
+	moduleNameMapper: {
+		'^@/(.*)$': '<rootDir>/src/$1', // ✅ matches tsconfig path
+	},
+	transform: {
+		'^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }],
+	},
 };
 
 module.exports = createJestConfig(customJestConfig);

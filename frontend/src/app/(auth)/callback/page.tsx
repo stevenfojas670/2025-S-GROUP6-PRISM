@@ -1,5 +1,6 @@
 "use client"
 
+import { useAuth } from "@/context/AuthContext"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
@@ -7,6 +8,7 @@ import { useEffect } from "react"
 export default function OAuthCallbackHandler() {
 	const { data: session } = useSession()
 	const router = useRouter()
+	const context = useAuth()
 
 	useEffect(() => {
 		if (session?.idToken) {
@@ -24,18 +26,28 @@ export default function OAuthCallbackHandler() {
 					const data = await res.json()
 
 					if (res.ok) {
+						context?.login(data["user"])
 						router.push("/dashboard")
 					} else {
-						console.error("Django auth failed", data)
+						sessionStorage.setItem(
+							"loginError",
+							data?.non_field_errors?.[0] || "Authentication failed."
+						)
+						router.push("/login")
 					}
 				} catch (err) {
-					console.error("Error sending token to Django", err)
+					console.log(err)
+					sessionStorage.setItem(
+						"loginError",
+						"Unexpected error during authentication."
+					)
+					router.push("/login")
 				}
 			}
 
 			sendToDjango()
 		}
-	}, [session, router])
+	}, [session, router, context])
 
 	return <p>Authenticating with backend...</p>
 }

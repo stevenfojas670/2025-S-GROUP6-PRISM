@@ -2,9 +2,11 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/context/AuthContext"
 
 export default function LogoutPage() {
 	const router = useRouter()
+	const context = useAuth()
 
 	useEffect(() => {
 		const logoutFlow = async () => {
@@ -17,11 +19,11 @@ export default function LogoutPage() {
 				const data = await response.json()
 
 				if (response.ok) {
+					context?.logout()
 					console.log("Succesfully logged out of Django: ", data)
+				} else {
+					throw new Error("Error logging out of Django: ", data.details)
 				}
-				// else { *This is mainly for testing, if logout fails, who cares, just go back to login
-				// 	throw new Error("Error logging out of Django: ", data)
-				// }
 				router.push("/login")
 			} catch (err) {
 				console.error(err)
@@ -30,7 +32,7 @@ export default function LogoutPage() {
 		}
 
 		logoutFlow()
-	}, [])
+	}, [router, context])
 
 	return <p>Logging you out...</p>
 }

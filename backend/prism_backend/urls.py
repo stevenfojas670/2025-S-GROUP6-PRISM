@@ -16,7 +16,6 @@ Including another URLconf
 
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django.contrib import admin
-from dj_rest_auth.views import LogoutView
 from dj_rest_auth.jwt_auth import get_refresh_view
 from django.urls import path, include
 from . import views
@@ -35,7 +34,7 @@ urlpatterns = [
     path("api/course/", include("courses.urls")),
     path("api/assignment/", include("assignments.urls")),
     path("api/login", views.CustomLoginView.as_view()),
-    path("api/logout", LogoutView.as_view()),
+    path("api/logout", views.CustomLogoutView.as_view()),
     path("api/google/verify", views.GoogleAuthView.as_view()),
     path("api/token/refresh", get_refresh_view().as_view()),
     path("api/cheating/", include("cheating.urls")),
