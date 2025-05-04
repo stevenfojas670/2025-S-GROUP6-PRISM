@@ -10,13 +10,15 @@ import { useEffect, useState } from "react"
 export default function Courses() {
 	const router = useRouter()
 	const { user } = useAuth()
-	const { semesterId } = useParams()
+	const params = useParams()
+	const semesterId = params.semesters
 	const [courses, setCourses] = useState<Course[]>([])
 	const [loading, setLoading] = useState(true)
 
 	useEffect(() => {
-		if (!semesterId || !user?.pk) return
+		if (!semesterId || !user) return
 		const loadCourses = async () => {
+			setLoading(true)
 			const data = await GetCourses(Number(user?.pk), Number(semesterId))
 			if ("results" in data) {
 				setCourses(data.results)
@@ -25,7 +27,6 @@ export default function Courses() {
 			}
 			setLoading(false)
 		}
-
 		loadCourses()
 	}, [user, semesterId])
 

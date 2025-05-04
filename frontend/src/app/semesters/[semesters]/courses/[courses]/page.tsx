@@ -23,6 +23,7 @@ import { GetAssignments } from "@/controllers/assignments"
 import { AssignmentItem } from "@/types/assignmentTypes"
 import { Student } from "@/types/studentTypes"
 import { useAuth } from "@/context/AuthContext"
+import { useRouter } from "next/navigation"
 
 const columns: { key: keyof AssignmentItem; label: string }[] = [
 	{ key: "title", label: "Title" },
@@ -32,9 +33,10 @@ const columns: { key: keyof AssignmentItem; label: string }[] = [
 ]
 
 export default function Assignments() {
-	const { courseId } = useParams()
+	const params = useParams()
+	const courseId = params.courses
 	const { user } = useAuth()
-
+	const router = useRouter()
 	const [loading, setLoading] = useState(true)
 	const [assignments, setAssignments] = useState<AssignmentItem[]>([])
 	const [students, setStudents] = useState<Student[]>([])
@@ -102,7 +104,12 @@ export default function Assignments() {
 			>
 				{/* Page buttons */}
 				<Box sx={{ display: "flex", gap: 2, mb: 2 }}>
-					<Button variant="contained">Upload Assignment</Button>
+					<Button
+						variant="contained"
+						onClick={() => router.push("/assignment_creation")}
+					>
+						Upload Assignment
+					</Button>
 					<Button variant="contained">Export All</Button>
 				</Box>
 				<Divider sx={{ mb: 2 }} />
@@ -129,10 +136,42 @@ export default function Assignments() {
 											<TableRow hover key={assignment.id}>
 												<TableCell>{assignment.title}</TableCell>
 												<TableCell>{assignment.assignment_number}</TableCell>
-												<TableCell>{assignment.due_date}</TableCell>
-												<TableCell>{assignment.lock_date}</TableCell>
 												<TableCell>
-													<Button onClick={() => console.log("nothing")}>
+													{assignment.due_date
+														? new Date(assignment.due_date).toLocaleString(
+																"en-US",
+																{
+																	year: "numeric",
+																	month: "short",
+																	day: "2-digit",
+																	hour: "numeric",
+																	minute: "2-digit",
+																	hour12: true,
+																}
+														  )
+														: "N/A"}
+												</TableCell>
+												<TableCell>
+													{assignment.lock_date
+														? new Date(assignment.lock_date).toLocaleString(
+																"en-US",
+																{
+																	year: "numeric",
+																	month: "short",
+																	day: "2-digit",
+																	hour: "numeric",
+																	minute: "2-digit",
+																	hour12: true,
+																}
+														  )
+														: "N/A"}
+												</TableCell>
+												<TableCell>
+													<Button
+														onClick={() =>
+															router.push(`assignments/${assignment.id}/graphs`)
+														}
+													>
 														View
 													</Button>
 												</TableCell>
