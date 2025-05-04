@@ -44,8 +44,7 @@ export default function LeftPanel() {
 	return (
 		<Box
 			sx={(theme) => ({
-				minWidth: 250,
-				maxWidth: 250,
+				width: 250,
 				minHeight: "100%",
 				position: "relative",
 				backgroundColor: theme.palette.primary.main,
@@ -69,14 +68,6 @@ export default function LeftPanel() {
 								</ListItemButton>
 							</React.Fragment>
 						))}
-						{/* {dummySemesters.map((ds) => (
-							<React.Fragment key={ds.id}>
-								<ListItemButton>
-									<ListItemText>{ds.name}</ListItemText>
-								</ListItemButton>
-								 
-							</React.Fragment>
-						))} */}
 					</List>
 				</Collapse>
 				<ListItemButton onClick={() => router.push("/student_comparison")}>

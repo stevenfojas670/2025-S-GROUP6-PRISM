@@ -13,14 +13,14 @@ import {
 	TableContainer,
 	TableHead,
 	TableRow,
-	Paper,
+	LinearProgress,
 	Divider,
 	TablePagination,
 } from "@mui/material"
 import { useParams } from "next/navigation"
 import { GetStudents } from "@/controllers/students"
 import { GetAssignments } from "@/controllers/assignments"
-import { AssignmentItem, AssignmentResponse } from "@/types/assignmentTypes"
+import { AssignmentItem } from "@/types/assignmentTypes"
 import { Student } from "@/types/studentTypes"
 import { useAuth } from "@/context/AuthContext"
 
@@ -35,15 +35,23 @@ export default function Assignments() {
 	const { courseId } = useParams()
 	const { user } = useAuth()
 
+	const [loading, setLoading] = useState(true)
 	const [assignments, setAssignments] = useState<AssignmentItem[]>([])
 	const [students, setStudents] = useState<Student[]>([])
-	const [assignmentCurPage, setAssignmentCurPage] = useState<number>(1)
-	const [assignmentPageSize, setAssignmentPageSize] = useState<number>(10)
-	const [assignmentCount, setAssignmentCount] = useState<number>(0)
+	const [assignmentCurPage, setAssignmentCurPage] = useState(1) // 1-based for backend
+	const [assignmentPageSize, setAssignmentPageSize] = useState(10) // matches backend default
+	const [assignmentCount, setAssignmentCount] = useState(0)
+
+	const page = assignmentCurPage - 1 // convert to 0-based index for MUI
+	const emptyRows =
+		page > 0
+			? Math.max(0, (1 + page) * assignmentPageSize - assignmentCount)
+			: 0
 
 	useEffect(() => {
 		if (!courseId || !user) return
 		const fetchAssignments = async () => {
+			setLoading(true)
 			const data = await GetAssignments(
 				Number(courseId),
 				assignmentCurPage,
@@ -59,6 +67,7 @@ export default function Assignments() {
 			} else {
 				console.error("Error fetching assignments: ", data)
 			}
+			setLoading(false)
 		}
 
 		const fetchStudents = async () => {
@@ -77,10 +86,7 @@ export default function Assignments() {
 
 	return (
 		<Box
-			sx={{
-				display: "flex",
-				gap: 1,
-			}}
+			sx={{ display: "flex", gap: 1, maxHeight: "100%", overflow: "hidden" }}
 		>
 			{/* Main Content */}
 			<Box
@@ -89,6 +95,9 @@ export default function Assignments() {
 					p: 2,
 					boxShadow: 2,
 					flex: 1,
+					display: "flex",
+					flexDirection: "column",
+					minHeight: "100%",
 				})}
 			>
 				{/* Page buttons */}
@@ -96,50 +105,64 @@ export default function Assignments() {
 					<Button variant="contained">Upload Assignment</Button>
 					<Button variant="contained">Export All</Button>
 				</Box>
-				<Divider />
-				<Box sx={{ pt: 2 }}>
-					<TableContainer>
-						<Table stickyHeader>
-							<TableHead>
-								<TableRow>
-									{columns.map((col) => (
-										<TableCell key={col.key}>{col.label}</TableCell>
-									))}
-									<TableCell>Action</TableCell>
-								</TableRow>
-							</TableHead>
-							<TableBody>
-								{assignments.map((assignment) => (
-									<TableRow hover key={assignment.id}>
-										<TableCell>{assignment.title}</TableCell>
-										<TableCell>{assignment.assignment_number}</TableCell>
-										<TableCell>{assignment.due_date}</TableCell>
-										<TableCell>{assignment.lock_date}</TableCell>
-										<TableCell>
-											<Button onClick={() => console.log("nothing")}>
-												View
-											</Button>
-										</TableCell>
-									</TableRow>
-								))}
-							</TableBody>
-						</Table>
-					</TableContainer>
-					<TablePagination
-						rowsPerPageOptions={[10, 25, 50, 100, 150, 200]}
-						component="div"
-						count={assignmentCount}
-						rowsPerPage={assignmentPageSize}
-						page={assignmentCurPage - 1}
-						onPageChange={(_, newPage) => {
-							setAssignmentCurPage(newPage + 1)
-						}}
-						onRowsPerPageChange={(e) => {
-							setAssignmentPageSize(parseInt(e.target.value, 10))
-							setAssignmentCurPage(1)
-						}}
-					/>
-				</Box>
+				<Divider sx={{ mb: 2 }} />
+				{/* Assignments Table */}
+				{loading ? (
+					<Box sx={{ width: "100%" }}>
+						<LinearProgress />
+					</Box>
+				) : (
+					<>
+						<Box sx={{ flex: 1, overflow: "auto" }}>
+							<TableContainer sx={{ maxHeight: "100%" }}>
+								<Table size="small" stickyHeader>
+									<TableHead>
+										<TableRow>
+											{columns.map((col) => (
+												<TableCell key={col.key}>{col.label}</TableCell>
+											))}
+											<TableCell>Action</TableCell>
+										</TableRow>
+									</TableHead>
+									<TableBody>
+										{assignments.map((assignment) => (
+											<TableRow hover key={assignment.id}>
+												<TableCell>{assignment.title}</TableCell>
+												<TableCell>{assignment.assignment_number}</TableCell>
+												<TableCell>{assignment.due_date}</TableCell>
+												<TableCell>{assignment.lock_date}</TableCell>
+												<TableCell>
+													<Button onClick={() => console.log("nothing")}>
+														View
+													</Button>
+												</TableCell>
+											</TableRow>
+										))}
+										{emptyRows > 0 && (
+											<TableRow style={{ height: 53 * emptyRows }}>
+												<TableCell colSpan={columns.length + 1} />
+											</TableRow>
+										)}
+									</TableBody>
+								</Table>
+							</TableContainer>
+						</Box>
+						<TablePagination
+							rowsPerPageOptions={[10, 25, 50, 100, 150, 200]}
+							component="div"
+							count={assignmentCount}
+							rowsPerPage={assignmentPageSize}
+							page={page}
+							onPageChange={(_, newPage) => {
+								setAssignmentCurPage(newPage + 1)
+							}}
+							onRowsPerPageChange={(e) => {
+								setAssignmentPageSize(parseInt(e.target.value, 10))
+								setAssignmentCurPage(1)
+							}}
+						/>
+					</>
+				)}
 			</Box>
 
 			{/* Student Sidebar */}
@@ -149,9 +172,9 @@ export default function Assignments() {
 					backgroundColor: theme.palette.background.paper,
 					boxShadow: 2,
 					p: 2,
-					overflowY: "auto",
-					maxHeight: "100vh",
 					flexShrink: 0,
+					overflowY: "auto",
+					maxHeight: "100%",
 				})}
 			>
 				<Typography variant="h6" gutterBottom>
