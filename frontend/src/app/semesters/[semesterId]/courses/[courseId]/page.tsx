@@ -34,19 +34,28 @@ const columns: { key: keyof AssignmentItem; label: string }[] = [
 export default function Assignments() {
 	const { courseId } = useParams()
 	const { user } = useAuth()
+
 	const [assignments, setAssignments] = useState<AssignmentItem[]>([])
 	const [students, setStudents] = useState<Student[]>([])
-	const [assignmentPagination, setAssignmentPagination] =
-		useState<AssignmentResponse | null>(null)
+	const [assignmentCurPage, setAssignmentCurPage] = useState<number>(1)
+	const [assignmentPageSize, setAssignmentPageSize] = useState<number>(10)
+	const [assignmentCount, setAssignmentCount] = useState<number>(0)
 
 	useEffect(() => {
 		if (!courseId || !user) return
 		const fetchAssignments = async () => {
-			const data = await GetAssignments(Number(courseId))
+			const data = await GetAssignments(
+				Number(courseId),
+				assignmentCurPage,
+				assignmentPageSize
+			)
 
 			if ("results" in data) {
 				setAssignments(data.results)
-				setAssignmentPagination(data)
+				setAssignmentCount(data.count)
+				setAssignmentCurPage(data.current_page)
+				setAssignmentPageSize(data.page_size)
+				console.log(assignmentCurPage)
 			} else {
 				console.error("Error fetching assignments: ", data)
 			}
@@ -64,14 +73,12 @@ export default function Assignments() {
 
 		fetchAssignments()
 		fetchStudents()
-	}, [courseId, user])
+	}, [courseId, user, assignmentCurPage, assignmentPageSize])
 
 	return (
 		<Box
 			sx={{
 				display: "flex",
-				height: "100vh",
-				overflow: "hidden", // prevents horizontal scroll
 				gap: 1,
 			}}
 		>
@@ -82,7 +89,6 @@ export default function Assignments() {
 					p: 2,
 					boxShadow: 2,
 					flex: 1,
-					overflow: "auto",
 				})}
 			>
 				{/* Page buttons */}
@@ -122,11 +128,16 @@ export default function Assignments() {
 					<TablePagination
 						rowsPerPageOptions={[10, 25, 50, 100, 150, 200]}
 						component="div"
-						count={assignmentPagination?.count ?? 0}
-						rowsPerPage={assignmentPagination?.page_size ?? 10}
-						page={(assignmentPagination?.current_page ?? 1) - 1}
-						onPageChange={() => {}}
-						onRowsPerPageChange={() => {}}
+						count={assignmentCount}
+						rowsPerPage={assignmentPageSize}
+						page={assignmentCurPage - 1}
+						onPageChange={(_, newPage) => {
+							setAssignmentCurPage(newPage + 1)
+						}}
+						onRowsPerPageChange={(e) => {
+							setAssignmentPageSize(parseInt(e.target.value, 10))
+							setAssignmentCurPage(1)
+						}}
 					/>
 				</Box>
 			</Box>
@@ -139,7 +150,7 @@ export default function Assignments() {
 					boxShadow: 2,
 					p: 2,
 					overflowY: "auto",
-					height: "100vh",
+					maxHeight: "100vh",
 					flexShrink: 0,
 				})}
 			>

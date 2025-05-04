@@ -1,7 +1,7 @@
 export interface AssignmentResponse {
 	count: number
-	next: string | null
-	previous: string | null
+	next: string
+	previous: string
 	current_page: number
 	page_size: number
 	results: AssignmentItem[]
