@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react"
 import { useAuth } from "@/context/AuthContext"
 import { easyFetch } from "@/utils/fetchWrapper"
-import { User } from "@/types"
+import { User } from "@/types/userTypes"
 
 interface UserInfo {
 	first_name: string

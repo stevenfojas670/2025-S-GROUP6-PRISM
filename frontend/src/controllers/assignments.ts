@@ -4,13 +4,20 @@ import { APIError } from "@/types/APIError"
 
 export async function GetAssignments(
 	courseId: number,
-	page: number | null,
-	page_size: number | null
+	page?: number | null,
+	page_size?: number | null
 ): Promise<AssignmentResponse | APIError> {
 	try {
+		const queryParams = new URLSearchParams({ course: String(courseId) })
+		if (page !== null && page !== undefined) {
+			queryParams.append("page", String(page))
+		}
+		if (page_size !== null && page_size !== undefined) {
+			queryParams.append("page_size", String(page_size))
+		}
+
 		const response = await easyFetch(
-			`http://localhost:8000/api/assignment/assignments/
-			get-assignments-by-course/?course=${courseId}&page=${page}&page_size=${page_size}`,
+			`http://localhost:8000/api/assignment/assignments/get-assignments-by-course/?${queryParams.toString()}`,
 			{ method: "GET" }
 		)
 
@@ -25,7 +32,7 @@ export async function GetAssignments(
 			}
 		}
 	} catch (e) {
-		console.error(e)
+		console.error("Assignment fetch error:", e)
 		return {
 			message: "Something went wrong during fetch.",
 		}

@@ -5,7 +5,7 @@ import {
 	GetDistributionPlot,
 	GetSimilarityPlot,
 } from "@/controllers/graphs"
-import { Box, Typography, Tab, Tabs, CircularProgress } from "@mui/material"
+import { Box, Tab, Tabs, CircularProgress } from "@mui/material"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
 
@@ -73,7 +73,8 @@ export default function Graphs() {
 		>
 			{!loaded && <CircularProgress />}
 			{src && (
-				<img
+				<Box
+					component="img"
 					src={src}
 					alt={alt}
 					onLoad={() => setLoaded(true)}

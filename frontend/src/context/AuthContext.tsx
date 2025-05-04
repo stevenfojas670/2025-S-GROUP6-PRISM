@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react"
-import { User } from "@/types"
+import { User } from "@/types/userTypes"
 
 // This just defines the structure of the context
 interface AuthContextType {

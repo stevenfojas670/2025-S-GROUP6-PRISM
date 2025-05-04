@@ -215,7 +215,11 @@ class SubmissionSimilarityPairsViewSet(viewsets.ModelViewSet, CachedViewMixin):
         if student2:
             queryset = queryset.filter(submission_id_2__student_id=student2)
         if assignment_id:
-            queryset = queryset.filter(assignment_id=assignment_id)
+            queryset = queryset.filter(
+                submission_id_1__assignment_id=assignment_id,
+                submission_id_2__assignment_id=assignment_id,
+                assignment_id=assignment_id,
+            )
 
         # Course filtering
         if course:

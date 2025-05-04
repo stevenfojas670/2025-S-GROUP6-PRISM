@@ -10,7 +10,7 @@ from rest_framework import status
 from django_filters.rest_framework import DjangoFilterBackend
 from prism_backend.mixins import CachedViewMixin
 from users.permissions import IsProfessorOrAdmin
-from django.db.models import Count, Max, Avg, F
+from django.db.models import Count, Max, Avg, F, Q
 from cheating.models import SubmissionSimilarityPairs
 from courses.models import CourseInstances
 
@@ -132,10 +132,10 @@ class SubmissionsViewSet(viewsets.ModelViewSet, CachedViewMixin):
     def get_queryset(self):
         """Return submissions filtered by logical AND on query parameters.
 
-        Filters by assignment ID, course instance ID, semester ID, and student ID,
-        if provided in the query string.
+        Supports filtering by one or both semesters.
 
-        Example query: /submissions/?student=382&asid=1&course=3&semester=1
+        Example query:
+            /submissions/?student=382&asid=1&course=3&semester1=1&semester2=2
 
         Returns:
             QuerySet: A filtered Django QuerySet of Submissions.
@@ -146,7 +146,8 @@ class SubmissionsViewSet(viewsets.ModelViewSet, CachedViewMixin):
 
         assignment_id = self.request.query_params.get("asid")
         course_instance_id = self.request.query_params.get("course")
-        semester_id = self.request.query_params.get("semester")
+        semester1 = self.request.query_params.get("semester")
+        semester2 = self.request.query_params.get("semester2")
         student_id = self.request.query_params.get("student")
 
         if assignment_id:
@@ -155,8 +156,15 @@ class SubmissionsViewSet(viewsets.ModelViewSet, CachedViewMixin):
         if course_instance_id:
             queryset = queryset.filter(course_instance_id=course_instance_id)
 
-        if semester_id:
-            queryset = queryset.filter(assignment__semester_id=semester_id)
+        if semester1 and semester2:
+            queryset = queryset.filter(
+                Q(assignment__semester_id=semester1)
+                | Q(assignment__semester_id=semester2)
+            )
+        elif semester1:
+            queryset = queryset.filter(assignment__semester_id=semester1)
+        elif semester2:
+            queryset = queryset.filter(assignment__semester_id=semester2)
 
         if student_id:
             queryset = queryset.filter(student_id=student_id)
