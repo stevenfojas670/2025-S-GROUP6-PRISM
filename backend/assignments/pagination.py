@@ -24,7 +24,7 @@ class StandardResultsSetPagination(pagination.PageNumberPagination):
                 "next": self.get_next_link(),
                 "previous": self.get_previous_link(),
                 "current_page": self.page.number,
-                "page_size": self.page_size,
+                "page_size": len(data),
                 "results": data,
             }
         )

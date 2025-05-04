@@ -3,11 +3,14 @@ import { AssignmentResponse } from "@/types/assignmentTypes"
 import { APIError } from "@/types/APIError"
 
 export async function GetAssignments(
-	courseId: number
+	courseId: number,
+	page: number | null,
+	page_size: number | null
 ): Promise<AssignmentResponse | APIError> {
 	try {
 		const response = await easyFetch(
-			`http://localhost:8000/api/assignment/assignments/get-assignments-by-course/?course=${courseId}`,
+			`http://localhost:8000/api/assignment/assignments/
+			get-assignments-by-course/?course=${courseId}&page=${page}&page_size=${page_size}`,
 			{ method: "GET" }
 		)
 
