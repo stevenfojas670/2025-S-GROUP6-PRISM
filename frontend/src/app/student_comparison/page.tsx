@@ -17,9 +17,6 @@ import {
 	TableBody,
 	CircularProgress,
 	Divider,
-	Switch,
-	FormControlLabel,
-	Skeleton,
 } from "@mui/material"
 import { grey } from "@mui/material/colors"
 
@@ -83,31 +80,31 @@ export default function StudentComparison() {
 		setSimilarity(null)
 	}
 
-	const isCourseSelectionValid = () =>
-		matchCourses ||
-		(course1 !== null && course2 !== null && course1 !== course2)
+	// const isCourseSelectionValid = () =>
+	// 	matchCourses ||
+	// 	(course1 !== null && course2 !== null && course1 !== course2)
 
-	const isSemesterSelectionValid = () =>
-		matchSemesters ||
-		(semester1 !== null && semester2 !== null && semester1 !== semester2)
+	// const isSemesterSelectionValid = () =>
+	// 	matchSemesters ||
+	// 	(semester1 !== null && semester2 !== null && semester1 !== semester2)
 
-	const handleSemesterToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const isChecked = e.target.checked
-		setMatchSemesters(isChecked)
+	// const handleSemesterToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
+	// 	const isChecked = e.target.checked
+	// 	setMatchSemesters(isChecked)
 
-		setSemester1(null)
-		setSemester2(null)
-		setSemester(null)
-	}
+	// 	setSemester1(null)
+	// 	setSemester2(null)
+	// 	setSemester(null)
+	// }
 
-	const handleCourseToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const isChecked = e.target.checked
-		setMatchCourses(isChecked)
+	// const handleCourseToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
+	// 	const isChecked = e.target.checked
+	// 	setMatchCourses(isChecked)
 
-		setCourse1(null)
-		setCourse2(null)
-		setCourse(null)
-	}
+	// 	setCourse1(null)
+	// 	setCourse2(null)
+	// 	setCourse(null)
+	// }
 
 	useEffect(() => {
 		if (user?.pk) {
