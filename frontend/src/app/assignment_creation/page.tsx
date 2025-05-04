@@ -13,12 +13,22 @@ import {
 	FormControlLabel,
 	Divider,
 } from "@mui/material"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useAuth } from "@/context/AuthContext"
+
+// Controllers
+import { GetAllCourses, GetCourses } from "@/controllers/courses"
+
+// Types
+import { Course } from "@/types/coursesTypes"
 
 export default function AssignmentCreation() {
+	const { user } = useAuth()
+
+	const [courses, setCourses] = useState<Course[]>([])
+	const [semesterId, setSemesterId] = useState<number | null>(null)
 	const [formData, setFormData] = useState({
-		course_catalog: "",
-		semester: "",
+		course: "",
 		assignment_number: "",
 		title: "",
 		due_date: "",
@@ -31,18 +41,15 @@ export default function AssignmentCreation() {
 		has_policy: false,
 	})
 
-	const handleChange = (
-		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-	) => {
-		const { name, value, type, checked } = e.target
-		setFormData((prev) => ({
-			...prev,
-			[name]: type === "checkbox" ? checked : value,
-		}))
-	}
+	// Fetch courses
+	useEffect(() => {
+		if (!user?.pk) return
+		GetCourses(Number(user?.pk), Number(semesterId)).then((data) => {
+			if ("results" in data) setCourses(data.results)
+		})
+	}, [user?.pk])
 
 	const handleSubmit = async () => {
-		// POST formData to your backend endpoint
 		console.log("Submitting Assignment:", formData)
 		// Add actual POST logic here
 	}
@@ -54,30 +61,14 @@ export default function AssignmentCreation() {
 			</Typography>
 			<Divider sx={{ mb: 2 }} />
 			<Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-				{/* Replace these dropdowns with actual fetched options */}
 				<FormControl fullWidth>
-					<InputLabel>Course Catalog</InputLabel>
-					<Select
-						name="course_catalog"
-						value={formData.course_catalog}
-						onChange={handleChange}
-						label="Course Catalog"
-					>
+					<InputLabel>Course</InputLabel>
+					<Select name="course" value={formData.course} label="Course">
+						{courses.map((course) => (
+							<MenuItem key={course.id}>{course.course_catalog.name}</MenuItem>
+						))}
 						<MenuItem value="1">CS 135</MenuItem>
 						<MenuItem value="2">CS 202</MenuItem>
-					</Select>
-				</FormControl>
-
-				<FormControl fullWidth>
-					<InputLabel>Semester</InputLabel>
-					<Select
-						name="semester"
-						value={formData.semester}
-						onChange={handleChange}
-						label="Semester"
-					>
-						<MenuItem value="1">Spring 2024</MenuItem>
-						<MenuItem value="2">Fall 2024</MenuItem>
 					</Select>
 				</FormControl>
 
@@ -85,7 +76,6 @@ export default function AssignmentCreation() {
 					label="Assignment Number"
 					name="assignment_number"
 					value={formData.assignment_number}
-					onChange={handleChange}
 					type="number"
 					fullWidth
 				/>
@@ -94,7 +84,6 @@ export default function AssignmentCreation() {
 					label="Title"
 					name="title"
 					value={formData.title}
-					onChange={handleChange}
 					fullWidth
 				/>
 
@@ -103,7 +92,6 @@ export default function AssignmentCreation() {
 					name="due_date"
 					type="date"
 					value={formData.due_date}
-					onChange={handleChange}
 					fullWidth
 					InputLabelProps={{ shrink: true }}
 				/>
@@ -113,7 +101,6 @@ export default function AssignmentCreation() {
 					name="lock_date"
 					type="datetime-local"
 					value={formData.lock_date}
-					onChange={handleChange}
 					fullWidth
 					InputLabelProps={{ shrink: true }}
 				/>
@@ -122,17 +109,12 @@ export default function AssignmentCreation() {
 					label="PDF Filepath"
 					name="pdf_filepath"
 					value={formData.pdf_filepath}
-					onChange={handleChange}
 					fullWidth
 				/>
 
 				<FormControlLabel
 					control={
-						<Checkbox
-							name="has_base_code"
-							checked={formData.has_base_code}
-							onChange={handleChange}
-						/>
+						<Checkbox name="has_base_code" checked={formData.has_base_code} />
 					}
 					label="Has Base Code"
 				/>
@@ -141,7 +123,6 @@ export default function AssignmentCreation() {
 					label="MOSS Report Directory"
 					name="moss_report_directory_path"
 					value={formData.moss_report_directory_path}
-					onChange={handleChange}
 					fullWidth
 				/>
 
@@ -149,7 +130,6 @@ export default function AssignmentCreation() {
 					label="Bulk AI Directory"
 					name="bulk_ai_directory_path"
 					value={formData.bulk_ai_directory_path}
-					onChange={handleChange}
 					fullWidth
 				/>
 
@@ -157,18 +137,11 @@ export default function AssignmentCreation() {
 					label="Language"
 					name="language"
 					value={formData.language}
-					onChange={handleChange}
 					fullWidth
 				/>
 
 				<FormControlLabel
-					control={
-						<Checkbox
-							name="has_policy"
-							checked={formData.has_policy}
-							onChange={handleChange}
-						/>
-					}
+					control={<Checkbox name="has_policy" checked={formData.has_policy} />}
 					label="Has Policy"
 				/>
 

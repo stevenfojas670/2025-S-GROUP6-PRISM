@@ -17,6 +17,8 @@ import {
 	TableBody,
 	CircularProgress,
 	Divider,
+	TableFooter,
+	TablePagination,
 } from "@mui/material"
 import { grey } from "@mui/material/colors"
 
@@ -24,13 +26,16 @@ import { useAuth } from "@/context/AuthContext"
 import { GetSemesters } from "@/controllers/semesters"
 import { GetCourses } from "@/controllers/courses"
 import { GetAssignments } from "@/controllers/assignments"
-import { GetSubmittedStudents } from "@/controllers/students"
+import {
+	GetStudentsWithSimilarities,
+	GetSubmittedStudents,
+} from "@/controllers/students"
 import { GetSimilarityPairs } from "@/controllers/similarityPairs"
 
 import { Semester } from "@/types/semesterTypes"
 import { Course } from "@/types/coursesTypes"
 import { AssignmentItem } from "@/types/assignmentTypes"
-import { SimilarityPair } from "@/types/similarityTypes"
+import { SimilarityPair, SimilarityPairResponse } from "@/types/similarityTypes"
 import { Student } from "@/types/studentTypes"
 
 export default function StudentComparison() {
@@ -54,10 +59,19 @@ export default function StudentComparison() {
 	const [students, setStudents] = useState<Student[]>([])
 	const [studentA, setStudentA] = useState<number | null>(null)
 	const [studentB, setStudentB] = useState<number | null>(null)
+	const [studentCurPage, setStudentCurPage] = useState(1)
+	const [studentPageSize, setStudentPageSize] = useState(10)
 
-	const [pageSize, setPageSize] = useState<number | null>(10)
 	const [similarity, setSimilarity] = useState<SimilarityPair[] | null>(null)
+	const [similarityCount, setSimilarityCount] = useState(0)
+
+	const [pageSize, setPageSize] = useState(10)
+	const [currentPage, setCurrentPage] = useState(1)
 	const [loading, setLoading] = useState(false)
+
+	const page = currentPage - 1 // convert to 0-based index for MUI
+	const emptyRows =
+		page > 0 ? Math.max(0, (1 + page) * pageSize - similarityCount) : 0
 
 	const handleClear = () => {
 		setSemester(null)
@@ -131,37 +145,91 @@ export default function StudentComparison() {
 	}, [course])
 
 	useEffect(() => {
-		GetSubmittedStudents(course, assignmentId, semester, semester2).then(
-			(data) => {
-				if (Array.isArray(data)) setStudents(data)
+		if (!course || !assignmentId || !semester) return
+		const fetchSimilarities = async () => {
+			setLoading(true)
+
+			const data = await GetSimilarityPairs(
+				assignmentId,
+				course,
+				course1,
+				course2,
+				studentA,
+				studentB,
+				semester,
+				semester1,
+				semester2,
+				pageSize,
+				currentPage
+			)
+
+			if ("results" in data) {
+				setSimilarity(data.results)
+				setSimilarityCount(data.count)
+				setCurrentPage(data.current_page)
+				setPageSize(data.page_size)
+			} else {
+				console.error("Error fetching similarities", data)
 			}
-		)
-	}, [course, assignmentId, semester, semester2])
-
-	const fetchSimilarities = async () => {
-		if (!assignmentId || (!studentA && !studentB)) return
-		setLoading(true)
-
-		const data = await GetSimilarityPairs(
-			matchCourses ? course : null,
-			!matchCourses ? course1 : null,
-			!matchCourses ? course2 : null,
-			studentA,
-			studentB,
-			assignmentId,
-			matchSemesters ? semester : null,
-			!matchSemesters ? semester1 : null,
-			!matchSemesters ? semester2 : null,
-			pageSize
-		)
-
-		if ("results" in data) {
-			setSimilarity(data.results)
-		} else {
-			console.error("Error fetching similarities", data)
+			setLoading(false)
 		}
-		setLoading(false)
-	}
+
+		fetchSimilarities()
+	}, [
+		assignmentId,
+		course,
+		course1,
+		course2,
+		studentA,
+		studentB,
+		semester,
+		semester1,
+		semester2,
+		pageSize,
+		currentPage,
+	])
+
+	useEffect(() => {
+		if (!course || !assignmentId || !semester) return
+		const fetchStudents = async () => {
+			setLoading(true)
+
+			const data = await GetStudentsWithSimilarities(
+				assignmentId,
+				course,
+				course1,
+				course2,
+				studentA,
+				studentB,
+				semester,
+				semester1,
+				semester2,
+				200,
+				studentCurPage
+			)
+
+			if ("results" in data) {
+				setStudents(data.results)
+			} else {
+				console.error("Error fetching students with similarities.")
+			}
+			setLoading(false)
+		}
+
+		fetchStudents()
+	}, [
+		assignmentId,
+		course,
+		course1,
+		course2,
+		studentA,
+		studentB,
+		semester,
+		semester1,
+		semester2,
+		studentPageSize,
+		studentCurPage,
+	])
 
 	return (
 		<Box
@@ -312,10 +380,12 @@ export default function StudentComparison() {
 				</FormControl>
 				{/* Student selections */}
 				<FormControl fullWidth disabled={!course}>
-					<InputLabel>Student A</InputLabel>
+					<InputLabel>Student 1</InputLabel>
 					<Select
 						value={studentA ?? ""}
-						onChange={(e) => setStudentA(Number(e.target.value))}
+						onChange={(e) => {
+							setStudentA(Number(e.target.value))
+						}}
 						label="Student A"
 					>
 						{students.map((s) => (
@@ -327,7 +397,7 @@ export default function StudentComparison() {
 				</FormControl>
 
 				<FormControl fullWidth disabled={!course}>
-					<InputLabel>Student B</InputLabel>
+					<InputLabel>Student 2</InputLabel>
 					<Select
 						value={studentB ?? ""}
 						onChange={(e) => setStudentB(Number(e.target.value))}
@@ -340,10 +410,6 @@ export default function StudentComparison() {
 						))}
 					</Select>
 				</FormControl>
-
-				<Button variant="contained" onClick={fetchSimilarities}>
-					{loading ? <CircularProgress size={24} /> : "Compare Students"}
-				</Button>
 				<Button variant="outlined" onClick={handleClear}>
 					Clear
 				</Button>
@@ -351,36 +417,60 @@ export default function StudentComparison() {
 			{/* Right Panel of the similarity table */}
 			<Box
 				sx={(theme) => ({
-					width: "50%",
 					p: 2,
+					width: "50%",
+					height: "100%",
+					display: "flex",
+					flexDirection: "column",
 					backgroundColor: theme.palette.background.paper,
 				})}
 			>
-				<TableContainer sx={{ backgroundColor: grey[100] }}>
-					<Table>
-						<TableHead>
-							<TableRow>
-								<TableCell>Students</TableCell>
-								<TableCell>Similarity Score</TableCell>
-							</TableRow>
-						</TableHead>
-						{similarity && (
-							<TableBody>
-								{similarity.map((pair) => (
-									<TableRow key={pair.id}>
-										<TableCell>
-											{pair.submission_id_1.student.first_name}{" "}
-											{pair.submission_id_1.student.last_name} &amp;{" "}
-											{pair.submission_id_2.student.first_name}{" "}
-											{pair.submission_id_2.student.last_name}
-										</TableCell>
-										<TableCell>{pair.percentage}%</TableCell>
-									</TableRow>
-								))}
-							</TableBody>
-						)}
-					</Table>
-				</TableContainer>
+				<Box sx={{ overflow: "auto", flex: 1 }}>
+					<TableContainer
+						sx={{ backgroundColor: grey[100], maxHeight: "100%" }}
+					>
+						<Table size="small" stickyHeader>
+							<TableHead>
+								<TableRow>
+									<TableCell>Student 1</TableCell>
+									<TableCell>Student 2</TableCell>
+									<TableCell>Similarity Score</TableCell>
+								</TableRow>
+							</TableHead>
+							{similarity && (
+								<TableBody sx={{}}>
+									{similarity.map((pair) => (
+										<TableRow hover key={pair.id}>
+											<TableCell>
+												{pair.submission_id_1.student.first_name}{" "}
+												{pair.submission_id_1.student.last_name}
+											</TableCell>
+											<TableCell>
+												{pair.submission_id_2.student.first_name}{" "}
+												{pair.submission_id_2.student.last_name}
+											</TableCell>
+											<TableCell>{pair.percentage}%</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							)}
+						</Table>
+					</TableContainer>
+				</Box>
+				<TablePagination
+					rowsPerPageOptions={[10, 25, 50, 100, 150, 200]}
+					component="div"
+					count={similarityCount}
+					rowsPerPage={pageSize}
+					page={page}
+					onPageChange={(_, newPage) => {
+						setCurrentPage(newPage + 1)
+					}}
+					onRowsPerPageChange={(e) => {
+						setPageSize(parseInt(e.target.value, 10))
+						setCurrentPage(1)
+					}}
+				/>
 			</Box>
 		</Box>
 	)
