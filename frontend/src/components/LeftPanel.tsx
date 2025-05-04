@@ -21,7 +21,6 @@ export default function LeftPanel() {
 	const { user } = useAuth()
 	const [semOpen, setSemOpen] = useState<boolean>(false)
 	const [semesters, setSemesters] = useState<Semester[]>([])
-	const [semId, setSemId] = useState<number | null>(null)
 
 	const handleSemesterClick = async (semId: number) => {
 		setSemesterId(semId)
@@ -39,7 +38,7 @@ export default function LeftPanel() {
 		}
 
 		fetchSemesters()
-	}, [])
+	})
 
 	return (
 		<Box
@@ -73,24 +72,18 @@ export default function LeftPanel() {
 				<ListItemButton onClick={() => router.push("/student_comparison")}>
 					<ListItemText>Student Comparison</ListItemText>
 				</ListItemButton>
-				<ListItemButton onClick={() => router.push("/student_submissions")}>
-					<ListItemText>Student Submission</ListItemText>
-				</ListItemButton>
 				<ListItemButton onClick={() => router.push("/assignment_creation/")}>
 					<ListItemText>Assignment Creation</ListItemText>
 				</ListItemButton>
 				<ListItemButton onClick={() => router.push("/plagiarism_report")}>
 					<ListItemText>Plagiarism Report</ListItemText>
 				</ListItemButton>
-
 				<ListItemButton onClick={() => router.push("/alerts")}>
 					<ListItemText>Alerts</ListItemText>
 				</ListItemButton>
-
 				<ListItemButton onClick={() => router.push("/account")}>
 					<ListItemText>Account</ListItemText>
 				</ListItemButton>
-
 				<ListItemButton onClick={() => router.push("/alerts")}>
 					<ListItemText>Settings</ListItemText>
 				</ListItemButton>

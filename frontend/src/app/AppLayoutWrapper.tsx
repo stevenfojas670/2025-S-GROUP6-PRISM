@@ -1,7 +1,8 @@
 "use client"
 
 import { useAuth } from "@/context/AuthContext"
-import { Box, AppBar, Toolbar, Typography, Button } from "@mui/material"
+import { Box, AppBar, Toolbar, Typography, Button, Link } from "@mui/material"
+import { useRouter } from "next/navigation"
 import { SignOutButton } from "@/components/AuthenticationMethod"
 import LeftPanel from "@/components/LeftPanel"
 
@@ -11,6 +12,7 @@ interface Props {
 
 export default function AppLayoutWrapper({ children }: Props) {
 	const { user, loading } = useAuth()
+	const router = useRouter()
 
 	if (loading) return null
 
@@ -34,9 +36,26 @@ export default function AppLayoutWrapper({ children }: Props) {
 				})}
 			>
 				<Toolbar>
-					<Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-						PRISM
-					</Typography>
+					<Box sx={{ flexGrow: 1 }}>
+						<Link
+							href="/dashboard"
+							style={{ textDecoration: "none", color: "inherit" }}
+						>
+							<Typography
+								variant="h6"
+								component="div"
+								sx={{ display: "flex", alignItems: "center", gap: 1 }}
+							>
+								PRISM
+								<Box
+									component="img"
+									src="/prism_logo_transparent.png"
+									alt="PRISM Logo"
+									sx={{ width: 30, height: 30 }}
+								/>
+							</Typography>
+						</Link>
+					</Box>
 					<Button variant="contained">
 						<SignOutButton />
 					</Button>
