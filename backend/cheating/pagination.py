@@ -18,6 +18,16 @@ class StandardResultsSetPagination(pagination.PageNumberPagination):
     max_page_size = 200
 
     def get_paginated_response(self, data):
+        """
+        Return a paginated API response with custom pagination structure.
+
+        Args:
+            data (list): The paginated list of results for the current page.
+
+        Returns:
+            Response: A DRF Response object containing pagination metadata
+                    and the current page's results.
+        """
         return Response(
             {
                 "count": self.page.paginator.count,
