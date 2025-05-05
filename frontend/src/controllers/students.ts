@@ -31,16 +31,19 @@ export async function GetStudents(
 }
 
 export async function GetSubmittedStudents(
-	course: number | null,
 	assignmentId: number | null,
-	semester: number | null,
-	semester1: number | null
+	course?: number | null,
+	semester?: number | null,
+	semester1?: number | null
 ): Promise<Student[] | APIError> {
 	const params = new URLSearchParams()
-	if (course) params.append("course", course.toString())
+	if (course !== null && course !== undefined)
+		params.append("course", course.toString())
 	if (assignmentId) params.append("asid", assignmentId.toString())
-	if (semester) params.append("semester", semester.toString())
-	if (semester1) params.append("semester1", semester1.toString())
+	if (semester !== null && semester !== undefined)
+		params.append("semester", semester.toString())
+	if (semester1 !== null && semester1 !== undefined)
+		params.append("semester1", semester1.toString())
 
 	try {
 		const response = await easyFetch(

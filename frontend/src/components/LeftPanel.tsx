@@ -75,9 +75,6 @@ export default function LeftPanel() {
 				<ListItemButton onClick={() => router.push("/assignment_creation/")}>
 					<ListItemText>Assignment Creation</ListItemText>
 				</ListItemButton>
-				<ListItemButton onClick={() => router.push("/plagiarism_report")}>
-					<ListItemText>Plagiarism Report</ListItemText>
-				</ListItemButton>
 				<ListItemButton onClick={() => router.push("/alerts")}>
 					<ListItemText>Alerts</ListItemText>
 				</ListItemButton>

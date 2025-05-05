@@ -37,6 +37,7 @@ import { Course } from "@/types/coursesTypes"
 import { AssignmentItem } from "@/types/assignmentTypes"
 import { SimilarityPair, SimilarityPairResponse } from "@/types/similarityTypes"
 import { Student } from "@/types/studentTypes"
+import { Submission } from "@/types/submissionTypes"
 
 export default function StudentComparison() {
 	const { user } = useAuth()
@@ -189,6 +190,7 @@ export default function StudentComparison() {
 		currentPage,
 	])
 
+	// Fetch students with similarities
 	useEffect(() => {
 		if (!course || !assignmentId || !semester) return
 		const fetchStudents = async () => {
@@ -230,6 +232,28 @@ export default function StudentComparison() {
 		studentPageSize,
 		studentCurPage,
 	])
+
+	// Fetch students
+	// useEffect(() => {
+	// 	if (!assignmentId) return
+	// 	const fetchStudents = async () => {
+	// 		const data = await GetSubmittedStudents(
+	// 			assignmentId,
+	// 			course,
+	// 			semester,
+	// 			semester1
+	// 		)
+
+	// 		if (Array.isArray(data)) {
+	// 			setStudents(data)
+	// 		} else {
+	// 			console.error("Failed to fetch students: ", data)
+	// 			setStudents([])
+	// 		}
+	// 	}
+
+	// 	fetchStudents()
+	// }, [assignmentId, course, semester, semester1])
 
 	return (
 		<Box
@@ -395,7 +419,6 @@ export default function StudentComparison() {
 						))}
 					</Select>
 				</FormControl>
-
 				<FormControl fullWidth disabled={!course}>
 					<InputLabel>Student 2</InputLabel>
 					<Select
