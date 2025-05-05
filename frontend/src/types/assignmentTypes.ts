@@ -22,3 +22,21 @@ export interface AssignmentItem {
 	course_catalog: number | null
 	semester: number | null
 }
+
+export type AssignmentCreatePayload = {
+	course_catalog: number
+	semester: number
+	assignment_number: number
+	title: string
+	due_date: string
+	lock_date: string
+	pdf_filepath: string
+	has_base_code: boolean
+	moss_report_directory_path: string
+	bulk_ai_directory_path: string
+	language: string
+	has_policy: boolean
+	base_files: { filename: string; filepath: string }[]
+	required_files: { filename: string }[]
+	constraints: { type: string; value: string }[]
+}

@@ -15,6 +15,8 @@ from django.db import transaction
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import filters, viewsets
+from rest_framework.response import Response
+from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
 from prism_backend.mixins import CachedViewMixin
 from assignments.models import Assignments, Submissions
@@ -27,6 +29,8 @@ from .services import (
 )
 from .services import generate_report as generate_report_service
 from django.views.decorators.http import require_GET
+
+from courses.models import Students
 from .models import (
     CheatingGroups,
     CheatingGroupMembers,
@@ -43,6 +47,7 @@ from .models import (
     StudentSemesterProfile,
 )
 
+from courses.serializers import StudentsSerializer
 from .serializers import (
     CheatingGroupsSerializer,
     CheatingGroupMembersSerializer,
@@ -246,6 +251,32 @@ class SubmissionSimilarityPairsViewSet(viewsets.ModelViewSet, CachedViewMixin):
             )
 
         return queryset
+
+    @action(detail=False, methods=["get"], url_path="students-with-similarities")
+    def students_with_similarities(self, request):
+        """Return all students involved in at least one similarity pair."""
+        student_ids_1 = self.get_queryset().values_list(
+            "submission_id_1__student_id", flat=True
+        )
+        student_ids_2 = self.get_queryset().values_list(
+            "submission_id_2__student_id", flat=True
+        )
+
+        combined_ids = student_ids_1.union(student_ids_2)
+
+        students = (
+            Students.objects.filter(id__in=combined_ids)
+            .distinct()
+            .order_by("last_name", "first_name")
+        )
+
+        page = self.paginate_queryset(students)
+        if page is not None:
+            serializer = StudentsSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = StudentsSerializer(students, many=True)
+        return Response(serializer.data)
 
 
 class LongitudinalCheatingGroupsViewSet(viewsets.ModelViewSet, CachedViewMixin):
